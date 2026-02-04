@@ -29,6 +29,7 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
     ...staticModelResolvers.Query,
     ...schedulerResolvers.Query,
     ...systemResolvers.Query,
+    ...dataConnectionResolvers.Query,
   },
 
   Mutation: {

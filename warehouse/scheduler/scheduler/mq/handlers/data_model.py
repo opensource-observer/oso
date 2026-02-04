@@ -25,7 +25,7 @@ from scheduler.types import (
     StepContext,
     SuccessResponse,
 )
-from scheduler.utils import OSOClientTableResolver, ctas_query
+from scheduler.utils import OSOClientTableResolver, ctas_query, get_trino_user
 from sqlglot import exp
 from sqlmesh import EngineAdapter
 
@@ -124,7 +124,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         dataset_name = dataset.node.name
         org_name = dataset.node.organization.name
 
-        user = f"rw-{org_name.strip().lower()}-{context.organization.id.replace('-', '').lower()}"
+        user = get_trino_user("rw", context.organization.id, org_name)
 
         assert isinstance(
             data_model_def,

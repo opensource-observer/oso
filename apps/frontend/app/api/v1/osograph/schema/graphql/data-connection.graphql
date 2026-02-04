@@ -7,6 +7,7 @@ enum DataConnectionType {
 type DataConnection {
   id: ID!
   orgId: ID!
+  organization: Organization!
   name: String!
   type: DataConnectionType!
   config: JSON!
@@ -30,8 +31,14 @@ type DataConnectionAlias {
   orgId: ID!
   datasetId: ID!
   dataConnectionId: ID!
-  name: String!
   schema: String!
+  materializations(
+    tableName: String!
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): MaterializationConnection!
 }
 
 extend type Query {
@@ -55,11 +62,6 @@ extend type Mutation {
   ): CreateDataConnectionPayload!
   deleteDataConnection(id: ID!): SimplePayload!
   syncDataConnection(id: ID!): SimplePayload!
-
-  createDataConnectionAlias(
-    input: CreateDataConnectionAliasInput!
-  ): CreateDataConnectionAliasPayload!
-  deleteDataConnectionAlias(id: ID!): SimplePayload!
 }
 
 input CreateDataConnectionInput {
@@ -79,17 +81,5 @@ type CreateDataConnectionPayload {
 type SyncDataConnectionPayload {
   success: Boolean!
   run: Run!
-  message: String
-}
-
-input CreateDataConnectionAliasInput {
-  dataConnectionId: ID!
-  name: String!
-  schema: String!
-}
-
-type CreateDataConnectionAliasPayload {
-  success: Boolean!
-  dataConnectionAlias: DataConnectionAlias
   message: String
 }

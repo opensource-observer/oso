@@ -1198,17 +1198,11 @@ export type ConflictingExecutionParamsError = Error & {
   message: Scalars["String"]["output"];
 };
 
-export type CreateDataConnectionAliasInput = {
+export type CreateDataConnectionDatasetsInput = {
   dataConnectionId: Scalars["ID"]["input"];
-  name: Scalars["String"]["input"];
-  schema: Scalars["String"]["input"];
-};
-
-export type CreateDataConnectionAliasPayload = {
-  __typename?: "CreateDataConnectionAliasPayload";
-  dataConnectionAlias?: Maybe<DataConnectionAlias>;
-  message?: Maybe<Scalars["String"]["output"]>;
-  success: Scalars["Boolean"]["output"];
+  orgId: Scalars["ID"]["input"];
+  runId: Scalars["ID"]["input"];
+  schemas: Array<DataConnectionSchemaInput>;
 };
 
 export type CreateDataConnectionInput = {
@@ -1544,6 +1538,7 @@ export type DataConnection = {
   id: Scalars["ID"]["output"];
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
+  organization: Organization;
   type: DataConnectionType;
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
@@ -1553,9 +1548,17 @@ export type DataConnectionAlias = {
   dataConnectionId: Scalars["ID"]["output"];
   datasetId: Scalars["ID"]["output"];
   id: Scalars["ID"]["output"];
-  name: Scalars["String"]["output"];
+  materializations: MaterializationConnection;
   orgId: Scalars["ID"]["output"];
   schema: Scalars["String"]["output"];
+};
+
+export type DataConnectionAliasMaterializationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  tableName: Scalars["String"]["input"];
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type DataConnectionConnection = {
@@ -1580,6 +1583,28 @@ export type DataConnectionEdge = {
   __typename?: "DataConnectionEdge";
   cursor: Scalars["String"]["output"];
   node: DataConnection;
+};
+
+export type DataConnectionSchema = {
+  __typename?: "DataConnectionSchema";
+  name: Scalars["String"]["output"];
+  tables: Array<DataConnectionTable>;
+};
+
+export type DataConnectionSchemaInput = {
+  name: Scalars["String"]["input"];
+  tables: Array<DataConnectionTableInput>;
+};
+
+export type DataConnectionTable = {
+  __typename?: "DataConnectionTable";
+  name: Scalars["String"]["output"];
+  schema: Array<DataModelColumn>;
+};
+
+export type DataConnectionTableInput = {
+  name: Scalars["String"]["input"];
+  schema: Array<DataModelColumnInput>;
 };
 
 export enum DataConnectionType {
@@ -3527,7 +3552,11 @@ export type Mutation = {
   /** Cancel a run */
   cancelRun: CancelRunPayload;
   createDataConnection: CreateDataConnectionPayload;
-  createDataConnectionAlias: CreateDataConnectionAliasPayload;
+  /**
+   * System only. Create a dataset linked to a data connection schema
+   * @system-only
+   */
+  createDataConnectionDatasets: SimplePayload;
   /** Request a run for a DATA_CONNECTION dataset */
   createDataConnectionRunRequest: CreateRunRequestPayload;
   createDataIngestionConfig: DataIngestion;
@@ -3556,7 +3585,6 @@ export type Mutation = {
   /** Sets the concurrency limit for a given concurrency key. */
   deleteConcurrencyLimit: Scalars["Boolean"]["output"];
   deleteDataConnection: SimplePayload;
-  deleteDataConnectionAlias: SimplePayload;
   deleteDataModel: SimplePayload;
   /** Delete a dataset */
   deleteDataset: SimplePayload;
@@ -3714,8 +3742,8 @@ export type MutationCreateDataConnectionArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
-export type MutationCreateDataConnectionAliasArgs = {
-  input: CreateDataConnectionAliasInput;
+export type MutationCreateDataConnectionDatasetsArgs = {
+  input: CreateDataConnectionDatasetsInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -3795,11 +3823,6 @@ export type MutationDeleteConcurrencyLimitArgs = {
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationDeleteDataConnectionArgs = {
-  id: Scalars["ID"]["input"];
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationDeleteDataConnectionAliasArgs = {
   id: Scalars["ID"]["input"];
 };
 

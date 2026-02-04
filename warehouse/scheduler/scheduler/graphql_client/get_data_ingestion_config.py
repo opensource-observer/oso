@@ -26,7 +26,7 @@ class GetDataIngestionConfigDatasetsEdgesNode(DatasetCommon):
     type_definition: Union[
         "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataModelDefinition",
         "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionDefinition",
-        "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataConnection",
+        "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataConnectionDefinition",
         "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionStaticModelDefinition",
     ] = Field(alias="typeDefinition", discriminator="typename__")
 
@@ -55,8 +55,10 @@ class GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionDefiniti
     config: Any
 
 
-class GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataConnection(BaseModel):
-    typename__: Literal["DataConnection"] = Field(alias="__typename")
+class GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataConnectionDefinition(
+    BaseModel
+):
+    typename__: Literal["DataConnectionDefinition"] = Field(alias="__typename")
 
 
 class GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionStaticModelDefinition(

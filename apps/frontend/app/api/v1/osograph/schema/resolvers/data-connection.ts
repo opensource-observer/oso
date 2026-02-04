@@ -13,7 +13,6 @@ import {
 } from "@/app/api/v1/osograph/utils/errors";
 import {
   CreateDataConnectionSchema,
-  CreateDataConnectionAliasSchema,
   validateInput,
   DataConnectionWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
@@ -24,11 +23,16 @@ import {
   deleteTrinoCatalog,
   validateDynamicConnector,
 } from "@/lib/dynamic-connectors";
-import { DynamicConnectorsRow } from "@/lib/types/schema-types";
+import {
+  DataConnectionAliasRow,
+  DynamicConnectorsRow,
+} from "@/lib/types/schema-types";
 import { createQueueService } from "@/lib/services/queue";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { SyncConnectionRunRequest } from "@opensource-observer/osoprotobufs/sync-connection";
+import { getMaterializations } from "@/app/api/v1/osograph/utils/resolver-helpers";
+import { generateTableId } from "@/app/api/v1/osograph/utils/model";
 
 async function syncDataConnection(
   supabase: SupabaseAdminClient,
@@ -266,43 +270,40 @@ export const dataConnectionResolvers = {
         message: "Data connection sync run queued successfully",
       };
     },
-
-    createDataConnectionAlias: async (
-      _: unknown,
-      {
-        input: _input,
-      }: {
-        input: z.infer<typeof CreateDataConnectionAliasSchema>;
-      },
-      _context: GraphQLContext,
-    ) => {
-      throw new Error("Not implemented");
-    },
-
-    deleteDataConnectionAlias: async (
-      _: unknown,
-      { id: _id }: { id: string },
-      _context: GraphQLContext,
-    ) => {
-      throw new Error("Not implemented");
-    },
   },
 
   DataConnection: {
     orgId: (parent: DynamicConnectorsRow) => parent.org_id,
-    createdAt: (parent: DynamicConnectorsRow) => parent.created_at,
-    updatedAt: (parent: DynamicConnectorsRow) => parent.updated_at,
     organization: (parent: DynamicConnectorsRow) => {
       return getOrganization(parent.org_id);
     },
+    createdAt: (parent: DynamicConnectorsRow) => parent.created_at,
+    updatedAt: (parent: DynamicConnectorsRow) => parent.updated_at,
     name: (parent: DynamicConnectorsRow) => parent.connector_name,
     type: (parent: DynamicConnectorsRow) => parent.connector_type.toUpperCase(),
   },
 
   DataConnectionAlias: {
-    orgId: (parent: { org_id: string }) => parent.org_id,
-    datasetId: (parent: { dataset_id: string }) => parent.dataset_id,
-    dataConnectionId: (parent: { data_connection_id: string }) =>
+    orgId: (parent: DataConnectionAliasRow) => parent.org_id,
+    datasetId: (parent: DataConnectionAliasRow) => parent.dataset_id,
+    schema: (parent: DataConnectionAliasRow) => parent.schema_name,
+    dataConnectionId: (parent: DataConnectionAliasRow) =>
       parent.data_connection_id,
+    createdAt: (parent: DataConnectionAliasRow) => parent.created_at,
+    updatedAt: (parent: DataConnectionAliasRow) => parent.updated_at,
+    materializations: async (
+      parent: DataConnectionAliasRow,
+      args: FilterableConnectionArgs & { tableName: string },
+      context: GraphQLContext,
+    ) => {
+      const { tableName, ...restArgs } = args;
+      return getMaterializations(
+        restArgs,
+        context,
+        parent.org_id,
+        parent.dataset_id,
+        generateTableId("DATA_CONNECTION", tableName),
+      );
+    },
   },
 };

@@ -317,10 +317,21 @@ export const CreateDataConnectionSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
-export const CreateDataConnectionAliasSchema = z.object({
+export const CreateDataConnectionDatasets = z.object({
+  runId: z.string().uuid(),
+  orgId: z.string().uuid(),
   dataConnectionId: z.string().uuid(),
-  name: z.string(),
-  schema: z.string(),
+  schemas: z.array(
+    z.object({
+      name: z.string(),
+      tables: z.array(
+        z.object({
+          name: z.string(),
+          schema: z.array(DataModelColumnSchema),
+        }),
+      ),
+    }),
+  ),
 });
 
 const ModelColumnContextSchema = z.object({

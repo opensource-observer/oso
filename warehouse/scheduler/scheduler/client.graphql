@@ -269,3 +269,36 @@ query GetNotebook($notebookId: ID!) {
   }
 }
 
+query GetDataConnection($connectionId: ID!) {
+  dataConnections(where: { id: { eq: $connectionId } }, single: true) {
+    edges {
+      node {
+        id
+        organization {
+          ...OrganizationCommon
+        }
+        name
+        type
+      }
+    }
+  }
+}
+
+mutation CreateDataConnectionDatasets(
+  $runId: ID!
+  $orgId: ID!
+  $dataConnectionId: ID!
+  $schemas: [DataConnectionSchemaInput!]!
+) {
+  createDataConnectionDatasets(
+    input: {
+      runId: $runId
+      orgId: $orgId
+      dataConnectionId: $dataConnectionId
+      schemas: $schemas
+    }
+  ) {
+    success
+    message
+  }
+}

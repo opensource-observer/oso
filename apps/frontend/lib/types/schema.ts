@@ -273,6 +273,63 @@ export const connectorRelationshipsRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const dataConnectionAliasRowSchema = z.object({
+  created_at: z.string(),
+  data_connection_id: z.string(),
+  dataset_id: z.string(),
+  deleted_at: z.string().nullable(),
+  id: z.string(),
+  org_id: z.string(),
+  schema_name: z.string(),
+  updated_at: z.string(),
+});
+
+export const dataConnectionAliasInsertSchema = z.object({
+  created_at: z.string().optional(),
+  data_connection_id: z.string(),
+  dataset_id: z.string(),
+  deleted_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  org_id: z.string(),
+  schema_name: z.string(),
+  updated_at: z.string().optional(),
+});
+
+export const dataConnectionAliasUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  data_connection_id: z.string().optional(),
+  dataset_id: z.string().optional(),
+  deleted_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  org_id: z.string().optional(),
+  schema_name: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const dataConnectionAliasRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("data_connection_alias_data_connection_id_fkey"),
+    columns: z.tuple([z.literal("data_connection_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("dynamic_connectors"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("data_connection_alias_dataset_id_fkey"),
+    columns: z.tuple([z.literal("dataset_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("datasets"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("data_connection_alias_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
 export const dataIngestionsRowSchema = z.object({
   config: jsonSchema,
   created_at: z.string(),
@@ -1604,6 +1661,30 @@ export const usersByOrganizationRelationshipsSchema = z.tuple([
     columns: z.tuple([z.literal("user_id")]),
     isOneToOne: z.literal(false),
     referencedRelation: z.literal("user_profiles"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
+export const dataConnectionAsTableRowSchema = z.object({
+  dataset_id: z.string().nullable(),
+  org_id: z.string().nullable(),
+  table_id: z.string().nullable(),
+  table_name: z.string().nullable(),
+});
+
+export const dataConnectionAsTableRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("materialization_dataset_id_fkey"),
+    columns: z.tuple([z.literal("dataset_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("datasets"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("materialization_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
     referencedColumns: z.tuple([z.literal("id")]),
   }),
 ]);
