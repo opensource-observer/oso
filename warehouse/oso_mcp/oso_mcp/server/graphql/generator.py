@@ -125,7 +125,7 @@ def generate_from_schema(
         # Collect queries using visitor pattern with QueryDocumentTraverser
         for doc in query_docs:
             query_visitor = QueryCollectorVisitor(schema, doc)
-            traverser = QueryDocumentTraverser(query_visitor)
+            traverser = QueryDocumentTraverser(query_visitor, schema)
             traverser.walk(doc)
             queries.extend(query_visitor.queries)
 

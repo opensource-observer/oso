@@ -353,6 +353,10 @@ async def test_query_tool_generation(
                         ],
                         "totalCount": 2,
                     },
+                    "source": {
+                        "__typename": "InternalWarehouse",
+                        "id": "warehouse-789",
+                    },
                 }
             }
         }
@@ -430,3 +434,5 @@ async def test_query_tool_generation(
             node = edge["node"]
             for field in ["id", "name", "foo_description"]:
                 assert field in node
+
+        assert item_data["item"]["source"]["id"] == "warehouse-78"
