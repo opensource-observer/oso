@@ -29,4 +29,6 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
     ...organizationOrganizationResolvers.Mutation,
     ...invitationResolvers.Mutation,
   },
+  Organization: organizationOrganizationResolvers.Organization,
+  OrganizationMember: organizationOrganizationResolvers.OrganizationMember,
 };

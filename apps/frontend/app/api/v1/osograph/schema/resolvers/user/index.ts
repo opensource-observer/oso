@@ -28,6 +28,7 @@ export const userResolvers: GraphQLResolverModule<GraphQLContext> = {
   Mutation: {
     ...invitationResolvers.Mutation,
   },
-  ...viewerResolvers.Viewer,
-  ...userUserResolvers.User,
+  Viewer: viewerResolvers.Viewer,
+  User: userUserResolvers.User,
+  Invitation: invitationResolvers.Invitation,
 };
