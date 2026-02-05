@@ -3687,7 +3687,7 @@ export type Mutation = {
   stopRunningSchedule: ScheduleMutationResult;
   /** Disable a sensor from launching runs for a job. */
   stopSensor: StopSensorMutationResultOrError;
-  syncDataConnection: SimplePayload;
+  syncDataConnection: SyncDataConnectionPayload;
   /** Terminates a run. */
   terminatePipelineExecution: TerminateRunResult;
   /** Terminates a run. */
@@ -9292,6 +9292,20 @@ export type DeleteDataConnectionMutation = {
   };
 };
 
+export type SyncDataConnectionMutationVariables = Exact<{
+  id: Scalars["ID"]["input"];
+}>;
+
+export type SyncDataConnectionMutation = {
+  __typename?: "Mutation";
+  syncDataConnection: {
+    __typename?: "SyncDataConnectionPayload";
+    success: boolean;
+    message?: string | null;
+    run: { __typename?: "Run"; id: string };
+  };
+};
+
 export type SavePreviewMutationVariables = Exact<{
   input: SaveNotebookPreviewInput;
 }>;
@@ -9988,6 +10002,65 @@ export const DeleteDataConnectionDocument = {
 } as unknown as DocumentNode<
   DeleteDataConnectionMutation,
   DeleteDataConnectionMutationVariables
+>;
+export const SyncDataConnectionDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "SyncDataConnection" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "ID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "syncDataConnection" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "id" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "run" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  SyncDataConnectionMutation,
+  SyncDataConnectionMutationVariables
 >;
 export const SavePreviewDocument = {
   kind: "Document",

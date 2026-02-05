@@ -18,6 +18,7 @@ type Documents = {
   "\n      mutation UnpublishNotebook($notebookId: ID!) {\n        unpublishNotebook(notebookId: $notebookId) {\n          success\n          message\n        }\n      }\n    ": typeof types.UnpublishNotebookDocument;
   "\n      mutation CreateDataConnection($input: CreateDataConnectionInput!) {\n        createDataConnection(input: $input) {\n          success\n          message\n          dataConnection {\n            id\n            orgId\n            name\n            type\n            config\n          }\n        }\n      }\n    ": typeof types.CreateDataConnectionDocument;
   "\n      mutation DeleteDataConnection($id: ID!) {\n        deleteDataConnection(id: $id) {\n          success\n          message\n        }\n      }\n    ": typeof types.DeleteDataConnectionDocument;
+  "\n      mutation SyncDataConnection($id: ID!) {\n        syncDataConnection(id: $id) {\n          success\n          message\n          run {\n            id\n          }\n        }\n      }\n    ": typeof types.SyncDataConnectionDocument;
   "\n      mutation SavePreview($input: SaveNotebookPreviewInput!) {\n        saveNotebookPreview(input: $input) {\n          success\n          message\n        }\n      }\n    ": typeof types.SavePreviewDocument;
   "\n      mutation CreateDataset($input: CreateDatasetInput!) {\n        createDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n            type\n            isPublic\n          }\n        }\n      }\n    ": typeof types.CreateDatasetDocument;
   "\n      mutation UpdateDataset($input: UpdateDatasetInput!) {\n        updateDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n            isPublic\n          }\n        }\n      }\n    ": typeof types.UpdateDatasetDocument;
@@ -50,6 +51,8 @@ const documents: Documents = {
     types.CreateDataConnectionDocument,
   "\n      mutation DeleteDataConnection($id: ID!) {\n        deleteDataConnection(id: $id) {\n          success\n          message\n        }\n      }\n    ":
     types.DeleteDataConnectionDocument,
+  "\n      mutation SyncDataConnection($id: ID!) {\n        syncDataConnection(id: $id) {\n          success\n          message\n          run {\n            id\n          }\n        }\n      }\n    ":
+    types.SyncDataConnectionDocument,
   "\n      mutation SavePreview($input: SaveNotebookPreviewInput!) {\n        saveNotebookPreview(input: $input) {\n          success\n          message\n        }\n      }\n    ":
     types.SavePreviewDocument,
   "\n      mutation CreateDataset($input: CreateDatasetInput!) {\n        createDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n            type\n            isPublic\n          }\n        }\n      }\n    ":
@@ -134,6 +137,12 @@ export function gql(
 export function gql(
   source: "\n      mutation DeleteDataConnection($id: ID!) {\n        deleteDataConnection(id: $id) {\n          success\n          message\n        }\n      }\n    ",
 ): (typeof documents)["\n      mutation DeleteDataConnection($id: ID!) {\n        deleteDataConnection(id: $id) {\n          success\n          message\n        }\n      }\n    "];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(
+  source: "\n      mutation SyncDataConnection($id: ID!) {\n        syncDataConnection(id: $id) {\n          success\n          message\n          run {\n            id\n          }\n        }\n      }\n    ",
+): (typeof documents)["\n      mutation SyncDataConnection($id: ID!) {\n        syncDataConnection(id: $id) {\n          success\n          message\n          run {\n            id\n          }\n        }\n      }\n    "];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

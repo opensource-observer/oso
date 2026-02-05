@@ -142,7 +142,7 @@ interface RowActionItem {
 
 interface RowActionMenu {
   type: "menu";
-  label: string;
+  label?: string;
   children?: RowActionItem[];
 }
 
@@ -312,8 +312,11 @@ function renderActions<TData, TValue>(
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{action.label}</DropdownMenuLabel>
-            {/* <DropdownMenuItem onClick={}>Copy payment ID</DropdownMenuItem> */}
+            {action.label && (
+              <DropdownMenuLabel className="text-muted-foreground">
+                {action.label}
+              </DropdownMenuLabel>
+            )}
             {action.children?.map((child) => (
               <DropdownMenuItem
                 key={child.label}
@@ -385,6 +388,7 @@ const DataTableMeta: CodeComponentMeta<DataTableProps<any, any>> = {
             displayName: "Menu items",
             itemType: {
               type: "object",
+              nameFunc: (item) => item.label,
               fields: {
                 label: {
                   type: "string",
