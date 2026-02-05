@@ -206,6 +206,61 @@ export type Database = {
           },
         ];
       };
+      data_connection_alias: {
+        Row: {
+          created_at: string;
+          data_connection_id: string;
+          dataset_id: string;
+          deleted_at: string | null;
+          id: string;
+          org_id: string;
+          schema_name: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          data_connection_id: string;
+          dataset_id: string;
+          deleted_at?: string | null;
+          id?: string;
+          org_id: string;
+          schema_name: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          data_connection_id?: string;
+          dataset_id?: string;
+          deleted_at?: string | null;
+          id?: string;
+          org_id?: string;
+          schema_name?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "data_connection_alias_data_connection_id_fkey";
+            columns: ["data_connection_id"];
+            isOneToOne: false;
+            referencedRelation: "dynamic_connectors";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "data_connection_alias_dataset_id_fkey";
+            columns: ["dataset_id"];
+            isOneToOne: false;
+            referencedRelation: "datasets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "data_connection_alias_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       data_ingestions: {
         Row: {
           config: Json;
@@ -1526,6 +1581,30 @@ export type Database = {
       };
     };
     Views: {
+      data_connection_as_table: {
+        Row: {
+          dataset_id: string | null;
+          org_id: string | null;
+          table_id: string | null;
+          table_name: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "materialization_dataset_id_fkey";
+            columns: ["dataset_id"];
+            isOneToOne: false;
+            referencedRelation: "datasets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "materialization_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       data_ingestion_as_table: {
         Row: {
           dataset_id: string | null;

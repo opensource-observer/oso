@@ -7,6 +7,7 @@ from pydantic import Field
 
 from .base_model import BaseModel
 from .enums import (
+    DataConnectionType,
     DataIngestionFactoryType,
     DataModelKind,
     DatasetType,
@@ -14,6 +15,14 @@ from .enums import (
     RunStatus,
     StepStatus,
 )
+
+
+class CreateDataConnectionInput(BaseModel):
+    org_id: str = Field(alias="orgId")
+    name: str
+    type: DataConnectionType
+    config: Any
+    credentials: Any
 
 
 class CreateDataIngestionInput(BaseModel):
@@ -256,8 +265,28 @@ class SavePublishedNotebookHtmlInput(BaseModel):
     html_content: str = Field(alias="htmlContent")
 
 
+class DataConnectionTableInput(BaseModel):
+    name: str
+    schema_: List["DataModelColumnInput"] = Field(alias="schema")
+
+
+class DataConnectionSchemaInput(BaseModel):
+    name: str
+    tables: List["DataConnectionTableInput"]
+
+
+class CreateDataConnectionDatasetsInput(BaseModel):
+    run_id: str = Field(alias="runId")
+    org_id: str = Field(alias="orgId")
+    data_connection_id: str = Field(alias="dataConnectionId")
+    schemas: List["DataConnectionSchemaInput"]
+
+
 CreateDataModelRevisionInput.model_rebuild()
 UpdateModelContextInput.model_rebuild()
 UpdateRunMetadataInput.model_rebuild()
 FinishRunInput.model_rebuild()
 CreateMaterializationInput.model_rebuild()
+DataConnectionTableInput.model_rebuild()
+DataConnectionSchemaInput.model_rebuild()
+CreateDataConnectionDatasetsInput.model_rebuild()

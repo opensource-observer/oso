@@ -48,6 +48,18 @@ export type ConnectorRelationshipsUpdate = z.infer<
 export type ConnectorRelationshipsRelationships = z.infer<
   typeof generated.connectorRelationshipsRelationshipsSchema
 >;
+export type DataConnectionAliasRow = z.infer<
+  typeof generated.dataConnectionAliasRowSchema
+>;
+export type DataConnectionAliasInsert = z.infer<
+  typeof generated.dataConnectionAliasInsertSchema
+>;
+export type DataConnectionAliasUpdate = z.infer<
+  typeof generated.dataConnectionAliasUpdateSchema
+>;
+export type DataConnectionAliasRelationships = z.infer<
+  typeof generated.dataConnectionAliasRelationshipsSchema
+>;
 export type DataIngestionsRow = z.infer<
   typeof generated.dataIngestionsRowSchema
 >;
@@ -326,6 +338,12 @@ export type UsersByOrganizationUpdate = z.infer<
 >;
 export type UsersByOrganizationRelationships = z.infer<
   typeof generated.usersByOrganizationRelationshipsSchema
+>;
+export type DataConnectionAsTableRow = z.infer<
+  typeof generated.dataConnectionAsTableRowSchema
+>;
+export type DataConnectionAsTableRelationships = z.infer<
+  typeof generated.dataConnectionAsTableRelationshipsSchema
 >;
 export type DataIngestionAsTableRow = z.infer<
   typeof generated.dataIngestionAsTableRowSchema

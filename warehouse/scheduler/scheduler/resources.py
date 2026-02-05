@@ -35,6 +35,7 @@ from scheduler.mq.handlers.data_model import DataModelRunRequestHandler
 from scheduler.mq.handlers.publish_notebook import PublishNotebookRunRequestHandler
 from scheduler.mq.handlers.query import QueryRunRequestHandler
 from scheduler.mq.handlers.static_model import StaticModelRunRequestHandler
+from scheduler.mq.handlers.sync_connection import SyncConnectionRunRequestHandler
 from scheduler.mq.pubsub import GCPPubSubMessageQueueService
 from scheduler.testing.client import FakeUDMClient
 from scheduler.types import (
@@ -193,6 +194,7 @@ def message_handler_registry_factory() -> MessageHandlerRegistry:
     registry.register(QueryRunRequestHandler())
     registry.register(StaticModelRunRequestHandler())
     registry.register(PublishNotebookRunRequestHandler())
+    registry.register(SyncConnectionRunRequestHandler())
     return registry
 
 

@@ -65,6 +65,14 @@ extend type Mutation {
   savePublishedNotebookHtml(
     input: SavePublishedNotebookHtmlInput!
   ): SavePublishedNotebookHtmlPayload!
+
+  """
+  System only. Create a dataset linked to a data connection schema
+  @system-only
+  """
+  createDataConnectionDatasets(
+    input: CreateDataConnectionDatasetsInput!
+  ): SimplePayload!
 }
 
 extend type Query {
@@ -159,4 +167,31 @@ input SavePublishedNotebookHtmlInput {
 type SavePublishedNotebookHtmlPayload {
   success: Boolean!
   message: String
+}
+
+type DataConnectionTable {
+  name: String!
+  schema: [DataModelColumn!]!
+}
+
+type DataConnectionSchema {
+  name: String!
+  tables: [DataConnectionTable!]!
+}
+
+input DataConnectionTableInput {
+  name: String!
+  schema: [DataModelColumnInput!]!
+}
+
+input DataConnectionSchemaInput {
+  name: String!
+  tables: [DataConnectionTableInput!]!
+}
+
+input CreateDataConnectionDatasetsInput {
+  runId: ID!
+  orgId: ID!
+  dataConnectionId: ID!
+  schemas: [DataConnectionSchemaInput!]!
 }

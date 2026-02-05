@@ -18,6 +18,7 @@ import {
   UpdateDatasetSchema,
   MaterializationWhereSchema,
   validateInput,
+  DataConnectionWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import {
   DatasetErrors,
@@ -28,7 +29,11 @@ import z from "zod";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { assertNever } from "@opensource-observer/utils";
-import { DataIngestionAsTableRow, DatasetsRow } from "@/lib/types/schema-types";
+import {
+  DataConnectionAsTableRow,
+  DataIngestionAsTableRow,
+  DatasetsRow,
+} from "@/lib/types/schema-types";
 import { Connection } from "@/app/api/v1/osograph/utils/connection";
 import { getMaterializations } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { generateTableId } from "@/app/api/v1/osograph/utils/model";
@@ -229,9 +234,11 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
           };
         }
         case "DATA_CONNECTION":
-          throw new Error(
-            `Dataset type "${parent.dataset_type}" is not supported yet.`,
-          );
+          return {
+            __typename: "DataConnectionDefinition",
+            org_id: parent.org_id,
+            dataset_id: parent.id,
+          };
         default:
           assertNever(
             parent.dataset_type,
@@ -295,19 +302,30 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
             })),
           };
         }
-        case "DATA_CONNECTION":
-          // Table metadata is not available until after the ingestion job completes
-          // Tables are created dynamically during ingestion
-          return {
-            edges: [],
-            pageInfo: {
-              hasNextPage: false,
-              hasPreviousPage: false,
-              startCursor: null,
-              endCursor: null,
+        case "DATA_CONNECTION": {
+          const result = (await queryWithPagination(args, context, {
+            tableName: "data_connection_as_table",
+            whereSchema: DataConnectionWhereSchema,
+            requireAuth: false,
+            filterByUserOrgs: false,
+            parentOrgIds: parent.org_id,
+            basePredicate: {
+              eq: [{ key: "dataset_id", value: parent.id }],
             },
-            totalCount: 0,
+          })) as Connection<DataConnectionAsTableRow>;
+
+          return {
+            ...result,
+            edges: result.edges.map((edge) => ({
+              node: {
+                id: edge.node.table_id,
+                name: edge.node.table_name,
+                datasetId: edge.node.dataset_id,
+              },
+              cursor: edge.cursor,
+            })),
           };
+        }
         default:
           assertNever(
             parent.dataset_type,
@@ -434,6 +452,23 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         parent.dataset_id,
         generateTableId("DATA_INGESTION", tableName),
       );
+    },
+  },
+
+  DataConnectionDefinition: {
+    orgId: (parent: { org_id: string }) => parent.org_id,
+    datasetId: (parent: { dataset_id: string }) => parent.dataset_id,
+    dataConnectionAlias: async (parent: { dataset_id: string }) => {
+      const supabase = createAdminClient();
+
+      const { data: alias } = await supabase
+        .from("data_connection_alias")
+        .select("*")
+        .eq("dataset_id", parent.dataset_id)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      return alias;
     },
   },
 };
