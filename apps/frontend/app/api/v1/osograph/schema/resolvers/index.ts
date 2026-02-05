@@ -56,6 +56,7 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   DataModelDefinition: datasetResolvers.DataModelDefinition,
   StaticModelDefinition: datasetResolvers.StaticModelDefinition,
   DataIngestionDefinition: datasetResolvers.DataIngestionDefinition,
+  DataConnectionDefinition: datasetResolvers.DataConnectionDefinition,
   DataIngestion: dataIngestionResolvers.DataIngestion,
   DataModel: dataModelResolvers.DataModel,
   DataModelRevision: dataModelResolvers.DataModelRevision,
