@@ -73,7 +73,7 @@ function isExplicitClientOptions<TTable extends TableWithOrgId>(
 }
 
 /**
- * @deprecated
+ * @deprecated Use ExplicitClientQueryOptions with explicit client parameter.
  */
 async function resolveOrgIds<TTable extends TableWithOrgId>(
   options: QueryConnectionOptions<TTable>,
@@ -221,7 +221,7 @@ export async function queryWithPagination<TTable extends TableWithOrgId>(
 ): Promise<Connection<TableRow<TTable>>>;
 
 /**
- * @deprecated
+ * @deprecated Use ExplicitClientQueryOptions with explicit client parameter.
  */
 export async function queryWithPagination<TTable extends TableWithOrgId>(
   args: FilterableConnectionArgs,

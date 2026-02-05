@@ -50,7 +50,7 @@ export async function getUserOrganizationIds(
   userId: string,
   adminClient: SupabaseAdminClient,
 ): Promise<string[]>;
-/** @deprecated */
+/** @deprecated - use `getUserOrganizationIds` with extra client parameter */
 export async function getUserOrganizationIds(userId: string): Promise<string[]>;
 export async function getUserOrganizationIds(
   userId: string,
@@ -79,7 +79,7 @@ export async function getUserOrganizationsConnection(
   additionalPredicate: undefined,
   adminClient: SupabaseAdminClient,
 ): Promise<Connection<z.infer<typeof organizationsRowSchema>>>;
-/** @deprecated */
+/** @deprecated - use `getUserOrganizationsConnection` with extra client parameter */
 export async function getUserOrganizationsConnection(
   userId: string,
   args: FilterableConnectionArgs,
@@ -159,7 +159,7 @@ export async function getUserInvitationsConnection(
   additionalPredicate: undefined,
   adminClient: SupabaseAdminClient,
 ): Promise<Connection<z.infer<typeof invitationsRowSchema>>>;
-/** @deprecated */
+/** @deprecated - use `getUserInvitationsConnection` with extra client parameter */
 export async function getUserInvitationsConnection(
   email: string | null | undefined,
   args: ConnectionArgs,
@@ -223,7 +223,7 @@ export async function getResourceById<T>(
   },
   adminClient: SupabaseAdminClient,
 ): Promise<T | null>;
-/** @deprecated */
+/** @deprecated - use `getResourceById` with extra client parameter */
 export async function getResourceById<T>(params: {
   tableName: keyof Database["public"]["Tables"];
   id: string;
@@ -270,7 +270,7 @@ export async function checkMembershipExists(
   orgId: string,
   adminClient: SupabaseAdminClient,
 ): Promise<boolean>;
-/** @deprecated */
+/** @deprecated - use `checkMembershipExists` with extra client parameter */
 export async function checkMembershipExists(
   userId: string,
   orgId: string,
@@ -299,7 +299,7 @@ export async function getModelRunConnection(
   args: ConnectionArgs,
   adminClient: SupabaseAdminClient,
 ): Promise<Connection<z.infer<typeof runRowSchema>>>;
-/** @deprecated */
+/** @deprecated - use `getModelRunConnection` with extra client parameter */
 export async function getModelRunConnection(
   datasetId: string,
   modelId: string,
