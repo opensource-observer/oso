@@ -553,13 +553,10 @@ class QueryDocumentTraverser(TraverserProtocol):
 
         if control == VisitorControl.STOP:
             return VisitorControl.STOP
-        # Visit children
-        for child in operation.children:
-            control = self._visit_selection(child)
-            if control == VisitorControl.STOP:
-                return VisitorControl.STOP
 
         # Delegate to the GraphQLSchemaTypeTraverser for field traversal
+        # Skip root hooks so the Query/Mutation type fields are added directly
+        # to the operation context instead of creating a nested Query/Mutation object
         traverser = GraphQLSchemaTypeTraverser(
             self._visitor,
             schema=self._schema,
@@ -575,7 +572,7 @@ class QueryDocumentTraverser(TraverserProtocol):
         assert schema_start is not None, (
             f"Schema does not have a {operation.operation_type.title()} type defined"
         )
-        control = traverser.visit(schema_start, field_name="")
+        control = traverser.visit(schema_start, field_name="", skip_root_hooks=True)
 
         # Leave the root object type
         return self._visitor.handle_leave_operation(

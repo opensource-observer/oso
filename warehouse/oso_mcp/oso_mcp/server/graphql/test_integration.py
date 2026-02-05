@@ -356,6 +356,7 @@ async def test_query_tool_generation(
                     "source": {
                         "__typename": "InternalWarehouse",
                         "id": "warehouse-789",
+                        "stage": "production",
                     },
                 }
             }
@@ -435,4 +436,4 @@ async def test_query_tool_generation(
             for field in ["id", "name", "foo_description"]:
                 assert field in node
 
-        assert item_data["item"]["source"]["id"] == "warehouse-78"
+        assert item_data["item"]["source"]["id"] == "warehouse-789"
