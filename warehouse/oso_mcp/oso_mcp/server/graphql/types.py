@@ -131,6 +131,7 @@ class QueryDocumentFragment:
     name: str
     type_condition: GraphQLObjectType
     children: t.List[QueryDocumentSelection] = field(default_factory=list)
+    dependencies: t.Set[str] = field(default_factory=set)
 
 
 @dataclass
@@ -377,7 +378,7 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         """
         return VisitorControl.CONTINUE
 
-    def handle_union(
+    def handle_enter_union(
         self,
         field_name: str,
         union_type: GraphQLUnionType,
@@ -385,6 +386,26 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         is_list: bool,
     ) -> VisitorControl:
         """Handle a union type.
+
+        Args:
+            field_name: Name of the field with this type
+            union_type: The union type
+            is_required: Whether wrapped in GraphQLNonNull
+            is_list: Whether wrapped in GraphQLList
+
+        Returns:
+            VisitorControl to control traversal flow
+        """
+        return VisitorControl.CONTINUE
+
+    def handle_leave_union(
+        self,
+        field_name: str,
+        union_type: GraphQLUnionType,
+        is_required: bool,
+        is_list: bool,
+    ) -> VisitorControl:
+        """Called when leaving a union type.
 
         Args:
             field_name: Name of the field with this type

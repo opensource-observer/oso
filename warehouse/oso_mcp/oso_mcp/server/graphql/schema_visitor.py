@@ -9,6 +9,7 @@ import typing as t
 
 from graphql import (
     FieldNode,
+    FragmentDefinitionNode,
     FragmentSpreadNode,
     GraphQLEnumType,
     GraphQLField,
@@ -45,7 +46,7 @@ class GraphQLSchemaTypeTraverser:
         visitor: "GraphQLSchemaTypeVisitor",
         schema: GraphQLSchema,
         selection_set: t.Optional[SelectionSetNode] = None,
-        fragments: t.Optional[t.Dict[str, t.Any]] = None,
+        fragments: t.Optional[t.Dict[str, FragmentDefinitionNode]] = None,
     ):
         """Initialize traverser with a visitor and traversal configuration.
 
@@ -120,13 +121,40 @@ class GraphQLSchemaTypeTraverser:
         elif isinstance(base_type, GraphQLInputObjectType):
             return self._visit_input_object(field_name, base_type, is_required, is_list)
         elif isinstance(base_type, GraphQLUnionType):
-            return self._visitor.handle_union(
-                field_name, base_type, is_required, is_list
-            )
+            return self._visit_union(field_name, base_type, is_required, is_list)
         else:
             return self._visitor.handle_unknown(
                 field_name, base_type, is_required, is_list
             )
+
+    def _visit_union(
+        self,
+        field_name: str,
+        union_type: GraphQLUnionType,
+        is_required: bool,
+        is_list: bool,
+    ) -> VisitorControl:
+        control = self._visitor.handle_enter_union(
+            field_name, union_type, is_required, is_list
+        )
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
+        elif control == VisitorControl.SKIP:
+            return VisitorControl.CONTINUE
+
+        # Visit each possible type in the union
+        for possible_type in union_type.types:
+            control = self.visit(
+                possible_type,
+                field_name=field_name,
+            )
+            if control == VisitorControl.STOP:
+                return VisitorControl.STOP
+
+        control = self._visitor.handle_leave_union(
+            field_name, union_type, is_required, is_list
+        )
+        return control
 
     def _extract_selected_fields(
         self, selection_set: SelectionSetNode

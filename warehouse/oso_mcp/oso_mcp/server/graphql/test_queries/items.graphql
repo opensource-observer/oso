@@ -24,6 +24,16 @@ fragment ItemFields on Item {
     }
     totalCount
   }
+  source {
+    ... on InternalWarehouse {
+      id
+      stage
+    }
+    ... on ExternalWarehouse {
+      id
+      location
+    }
+  }
 }
 
 fragment NestedItemFields on NestedItem {

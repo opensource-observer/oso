@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
+import abc
 import logging
 import typing as t
-from enum import Enum, StrEnum
+from enum import StrEnum
 
 from graphql import (
     GraphQLEnumType,
     GraphQLField,
     GraphQLInputObjectType,
-    GraphQLList,
-    GraphQLNonNull,
     GraphQLObjectType,
     GraphQLScalarType,
     GraphQLSchema,
@@ -27,6 +26,8 @@ from .types import MutationFilter, MutationInfo
 
 logger = logging.getLogger(__name__)
 
+GeneratedType = t.Type[BaseModel] | StrEnum | t.Any
+
 
 class UnsetNested(BaseModel):
     """Marker for unset nested fields in Pydantic models."""
@@ -34,100 +35,78 @@ class UnsetNested(BaseModel):
     pass
 
 
-class FieldTypeInfo:
-    """Helper class to unwrap GraphQL field types and expose their properties.
+class TypeBuildContext(abc.ABC):
+    """Generic context for building a type"""
 
-    This class takes a GraphQL field type (which may be wrapped in NonNull and/or List)
-    and provides convenient properties to access the base type and modifiers.
+    @property
+    @abc.abstractmethod
+    def type_name(self) -> str:
+        """Get the type name being built."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def depth(self) -> int:
+        """Get the current depth."""
+        pass
+
+    @abc.abstractmethod
+    def materialize(self) -> GeneratedType:
+        """Materialize the type being built."""
+        pass
+
+
+class UnionTypeBuildContext(TypeBuildContext):
+    """Context for building a union type.
+
+    This class encapsulates all state needed while building one union type
+    from a GraphQL union. Multiple contexts can be stacked when processing nested types.
     """
 
-    def __init__(self, base_type: t.Any, is_required: bool, is_list: bool):
-        """Initialize with unwrapped field type information.
+    def __init__(
+        self,
+        type_name: str,
+        depth: int,
+    ):
+        """Initialize union type build context.
 
         Args:
-            base_type: The unwrapped base GraphQL type
-            is_required: Whether the field is required (NonNull)
-            is_list: Whether the field is a list type
+            type_name: Name of the union type being built
+            depth: Current nesting depth
+            member_types: List of member types in the union
         """
-        self._base_type = base_type
-        self._is_required = is_required
-        self._is_list = is_list
+        self._type_name = type_name
+        self._depth = depth
+        self._member_types: list[t.Any] = []
 
-    @classmethod
-    def from_graphql_type(cls, field_type: t.Any) -> "FieldTypeInfo":
-        """Create FieldTypeInfo by unwrapping a GraphQL field type.
+    @property
+    def type_name(self) -> str:
+        """Get the union type name."""
+        return self._type_name
+
+    @property
+    def depth(self) -> int:
+        """Get the depth."""
+        return self._depth
+
+    def add_member(self, member_type: t.Any, *args) -> None:
+        """Add a member type to the union.
 
         Args:
-            field_type: GraphQL field type (possibly wrapped in NonNull/List)
+            member_type: Member type to add
+        """
+        self._member_types.append(member_type)
+
+    def materialize(self) -> t.Any:
+        """Create the union type from member types.
 
         Returns:
-            FieldTypeInfo with unwrapped type information
+            The union type
         """
-        # Check for NonNull wrapper
-        is_required = isinstance(field_type, GraphQLNonNull)
-        if is_required:
-            field_type = field_type.of_type
-
-        # Check for List wrapper
-        is_list = isinstance(field_type, GraphQLList)
-        if is_list:
-            inner_type = field_type.of_type
-            if isinstance(inner_type, GraphQLNonNull):
-                inner_type = inner_type.of_type
-            field_type = inner_type
-
-        return cls(base_type=field_type, is_required=is_required, is_list=is_list)
-
-    @property
-    def base_type(self) -> t.Any:
-        """The unwrapped base GraphQL type."""
-        return self._base_type
-
-    @property
-    def is_required(self) -> bool:
-        """Whether the field is required (NonNull)."""
-        return self._is_required
-
-    @property
-    def is_list(self) -> bool:
-        """Whether the field is a list type."""
-        return self._is_list
+        return t.Union[tuple(self._member_types)]
 
 
-class UnionTypeMarker:
-    """Marker class for union types before they're converted to Pydantic fields.
-
-    This class represents a GraphQL union type that needs to be converted to a
-    Python Union type with discriminated fields.
-    """
-
-    def __init__(self, member_types: tuple[t.Type[BaseModel], ...]):
-        """Initialize with union member types.
-
-        Args:
-            member_types: Tuple of Pydantic model classes for union members
-        """
-        self.member_types = member_types
-
-    def to_union_type(self) -> t.Any:
-        """Convert to a Python Union type annotation.
-
-        Returns:
-            Union type annotation of all member types
-        """
-        return t.Union[self.member_types]
-
-
-class ContextMode(Enum):
-    """Mode for model generation context."""
-
-    INPUT = "input"  # Processing GraphQLInputObjectType
-    OUTPUT = (
-        "output"  # Processing GraphQLObjectType (with optional SelectionSet filtering)
-    )
-
-
-class PydanticModelBuildContext:
+class PydanticModelBuildContext(TypeBuildContext):
     """Context for building a single Pydantic model.
 
     This class encapsulates all state needed while building one Pydantic model
@@ -136,23 +115,26 @@ class PydanticModelBuildContext:
 
     def __init__(
         self,
-        model_name: str,
+        type_name: str,
         depth: int,
+        discriminator: str | None = None,
     ):
         """Initialize model build context.
 
         Args:
-            model_name: Name for the Pydantic model being built
+            type_name: Name for the Pydantic model being built
             depth: Current nesting depth
+            discriminator: Optional discriminator field for model (for unions)
         """
-        self._model_name = model_name
+        self._type_name = type_name
         self._depth = depth
         self._fields: dict[str, tuple[t.Any, t.Any]] = {}  # Accumulated fields
+        self._discriminator = discriminator
 
     @property
-    def model_name(self) -> str:
+    def type_name(self) -> str:
         """Get the model name."""
-        return self._model_name
+        return self._type_name
 
     @property
     def depth(self) -> int:
@@ -178,11 +160,19 @@ class PydanticModelBuildContext:
         Returns:
             Dynamically created Pydantic model class
         """
-        if not self._fields:
-            # Create empty model if no fields
-            return create_model(self._model_name)
+        fields = self._fields.copy()
+        if self._discriminator:
+            # Add discriminator field if specified
+            fields["typename__"] = (
+                t.Literal[self._discriminator],
+                Field(alias="__typename"),
+            )
 
-        return create_model(self._model_name, **self._fields)  # type: ignore # pyright: ignore
+        if not fields:
+            # Create empty model if no fields
+            return create_model(self._type_name)
+
+        return create_model(self._type_name, **fields)  # type: ignore # pyright: ignore
 
 
 class PydanticModelAlreadyRegistered(Exception):
@@ -208,7 +198,6 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
 
     def __init__(
         self,
-        model_name: str,
         max_depth: int = 2,
         use_context_prefix: bool = False,
         ignore_unknown_types: bool = False,
@@ -222,18 +211,18 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             ignore_unknown_types: If True, map unknown types to Any instead of raising error
         """
         super().__init__()
-        self._type_registry: dict[str, t.Type[BaseModel] | StrEnum] = {}
+        self._type_registry: dict[str, GeneratedType] = {}
         self._max_depth = max_depth
         self._use_context_prefix = use_context_prefix
         self._ignore_unknown_types = ignore_unknown_types
-        self._context_stack: list[PydanticModelBuildContext] = []
+        self._context_stack: list[TypeBuildContext] = []
 
     @property
     def current_depth(self) -> int:
         """Get the current depth based on stack size."""
         return len(self._context_stack)
 
-    def get_type(self, name: str) -> t.Type[BaseModel] | StrEnum:
+    def get_type(self, name: str) -> GeneratedType:
         """Get the type registry."""
         return self._type_registry[name]
 
@@ -245,7 +234,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         """Check if we've exceeded max depth."""
         return self.current_depth >= self._max_depth
 
-    def require_context(self, operation: str) -> PydanticModelBuildContext:
+    def require_context(self, operation: str) -> TypeBuildContext:
         """Get current context or raise error if none exists.
 
         Args:
@@ -264,8 +253,27 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             )
         return self._context_stack[-1]
 
+    def require_model_context(self, operation: str) -> PydanticModelBuildContext:
+        """Get current Pydantic model context or raise error if none exists.
+
+        Args:
+            operation: Description of the operation being attempted (for error message)
+        Returns:
+            The current Pydantic model context
+        Raises:
+            RuntimeError: If no context exists (invalid traversal state)
+        """
+
+        ctx = self.require_context(operation)
+        if not isinstance(ctx, PydanticModelBuildContext):
+            raise RuntimeError(
+                f"Cannot {operation} without a Pydantic model context - "
+                "traversal may have started from an invalid point or the visitor is context is misconfigured"
+            )
+        return ctx
+
     @property
-    def current_context(self) -> t.Optional[PydanticModelBuildContext]:
+    def current_context(self) -> t.Optional[TypeBuildContext]:
         """Get the current context, or None if stack is empty.
 
         Returns:
@@ -275,9 +283,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             return None
         return self._context_stack[-1]
 
-    def start_context(
-        self, name: str, no_prefix: bool = False
-    ) -> type[BaseModel] | StrEnum | None:
+    def start_model_context(self, name: str, no_prefix: bool = False) -> None:
         """Enter a new context with the given name.
 
         Args:
@@ -289,7 +295,25 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             raise PydanticModelAlreadyRegistered(name)
 
         ctx = PydanticModelBuildContext(
-            model_name=name,
+            type_name=name,
+            depth=self.current_depth,
+        )
+        self._context_stack.append(ctx)
+        return None
+
+    def start_union_context(self, name: str, no_prefix: bool = False) -> None:
+        """Enter a new union context with the given name.
+
+        Args:
+            name: Name of the new union context
+        """
+        logger.debug(f"Starting union context: {name}, no_prefix={no_prefix}")
+        name = self.next_context_name(name, no_prefix=no_prefix)
+        if self.is_type_registered(name):
+            raise PydanticModelAlreadyRegistered(name)
+
+        ctx = UnionTypeBuildContext(
+            type_name=name,
             depth=self.current_depth,
         )
         self._context_stack.append(ctx)
@@ -301,7 +325,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             and not no_prefix
             and self.current_context is not None
         ):
-            return f"{self.current_context.model_name}{name}"
+            return f"{self.current_context.type_name}{name}"
         return name
 
     def finish_context(self) -> str:
@@ -312,9 +336,10 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         """
         self.require_context("finish context")
         ctx = self._context_stack.pop()
+        logger.debug(f"Finishing context: {ctx.type_name} at depth {ctx.depth}")
         model = ctx.materialize()
-        self._type_registry[ctx.model_name] = model
-        return ctx.model_name
+        self._type_registry[ctx.type_name] = model
+        return ctx.type_name
 
     def _get_type_name(self, base_name: str, parent_prefix: str = "") -> str:
         """Get the type name, potentially with context prefix.
@@ -354,7 +379,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         is_list: bool,
     ) -> VisitorControl:
         """Handle a scalar type by adding it to the current context."""
-        ctx = self.require_context("add scalar field")
+        ctx = self.require_model_context("add scalar field")
 
         # Map to Python type
         python_type = self._map_scalar_to_python(scalar_type)
@@ -383,7 +408,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         is_list: bool,
     ) -> VisitorControl:
         """Handle an enum type by generating a StrEnum and adding to context."""
-        ctx = self.require_context("add enum field")
+        ctx = self.require_model_context("add enum field")
 
         # Enums are always registered with their base name (no prefix)
         type_name = enum_type.name
@@ -430,7 +455,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             return VisitorControl.SKIP
 
         try:
-            self.start_context(object_type.name)
+            self.start_model_context(object_type.name)
         except PydanticModelAlreadyRegistered as e:
             python_type = self.get_type(e.model_name)
             # Use existing model
@@ -447,7 +472,11 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             else:
                 field_info = Field()
 
-            current_context.add_field(field_name, python_type, field_info)
+            match current_context:
+                case PydanticModelBuildContext():
+                    current_context.add_field(field_name, python_type, field_info)
+                case UnionTypeBuildContext():
+                    current_context.add_member(python_type)
 
             return VisitorControl.SKIP  # Don't revisit
         return VisitorControl.CONTINUE
@@ -482,7 +511,12 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             else:
                 field_info = Field()
 
-            self.current_context.add_field(field_name, python_type, field_info)
+            current_context = self.current_context
+            match current_context:
+                case PydanticModelBuildContext():
+                    current_context.add_field(field_name, python_type, field_info)
+                case UnionTypeBuildContext():
+                    current_context.add_member(python_type)
 
         return VisitorControl.CONTINUE
 
@@ -498,7 +532,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         type_name = input_type.name
 
         try:
-            self.start_context(type_name)
+            self.start_model_context(type_name)
         except PydanticModelAlreadyRegistered as e:
             python_type = self.get_type(e.model_name)
             # Use existing model
@@ -514,7 +548,12 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
                 else:
                     field_info = Field()
 
-                self.current_context.add_field(field_name, python_type, field_info)
+                current_context = self.current_context
+                match current_context:
+                    case PydanticModelBuildContext():
+                        current_context.add_field(field_name, python_type, field_info)
+                    case UnionTypeBuildContext():
+                        current_context.add_member(python_type)
 
             return VisitorControl.SKIP  # Don't revisit
         return VisitorControl.CONTINUE
@@ -548,11 +587,16 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             else:
                 field_info = Field()
 
-            self.current_context.add_field(field_name, python_type, field_info)
+            current_context = self.current_context
+            match current_context:
+                case PydanticModelBuildContext():
+                    current_context.add_field(field_name, python_type, field_info)
+                case UnionTypeBuildContext():
+                    current_context.add_member(python_type)
 
         return VisitorControl.CONTINUE
 
-    def handle_union(
+    def handle_enter_union(
         self,
         field_name: str,
         union_type: GraphQLUnionType,
@@ -568,19 +612,61 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         if self.should_skip_depth():
             return VisitorControl.SKIP
 
-        current_context = self.require_context("add union field")
+        try:
+            self.start_union_context(union_type.name)
+        except PydanticModelAlreadyRegistered as e:
+            existing_type = self.get_type(e.model_name)
+            assert t.get_origin(existing_type) == t.Union
+            # Use existing union
+            current_context = self.require_model_context("add union field")
+            # Apply list wrapper if needed
+            if is_list:
+                existing_type = list[existing_type]  # type: ignore
+            # Apply optional wrapper
+            if not is_required:
+                existing_type = t.Optional[existing_type]  # type: ignore
+                field_info = Field(default=None, discriminator="typename__")
+            else:
+                field_info = Field(discriminator="typename__")
+            current_context.add_field(field_name, existing_type, field_info)
 
-        # TODO: Implement union handling with discriminated types
-        # For now, just add as Any
-        python_type = t.Any
-        if is_list:
-            python_type = list[python_type]
-        if not is_required:
-            python_type = t.Optional[python_type]
-            field_info = Field(default=None)
-        else:
-            field_info = Field()
-        current_context.add_field(field_name, python_type, field_info)
+        return VisitorControl.CONTINUE
+
+    def handle_leave_union(
+        self,
+        field_name: str,
+        union_type: GraphQLUnionType,
+        is_required: bool,
+        is_list: bool,
+    ) -> VisitorControl:
+        """Handle leaving a union type by materializing the union."""
+        if not self.current_context:
+            raise RuntimeError("No context to finish for union type")
+
+        union_name = self.finish_context()
+        union_type_materialized = self.get_type(union_name)
+
+        # Add to parent context if exists
+        if self.current_context:
+            python_type: t.Any = union_type_materialized
+
+            # Apply list wrapper if needed
+            if is_list:
+                python_type = list[python_type]
+
+            # Apply optional wrapper
+            if not is_required:
+                python_type = t.Optional[python_type]
+                field_info = Field(default=None)
+            else:
+                field_info = Field()
+
+            current_context = self.require_model_context("add union field")
+            match current_context:
+                case PydanticModelBuildContext():
+                    current_context.add_field(field_name, python_type, field_info)
+                case UnionTypeBuildContext():
+                    current_context.add_member(python_type)
 
         return VisitorControl.CONTINUE
 
@@ -608,7 +694,12 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             field_info = Field(default=None)
         else:
             field_info = Field()
-        ctx.add_field(field_name, python_type, field_info)
+
+        match ctx:
+            case PydanticModelBuildContext():
+                ctx.add_field(field_name, python_type, field_info)
+            case UnionTypeBuildContext():
+                ctx.add_member(python_type)
 
         return VisitorControl.CONTINUE
 
@@ -659,7 +750,6 @@ class MutationCollectorVisitor(PydanticModelVisitor):
         """
         # Initialize parent visitor
         super().__init__(
-            model_name="",  # Unused - contexts created during traversal
             max_depth=2,
             use_context_prefix=False,
             ignore_unknown_types=ignore_unknown_types,

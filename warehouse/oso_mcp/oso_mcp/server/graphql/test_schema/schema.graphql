@@ -13,6 +13,7 @@ type InternalWarehouse {
   id: ID!
   name: String!
   location: String!
+  stage: String!
 }
 
 type ExternalWarehouse {
