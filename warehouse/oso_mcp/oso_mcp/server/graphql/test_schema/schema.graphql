@@ -63,6 +63,9 @@ type Mutation {
 }
 
 input CreateItemInput {
+  """
+  ANOTHER NAME OPTION
+  """
   name: String!
   description: String
   count: Int
@@ -76,11 +79,17 @@ type CreateItemPayload {
 
 input UpdateItemInput {
   id: ID!
+  """
+  BOOPER
+  """
   name: String
   description: String
 }
 
 type UpdateItemPayload {
+  """
+  A boolean indicating if the update was successful
+  """
   success: Boolean!
   message: String
   item: Item
@@ -99,6 +108,9 @@ type NestedItemInArray {
 }
 
 type Item {
+  """
+  This is the item's unique identifier
+  """
   id: ID!
   name: String!
   description: String

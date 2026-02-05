@@ -112,10 +112,19 @@ query ListTablesForDataset($datasetName: String!, $where: JSON!) {
         id
         name
         tables(where: $where) {
-          name
-          columns {
-            ...TableColumnFields
+          edges {
+            node {
+              id
+              name
+              columns {
+                ...TableColumnFields
+              }
+            }
           }
+          pageInfo {
+            ...PageInfoFields
+          }
+          totalCount
         }
       }
     }

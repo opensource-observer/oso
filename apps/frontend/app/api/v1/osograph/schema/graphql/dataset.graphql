@@ -181,11 +181,40 @@ extend type Mutation {
 }
 
 input CreateDatasetInput {
+  """
+  The organization ID the dataset belongs to
+
+  BOOPER
+  """
   orgId: ID!
+  """
+  The name of the dataset
+  """
   name: String!
+  """
+  The display name of the dataset.
+  """
   displayName: String
+  """
+  The description of the dataset.
+  """
   description: String
+
+  """
+  The type of the dataset.
+
+  Types:
+    * USER_MODEL: Sometimes called a UDM, this dataset type contains
+      user-defined data models.
+    * DATA_INGESTION: This dataset type is used for datasets that are ingested
+      from external sources using strategies like REST/GraphQL APIs, file
+      uploads, etc.
+  """
   type: DatasetType = USER_MODEL
+
+  """
+  Whether the dataset is public or private.
+  """
   isPublic: Boolean = false
 }
 

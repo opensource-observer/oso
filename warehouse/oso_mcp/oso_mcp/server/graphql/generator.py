@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 
 import httpx
 from ariadne_codegen.schema import get_graphql_schema_from_path
+from attr import dataclass
 from fastmcp import FastMCP
 from oso_mcp.server.config import MCPConfig
 
@@ -14,9 +15,37 @@ from .pydantic_generator import MutationCollectorVisitor
 from .queries import QueryCollectorVisitor, QueryDocumentParser, QueryDocumentTraverser
 from .schema_visitor import GraphQLSchemaTypeTraverser
 from .tool_generator import ToolGenerator
-from .types import AsyncGraphQLClient, GraphQLClientFactory, MutationFilter, QueryInfo
+from .types import (
+    AsyncGraphQLClient,
+    GraphQLClientFactory,
+    MutationFilter,
+    MutationInfo,
+    QueryInfo,
+)
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class _IntermediateMutationsAndQueries:
+    """Holds intermediate data for mutations and queries."""
+
+    mutations: list[MutationInfo]
+    queries: list[QueryInfo]
+
+    def get_mutation(self, name: str) -> MutationInfo | None:
+        """Get mutation by name."""
+        for mutation in self.mutations:
+            if mutation.name == name:
+                return mutation
+        return None
+
+    def get_query(self, name: str) -> QueryInfo | None:
+        """Get query by name."""
+        for query in self.queries:
+            if query.name == name:
+                return query
+        return None
 
 
 class OSOAsyncGraphQLClient(AsyncGraphQLClient):
@@ -104,6 +133,34 @@ def generate_from_schema(
         client_schema_path: Optional path to directory containing client
                           GraphQL query files
     """
+    # Generate intermediate mutations and queries
+    intermediate = generate_models_intermediate_mutations_and_query_info(
+        schema_path, filters, client_schema_path
+    )
+    mutations = intermediate.mutations
+    queries = intermediate.queries
+
+    if not graphql_client_factory:
+        graphql_client_factory = default_http_client_factory(config)
+
+    # Generate and register tools
+    tool_gen = ToolGenerator(
+        mcp,
+        mutations,
+        graphql_endpoint=config.graphql_endpoint,
+        graphql_client_factory=graphql_client_factory,
+        queries=queries,
+    )
+    tool_gen.generate_mutation_tools()
+    if queries:
+        tool_gen.generate_query_tools()
+
+
+def generate_models_intermediate_mutations_and_query_info(
+    schema_path: str,
+    filters: list[MutationFilter],
+    client_schema_path: str | None = None,
+) -> _IntermediateMutationsAndQueries:
     # Load GraphQL schema
     schema = get_graphql_schema_from_path(schema_path)
 
@@ -128,18 +185,4 @@ def generate_from_schema(
             traverser = QueryDocumentTraverser(query_visitor, schema)
             traverser.walk(doc)
             queries.extend(query_visitor.queries)
-
-    if not graphql_client_factory:
-        graphql_client_factory = default_http_client_factory(config)
-
-    # Generate and register tools
-    tool_gen = ToolGenerator(
-        mcp,
-        mutations,
-        graphql_endpoint=config.graphql_endpoint,
-        graphql_client_factory=graphql_client_factory,
-        queries=queries,
-    )
-    tool_gen.generate_mutation_tools()
-    if queries:
-        tool_gen.generate_query_tools()
+    return _IntermediateMutationsAndQueries(mutations=mutations, queries=queries)

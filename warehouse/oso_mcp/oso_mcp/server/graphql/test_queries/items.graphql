@@ -47,6 +47,8 @@ query GetItem($id: ID!) {
   }
 }
 
+# This is a test context that should appear. Hopefully it will appear and we can
+# just use this
 query ListItems($limit: Int, $offset: Int) {
   items(limit: $limit, offset: $offset) {
     ...ItemFields

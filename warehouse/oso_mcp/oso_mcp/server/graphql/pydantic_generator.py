@@ -377,9 +377,14 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         scalar_type: GraphQLScalarType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         """Handle a scalar type by adding it to the current context."""
         ctx = self.require_model_context("add scalar field")
+
+        logger.debug(
+            f"Adding scalar field: {field_name} of type {scalar_type.name} with description: {description}"
+        )
 
         # Map to Python type
         python_type = self._map_scalar_to_python(scalar_type)
@@ -391,9 +396,9 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         # Apply optional wrapper and create field info
         if not is_required:
             python_type = t.Optional[python_type]
-            field_info = Field(default=None)
+            field_info = Field(default=None, description=description)
         else:
-            field_info = Field()
+            field_info = Field(description=description)
 
         # Add to current context
         ctx.add_field(field_name, python_type, field_info)
@@ -406,6 +411,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         enum_type: GraphQLEnumType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         """Handle an enum type by generating a StrEnum and adding to context."""
         ctx = self.require_model_context("add enum field")
@@ -431,9 +437,9 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         # Apply optional wrapper and create field info
         if not is_required:
             python_type = t.Optional[python_type]  # type: ignore
-            field_info = Field(default=None)
+            field_info = Field(default=None, description=description)
         else:
-            field_info = Field()
+            field_info = Field(description=description)
 
         # Add to current context
         ctx.add_field(field_name, python_type, field_info)
@@ -446,6 +452,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         object_type: GraphQLObjectType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         """Handle entering an object type by pushing a new context."""
         # Check depth limit - skip traversal without adding field to parent
@@ -458,6 +465,12 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             self.start_model_context(object_type.name)
         except PydanticModelAlreadyRegistered as e:
             python_type = self.get_type(e.model_name)
+
+            # If we're at the root no need to add the field to anything
+            # And this type is already registered so we can skip
+            if self.current_context is None:
+                return VisitorControl.SKIP
+
             # Use existing model
             current_context = self.require_context("add object field")
 
@@ -468,9 +481,9 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             # Apply optional wrapper
             if not is_required:
                 python_type = t.Optional[python_type]  # type: ignore
-                field_info = Field(default=None)
+                field_info = Field(default=None, description=description)
             else:
-                field_info = Field()
+                field_info = Field(description=description)
 
             match current_context:
                 case PydanticModelBuildContext():
@@ -487,6 +500,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         object_type: GraphQLObjectType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         """Handle leaving an object type by materializing the model."""
         if not self._context_stack:
@@ -507,9 +521,9 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             # Apply optional wrapper
             if not is_required:
                 python_type = t.Optional[python_type]
-                field_info = Field(default=None)
+                field_info = Field(default=None, description=description)
             else:
-                field_info = Field()
+                field_info = Field(description=description)
 
             current_context = self.current_context
             match current_context:
@@ -526,13 +540,14 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         input_type: GraphQLInputObjectType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         """Handle entering an input object type by pushing a new context."""
         # Input types always use base name (no prefix)
         type_name = input_type.name
 
         try:
-            self.start_model_context(type_name)
+            self.start_model_context(type_name, no_prefix=True)
         except PydanticModelAlreadyRegistered as e:
             python_type = self.get_type(e.model_name)
             # Use existing model
@@ -544,9 +559,9 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
                 # Apply optional wrapper
                 if not is_required:
                     python_type = t.Optional[python_type]  # type: ignore
-                    field_info = Field(default=None)
+                    field_info = Field(default=None, description=description)
                 else:
-                    field_info = Field()
+                    field_info = Field(description=description)
 
                 current_context = self.current_context
                 match current_context:
@@ -564,6 +579,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         input_type: GraphQLInputObjectType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         """Handle leaving an input object type by materializing the model."""
         if not self.current_context:
@@ -583,9 +599,9 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             # Apply optional wrapper
             if not is_required:
                 python_type = t.Optional[python_type]
-                field_info = Field(default=None)
+                field_info = Field(default=None, description=description)
             else:
-                field_info = Field()
+                field_info = Field(description=description)
 
             current_context = self.current_context
             match current_context:
@@ -602,6 +618,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         union_type: GraphQLUnionType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         """Handle a union type.
 
@@ -625,9 +642,11 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             # Apply optional wrapper
             if not is_required:
                 existing_type = t.Optional[existing_type]  # type: ignore
-                field_info = Field(default=None, discriminator="typename__")
+                field_info = Field(
+                    default=None, description=description, discriminator="typename__"
+                )
             else:
-                field_info = Field(discriminator="typename__")
+                field_info = Field(description=description, discriminator="typename__")
             current_context.add_field(field_name, existing_type, field_info)
 
         return VisitorControl.CONTINUE
@@ -638,6 +657,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         union_type: GraphQLUnionType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         """Handle leaving a union type by materializing the union."""
         if not self.current_context:
@@ -657,16 +677,12 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             # Apply optional wrapper
             if not is_required:
                 python_type = t.Optional[python_type]
-                field_info = Field(default=None)
+                field_info = Field(default=None, description=description)
             else:
-                field_info = Field()
+                field_info = Field(description=description)
 
             current_context = self.require_model_context("add union field")
-            match current_context:
-                case PydanticModelBuildContext():
-                    current_context.add_field(field_name, python_type, field_info)
-                case UnionTypeBuildContext():
-                    current_context.add_member(python_type)
+            current_context.add_field(field_name, python_type, field_info)
 
         return VisitorControl.CONTINUE
 
@@ -775,6 +791,8 @@ class MutationCollectorVisitor(PydanticModelVisitor):
         field_def: GraphQLField,
         input_type: GraphQLInputObjectType | None,
         return_type: t.Any,
+        input_description: str | None,
+        return_description: str | None,
     ) -> VisitorControl:
         """Handle entering a mutation field - store context for later collection."""
         # Skip mutations without input type
@@ -803,6 +821,8 @@ class MutationCollectorVisitor(PydanticModelVisitor):
         field_def: GraphQLField,
         input_type: GraphQLInputObjectType | None,
         return_type: t.Any,
+        input_description: str | None,
+        return_description: str | None,
     ) -> VisitorControl:
         """Handle leaving a mutation field - collect the mutation info."""
 

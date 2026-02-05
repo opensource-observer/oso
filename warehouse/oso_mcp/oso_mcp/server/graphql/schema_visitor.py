@@ -5,6 +5,7 @@ The traverser handles all tree-walking logic, while visitors implement handlers
 to process each type encountered during traversal.
 """
 
+import logging
 import typing as t
 
 from graphql import (
@@ -13,6 +14,7 @@ from graphql import (
     FragmentSpreadNode,
     GraphQLEnumType,
     GraphQLField,
+    GraphQLInputField,
     GraphQLInputObjectType,
     GraphQLList,
     GraphQLNonNull,
@@ -26,6 +28,8 @@ from graphql import (
 )
 
 from .types import GraphQLSchemaTypeVisitor, VisitorControl
+
+logger = logging.getLogger(__name__)
 
 
 class GraphQLSchemaTypeTraverser:
@@ -94,10 +98,15 @@ class GraphQLSchemaTypeTraverser:
         is_list = False
         base_type = gql_type
 
+        description = getattr(base_type, "description", None)
+
         # Unwrap NonNull wrapper
         if isinstance(gql_type, GraphQLNonNull):
             is_required = True
             base_type = gql_type.of_type
+
+        if not description:
+            description = getattr(base_type, "description", None)
 
         # Unwrap List wrapper
         if isinstance(base_type, GraphQLList):
@@ -112,20 +121,30 @@ class GraphQLSchemaTypeTraverser:
         # Dispatch to appropriate handler based on base type
         if isinstance(base_type, GraphQLScalarType):
             return self._visitor.handle_scalar(
-                field_name, base_type, is_required, is_list
+                field_name, base_type, is_required, is_list, description
             )
         elif isinstance(base_type, GraphQLEnumType):
             return self._visitor.handle_enum(
-                field_name, base_type, is_required, is_list
+                field_name, base_type, is_required, is_list, description
             )
         elif isinstance(base_type, GraphQLObjectType):
             return self._visit_object(
-                field_name, base_type, is_required, is_list, skip_root_hooks
+                field_name,
+                base_type,
+                is_required,
+                is_list,
+                skip_root_hooks,
+                description,
             )
         elif isinstance(base_type, GraphQLInputObjectType):
+            logger.debug("Visiting input object type: %s", base_type.name)
             return self._visit_input_object(field_name, base_type, is_required, is_list)
+        elif isinstance(base_type, GraphQLInputField):
+            return self._visit_input_field(field_name, base_type, is_required, is_list)
         elif isinstance(base_type, GraphQLUnionType):
-            return self._visit_union(field_name, base_type, is_required, is_list)
+            return self._visit_union(
+                field_name, base_type, is_required, is_list, description
+            )
         else:
             return self._visitor.handle_unknown(
                 field_name, base_type, is_required, is_list
@@ -137,9 +156,10 @@ class GraphQLSchemaTypeTraverser:
         union_type: GraphQLUnionType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         control = self._visitor.handle_enter_union(
-            field_name, union_type, is_required, is_list
+            field_name, union_type, is_required, is_list, description
         )
         if control == VisitorControl.STOP:
             return VisitorControl.STOP
@@ -177,7 +197,7 @@ class GraphQLSchemaTypeTraverser:
                 return VisitorControl.STOP
 
         control = self._visitor.handle_leave_union(
-            field_name, union_type, is_required, is_list
+            field_name, union_type, is_required, is_list, description
         )
         return control
 
@@ -229,12 +249,14 @@ class GraphQLSchemaTypeTraverser:
         is_required: bool,
         is_list: bool,
         skip_hooks: bool = False,
+        description: str | None = None,
     ) -> VisitorControl:
         """Visit an object type (internal - handles traversal)."""
         # Call enter hook (skip if requested)
         if not skip_hooks:
+            print("Visiting object:", object_type.name)
             control = self._visitor.handle_enter_object(
-                field_name, object_type, is_required, is_list
+                field_name, object_type, is_required, is_list, description
             )
             if control == VisitorControl.STOP:
                 return VisitorControl.STOP
@@ -286,7 +308,7 @@ class GraphQLSchemaTypeTraverser:
         # Call leave hook (skip if requested)
         if not skip_hooks:
             control = self._visitor.handle_leave_object(
-                field_name, object_type, is_required, is_list
+                field_name, object_type, is_required, is_list, description
             )
             return control
 
@@ -310,7 +332,7 @@ class GraphQLSchemaTypeTraverser:
         field_def: GraphQLField,
     ) -> VisitorControl:
         """Visit a mutation field with enter/leave hooks."""
-        # Extract and unwrap input type from 'input' argument
+        # Extract and unwrap input types from args
         input_type: t.Optional[GraphQLInputObjectType] = None
         input_arg = field_def.args.get("input")
         if input_arg:
@@ -321,16 +343,29 @@ class GraphQLSchemaTypeTraverser:
         # Unwrap return type
         return_type = self._unwrap_type(field_def.type)
 
+        input_description = input_type.description if input_type else None
+        return_description = getattr(return_type, "description", None)
+
         # Enter mutation field
         control = self._visitor.handle_enter_mutation_field(
-            field_name, field_def, input_type, return_type
+            field_name,
+            field_def,
+            input_type,
+            return_type,
+            input_description=input_description,
+            return_description=return_description,
         )
         if control == VisitorControl.STOP:
             return VisitorControl.STOP
         if control == VisitorControl.SKIP:
             # Still call leave hook even when skipping
             return self._visitor.handle_leave_mutation_field(
-                field_name, field_def, input_type, return_type
+                field_name,
+                field_def,
+                input_type,
+                return_type,
+                input_description=input_description,
+                return_description=return_description,
             )
 
         # Visit input type first (allows visitor to build input model via inherited hooks)
@@ -340,6 +375,7 @@ class GraphQLSchemaTypeTraverser:
                 input_type=input_type,
                 is_required=True,
                 is_list=False,
+                description=input_description,
             )
             if control == VisitorControl.STOP:
                 return VisitorControl.STOP
@@ -351,13 +387,19 @@ class GraphQLSchemaTypeTraverser:
                 object_type=return_type,
                 is_required=True,
                 is_list=False,
+                description=return_description,
             )
             if control == VisitorControl.STOP:
                 return VisitorControl.STOP
 
         # Leave mutation field
         return self._visitor.handle_leave_mutation_field(
-            field_name, field_def, input_type, return_type
+            field_name,
+            field_def,
+            input_type,
+            return_type,
+            input_description=input_description,
+            return_description=return_description,
         )
 
     def _visit_query_field(
@@ -369,14 +411,20 @@ class GraphQLSchemaTypeTraverser:
         """Visit a query field with enter/leave hooks."""
         # Enter query field
         control = self._visitor.handle_enter_query_field(
-            field_name, field_def, field_def.type
+            field_name,
+            field_def,
+            field_def.type,
+            getattr(field_def.type, "description", None),
         )
         if control == VisitorControl.STOP:
             return VisitorControl.STOP
         if control == VisitorControl.SKIP:
             # Still call leave hook even when skipping
             return self._visitor.handle_leave_query_field(
-                field_name, field_def, field_def.type
+                field_name,
+                field_def,
+                field_def.type,
+                getattr(field_def.type, "description", None),
             )
 
         # Save and update selection_set for this field's nested selections
@@ -394,7 +442,10 @@ class GraphQLSchemaTypeTraverser:
 
         # Leave query field
         return self._visitor.handle_leave_query_field(
-            field_name, field_def, field_def.type
+            field_name,
+            field_def,
+            field_def.type,
+            getattr(field_def.type, "description", None),
         )
 
     def _visit_input_object(
@@ -403,11 +454,12 @@ class GraphQLSchemaTypeTraverser:
         input_type: GraphQLInputObjectType,
         is_required: bool,
         is_list: bool,
+        description: str | None = None,
     ) -> VisitorControl:
         """Visit an input object type (internal - handles traversal)."""
         # Call enter hook
         control = self._visitor.handle_enter_input_object(
-            field_name, input_type, is_required, is_list
+            field_name, input_type, is_required, is_list, description
         )
         if control == VisitorControl.STOP:
             return VisitorControl.STOP
@@ -416,12 +468,77 @@ class GraphQLSchemaTypeTraverser:
 
         # Traverse each field (input objects don't use selection sets)
         for child_field_name, field in input_type.fields.items():
-            control = self.visit(field.type, field_name=child_field_name)
+            control = self.visit(field, field_name=child_field_name)
             if control == VisitorControl.STOP:
                 return VisitorControl.STOP
 
         # Call leave hook
         control = self._visitor.handle_leave_input_object(
-            field_name, input_type, is_required, is_list
+            field_name, input_type, is_required, is_list, description
         )
         return control
+
+    def _visit_input_field(
+        self,
+        field_name: str,
+        field_type: GraphQLInputField,
+        is_required: bool,
+        is_list: bool,
+    ) -> VisitorControl:
+        """Visit an input field (internal - handles traversal)."""
+
+        logger.debug(f"Visiting input field: {field_name}")
+
+        # Unwrap wrappers (NonNull, List) to get base type
+        is_required = False
+        is_list = False
+        base_type = field_type.type
+
+        description = getattr(field_type, "description", None)
+
+        logger.debug(f"Field description: {description}")
+
+        # Unwrap NonNull wrapper
+        if isinstance(base_type, GraphQLNonNull):
+            is_required = True
+            base_type = base_type.of_type
+
+        # Unwrap List wrapper
+        if isinstance(base_type, GraphQLList):
+            is_list = True
+            # Get the inner type (might be NonNull too)
+            inner_type = base_type.of_type
+            if isinstance(inner_type, GraphQLNonNull):
+                base_type = inner_type.of_type
+            else:
+                base_type = inner_type
+
+        match base_type:
+            case GraphQLScalarType():
+                return self._visitor.handle_scalar(
+                    field_name,
+                    base_type,
+                    is_required,
+                    is_list,
+                    description,
+                )
+            case GraphQLEnumType():
+                return self._visitor.handle_enum(
+                    field_name,
+                    base_type,
+                    is_required,
+                    is_list,
+                    description,
+                )
+            case GraphQLInputObjectType():
+                return self._visit_input_object(
+                    field_name,
+                    base_type,
+                    is_required,
+                    is_list,
+                    description,
+                )
+            case _:
+                return self._visitor.handle_unknown(
+                    field_name, base_type, is_required, is_list
+                )

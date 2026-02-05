@@ -117,6 +117,7 @@ class QueryDocumentOperation:
     root_type: GraphQLObjectType
     variables: t.List[QueryDocumentVariable] = field(default_factory=list)
     children: t.List[QueryDocumentSelection] = field(default_factory=list)
+    description: t.Optional[str] = None
 
 
 @dataclass
@@ -265,6 +266,7 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         scalar_type: GraphQLScalarType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         """Handle a scalar type (String, Int, Boolean, etc.).
 
@@ -285,6 +287,7 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         enum_type: GraphQLEnumType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         """Handle an enum type.
 
@@ -305,6 +308,7 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         object_type: GraphQLObjectType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         """Called when entering an object type (before visiting fields).
 
@@ -325,6 +329,7 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         object_type: GraphQLObjectType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         """Called when leaving an object type (after visiting all fields).
 
@@ -345,6 +350,7 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         input_type: GraphQLInputObjectType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         """Called when entering an input object type (before visiting fields).
 
@@ -365,6 +371,7 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         input_type: GraphQLInputObjectType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         """Called when leaving an input object type (after visiting all fields).
 
@@ -385,6 +392,7 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         union_type: GraphQLUnionType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         """Handle a union type.
 
@@ -405,6 +413,7 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         union_type: GraphQLUnionType,
         is_required: bool,
         is_list: bool,
+        description: str | None,
     ) -> VisitorControl:
         """Called when leaving a union type.
 
@@ -447,6 +456,8 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         field_def: GraphQLField,
         input_type: t.Optional[GraphQLInputObjectType],
         return_type: t.Any,
+        input_description: str | None,
+        return_description: str | None,
     ) -> VisitorControl:
         """Called when entering a mutation field during schema traversal.
 
@@ -459,6 +470,7 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
             input_type: The input argument type (extracted and unwrapped from 'input' arg),
                        or None if no 'input' argument exists
             return_type: The mutation's return/payload type (unwrapped)
+            description: The mutation's description from the schema
 
         Returns:
             CONTINUE to traverse the return type's fields
@@ -473,6 +485,8 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         field_def: GraphQLField,
         input_type: t.Optional[GraphQLInputObjectType],
         return_type: t.Any,
+        input_description: str | None,
+        return_description: str | None,
     ) -> VisitorControl:
         """Called when leaving a mutation field after visiting its return type.
 
@@ -481,6 +495,7 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
             field_def: Full field definition
             input_type: The input argument type, or None
             return_type: The mutation's return/payload type (unwrapped)
+            description: The mutation's description from the schema
 
         Returns:
             VisitorControl to control traversal flow
@@ -494,6 +509,7 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         field_name: str,
         field_def: GraphQLField,
         return_type: t.Any,
+        description: str | None,
     ) -> VisitorControl:
         """Called when entering a query field during schema traversal.
 
@@ -517,6 +533,7 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         field_name: str,
         field_def: GraphQLField,
         return_type: t.Any,
+        description: str | None,
     ) -> VisitorControl:
         """Called when leaving a query field after visiting its return type.
 
@@ -524,6 +541,7 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
             field_name: Name of the query
             field_def: Full field definition
             return_type: The query's return type (unwrapped)
+            description: The query's description from the schema
 
         Returns:
             VisitorControl to control traversal flow

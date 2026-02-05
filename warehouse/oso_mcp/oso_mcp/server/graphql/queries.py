@@ -59,6 +59,28 @@ from .types import (
 logger = logging.getLogger(__name__)
 
 
+def collect_comments(raw_content: str, start_index: int) -> t.List[str]:
+    """Find preceding comment lines before a given index in the content."""
+    comments = []
+    index = start_index - 1
+
+    while index >= 0:
+        # Move to the start of the current line
+        line_start = raw_content.rfind("\n", 0, index) + 1
+        line = raw_content[line_start : index + 1].strip()
+
+        if line.startswith("#"):
+            comments.append(line[1:].strip())
+            index = line_start - 1
+        elif line == "":
+            index = line_start - 1
+        else:
+            break
+
+    comments.reverse()
+    return comments
+
+
 class QueryDocumentParser:
     """Parses .graphql files into enriched QueryDocument with schema resolution.
 
@@ -93,7 +115,7 @@ class QueryDocumentParser:
             content = f.read()
 
         ast = parse(content)
-        return self._build_document(ast, file_path)
+        return self._build_document(ast, file_path, content)
 
     def parse_directory(self, directory_path: str) -> t.List[QueryDocument]:
         """Parse all .graphql files in directory.
@@ -124,7 +146,7 @@ class QueryDocumentParser:
         return docs
 
     def _build_document(
-        self, ast: DocumentNode, file_path: str
+        self, ast: DocumentNode, file_path: str, raw_content: str
     ) -> t.Optional[QueryDocument]:
         """Build enriched QueryDocument from parsed AST."""
         # Extract raw AST nodes
@@ -136,10 +158,10 @@ class QueryDocumentParser:
             return None
 
         # Build fragments first in topological order (dependencies before dependents)
-        fragments = self._build_fragments(raw_fragments)
+        fragments = self._build_fragments(raw_fragments, raw_content)
 
         # Build operations with fragment references
-        operations = self._build_operations(raw_operations, fragments)
+        operations = self._build_operations(raw_operations, fragments, raw_content)
 
         return QueryDocument(
             file_path=file_path,
@@ -169,7 +191,7 @@ class QueryDocumentParser:
         return fragments
 
     def _build_fragments(
-        self, raw_fragments: t.Dict[str, FragmentDefinitionNode]
+        self, raw_fragments: t.Dict[str, FragmentDefinitionNode], raw_content: str
     ) -> t.Dict[str, QueryDocumentFragment]:
         """Build enriched fragments in topological dependency order."""
         if not raw_fragments:
@@ -238,6 +260,7 @@ class QueryDocumentParser:
         self,
         raw_operations: t.List[OperationDefinitionNode],
         fragments: t.Dict[str, QueryDocumentFragment],
+        raw_content: str,
     ) -> t.List[QueryDocumentOperation]:
         """Build enriched operations with resolved root types."""
         operations = []
@@ -255,6 +278,22 @@ class QueryDocumentParser:
                 op_type = "subscription"
             else:
                 continue
+
+            # Grab additional context from each operation using hash style
+            # comments
+            assert raw_op.loc is not None, "Operation node missing location info"
+
+            start_index = raw_op.loc.start
+            # Scan in reverse until we hit a newline (we will collect comments _before_ that)
+            lower_bound_index = start_index
+            while lower_bound_index > 0:
+                lower_bound_index -= 1
+                if raw_content[lower_bound_index] == "\n":
+                    break
+            comment_lines = collect_comments(raw_content, lower_bound_index)
+            description = "\n".join(comment_lines) if comment_lines else None
+
+            logger.debug(f"Extracted description for operation: {description}")
 
             if root_type is None:
                 raise ValueError(
@@ -280,6 +319,7 @@ class QueryDocumentParser:
                     root_type=root_type,
                     variables=variables,
                     children=children,
+                    description=description,
                 )
             )
 
@@ -749,7 +789,7 @@ class QueryCollectorVisitor(PydanticModelVisitor):
         # Create and collect QueryInfo
         query_info = QueryInfo(
             name=operation.name,
-            description=None,
+            description=operation.description,
             query_string=query_string,
             input_model=input_model,
             payload_model=payload_model,
