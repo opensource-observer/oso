@@ -18,6 +18,7 @@ from graphql import (
     GraphQLObjectType,
     GraphQLScalarType,
     GraphQLSchema,
+    GraphQLType,
     GraphQLUnionType,
     InlineFragmentNode,
     SelectionSetNode,
@@ -42,8 +43,8 @@ class GraphQLSchemaTypeTraverser:
     def __init__(
         self,
         visitor: "GraphQLSchemaTypeVisitor",
+        schema: GraphQLSchema,
         selection_set: t.Optional[SelectionSetNode] = None,
-        schema: t.Optional[GraphQLSchema] = None,
         fragments: t.Optional[t.Dict[str, t.Any]] = None,
     ):
         """Initialize traverser with a visitor and traversal configuration.
@@ -63,15 +64,14 @@ class GraphQLSchemaTypeTraverser:
         # Track root type names for mutation/query field detection
         self._mutation_type_name: t.Optional[str] = None
         self._query_type_name: t.Optional[str] = None
-        if schema:
-            if schema.mutation_type:
-                self._mutation_type_name = schema.mutation_type.name
-            if schema.query_type:
-                self._query_type_name = schema.query_type.name
+        if schema.mutation_type:
+            self._mutation_type_name = schema.mutation_type.name
+        if schema.query_type:
+            self._query_type_name = schema.query_type.name
 
     def visit(
         self,
-        gql_type: t.Any,
+        gql_type: GraphQLType,
         field_name: str = "",
     ) -> VisitorControl:
         """Visit a GraphQL type and recursively visit its nested types.
