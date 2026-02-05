@@ -34,6 +34,8 @@ SchemaType = t.Union[
     GraphQLInputObjectType,
 ]
 
+Scalar = t.Union[str, int, float, bool, None]
+
 
 @dataclass
 class QueryDocumentField:
@@ -161,13 +163,9 @@ class MutationInfo(BaseModel):
     input_model: t.Type[BaseModel] = Field(
         description="Generated Pydantic model for input validation"
     )
-    payload_model: t.Type[BaseModel] = Field(
-        description="Generated Pydantic model for payload response"
+    payload_model: t.Type[t.Any] = Field(
+        description="Generated response model or scalar for payload response"
     )
-    payload_fields: t.List[str] = Field(
-        description="Top-level fields to return from payload"
-    )
-    graphql_input_type_name: str = Field(description="Original GraphQL input type name")
 
 
 class QueryInfo(BaseModel):
@@ -454,10 +452,8 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         self,
         field_name: str,
         field_def: GraphQLField,
-        input_type: t.Optional[GraphQLInputObjectType],
         return_type: t.Any,
-        input_description: str | None,
-        return_description: str | None,
+        description: str | None,
     ) -> VisitorControl:
         """Called when entering a mutation field during schema traversal.
 
@@ -467,9 +463,6 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         Args:
             field_name: Name of the mutation (e.g., "createUser")
             field_def: Full field definition with description, directives, args
-            input_type: The input argument type (extracted and unwrapped from 'input' arg),
-                       or None if no 'input' argument exists
-            return_type: The mutation's return/payload type (unwrapped)
             description: The mutation's description from the schema
 
         Returns:
@@ -483,18 +476,15 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         self,
         field_name: str,
         field_def: GraphQLField,
-        input_type: t.Optional[GraphQLInputObjectType],
         return_type: t.Any,
-        input_description: str | None,
-        return_description: str | None,
+        description: str | None,
     ) -> VisitorControl:
         """Called when leaving a mutation field after visiting its return type.
 
         Args:
             field_name: Name of the mutation
             field_def: Full field definition
-            input_type: The input argument type, or None
-            return_type: The mutation's return/payload type (unwrapped)
+            return_type: The mutation's return type (unwrapped)
             description: The mutation's description from the schema
 
         Returns:
@@ -502,7 +492,61 @@ class GraphQLSchemaTypeVisitor(t.Protocol):
         """
         return VisitorControl.CONTINUE
 
-    # Query field hooks (enter/leave pair)
+    def handle_enter_mutation_arguments(
+        self,
+        mutation_name: str,
+    ):
+        """Called when entering a mutation's arguments section (before all args).
+
+        Args:
+            mutation_name: Name of the mutation being entered
+
+        Returns:
+            VisitorControl to control traversal flow
+        """
+        return VisitorControl.CONTINUE
+
+    def handle_leave_mutation_arguments(
+        self,
+        mutation_name: str,
+    ):
+        """Called when leaving a mutation's arguments section (after all args).
+
+        Args:
+            mutation_name: Name of the mutation being left
+
+        Returns:
+            VisitorControl to control traversal flow
+        """
+        return VisitorControl.CONTINUE
+
+    def handle_enter_mutation_return_type(
+        self,
+        mutation_name: str,
+        return_type: t.Any,
+    ) -> VisitorControl:
+        """Called when entering a mutation's return type section (before all fields).
+
+        Args:
+            mutation_name: Name of the mutation being entered
+        Returns:
+            VisitorControl to control traversal flow
+        """
+        return VisitorControl.CONTINUE
+
+    def handle_leave_mutation_return_type(
+        self,
+        mutation_name: str,
+        return_type: t.Any,
+    ) -> VisitorControl:
+        """Called when leaving a mutation's return type section (after all fields).
+
+        Args:
+            mutation_name: Name of the mutation being left
+        Returns:
+            VisitorControl to control traversal flow
+        """
+        return VisitorControl.CONTINUE
 
     def handle_enter_query_field(
         self,

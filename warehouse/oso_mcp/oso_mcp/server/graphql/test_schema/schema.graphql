@@ -60,6 +60,18 @@ type Mutation {
   @mcp-ignore
   """
   updateItem(input: UpdateItemInput!): UpdateItemPayload!
+
+  """
+  Do not ignore this update
+  """
+  altUpdateItem(input: UpdateItemInput!): UpdateItemPayload!
+
+  deleteItem(
+    """
+    The ID of the item to delete
+    """
+    id: ID!
+  ): Boolean!
 }
 
 input CreateItemInput {

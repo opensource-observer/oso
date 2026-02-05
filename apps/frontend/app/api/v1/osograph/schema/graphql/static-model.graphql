@@ -38,8 +38,17 @@ extend type Query {
 }
 
 input CreateStaticModelInput {
+  """
+  The ID of the organization to which the static model belongs.
+  """
   orgId: ID!
+  """
+  The ID of the dataset associated with the static model.
+  """
   datasetId: ID!
+  """
+  The desired name for the static model (must be unique within the organization).
+  """
   name: String!
 }
 
@@ -59,5 +68,13 @@ extend type Mutation {
   createStaticModel(input: CreateStaticModelInput!): CreateStaticModelPayload!
   updateStaticModel(input: UpdateStaticModelInput!): CreateStaticModelPayload!
   deleteStaticModel(id: ID!): SimplePayload!
+
+  """
+  Generate a pre-signed upload URL for the static model file. In order to upload
+  a static model, first create the static model using the `createStaticModel`
+  mutation, then call this mutation to get the upload URL. The file should be
+  uploaded to the returned URL using a POST. At this time only CSV files are
+  supported.
+  """
   createStaticModelUploadUrl(staticModelId: ID!): String!
 }

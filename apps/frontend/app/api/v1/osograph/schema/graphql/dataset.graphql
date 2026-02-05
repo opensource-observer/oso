@@ -209,6 +209,8 @@ input CreateDatasetInput {
     * DATA_INGESTION: This dataset type is used for datasets that are ingested
       from external sources using strategies like REST/GraphQL APIs, file
       uploads, etc.
+    * STATIC_MODEL: This is used for datasets composed of statically uploaded
+      models. Currently only CSV files are supported for static models.
   """
   type: DatasetType = USER_MODEL
 

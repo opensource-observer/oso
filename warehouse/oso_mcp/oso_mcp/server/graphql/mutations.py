@@ -106,7 +106,8 @@ class GraphQLExecutor:
         """
         logger.debug(f"Executing mutation {self.mutation.name} at {self.endpoint}")
         # Convert Pydantic model to dict for variables
-        variables = {"input": input_data.model_dump(exclude_none=True)}
+
+        variables = input_data.model_dump(exclude_none=True)
 
         # Build GraphQL mutation query
         mutation_query = self._build_mutation_query()
@@ -126,10 +127,9 @@ class GraphQLExecutor:
 
         # Get mutation data
         data = result.get("data", {})
-        mutation_data = data.get(self.mutation.name, {})
 
         # Convert to Pydantic model
-        return self.mutation.payload_model.model_validate(mutation_data)
+        return self.mutation.payload_model.model_validate(data)
 
     def _unwrap_union_types(self, field_type: t.Any) -> t.List[t.Any]:
         """Unwrap Optional[T] by checking for Union[T, None] to get non-None
@@ -362,13 +362,50 @@ class GraphQLExecutor:
             GraphQL mutation query string
         """
         # Build the query with all payload fields (including nested)
-        fields = self._build_field_selection(
-            self.mutation.payload_model, indent_level=2
+        if isinstance(self.mutation.payload_model, type) and issubclass(
+            self.mutation.payload_model, BaseModel
+        ):
+            logger.debug(f"Model fields: {self.mutation.payload_model.model_fields}")
+
+        # Get the inner payload model specific to this mutation (we need to get
+        # it based on the name of the mutation)
+        payload_model_fields = self.mutation.payload_model.model_fields.get(
+            self.mutation.name
         )
+        assert payload_model_fields is not None, (
+            f"Expected payload model to have a field for the mutation name {self.mutation.name}"
+        )
+        inner_payload_model = payload_model_fields.annotation
+        assert isinstance(inner_payload_model, type) and issubclass(
+            inner_payload_model, BaseModel
+        ), "Expected inner payload model to be a Pydantic model"
+
+        fields = self._build_field_selection(inner_payload_model, indent_level=2)
+
+        # Generate the argument line for the mutation (e.g. $input: InputType!)
+        # by iterating over the mutation's arguments
+        model_fields = self.mutation.input_model.model_fields
+
+        input_pairs = []
+        variable_pairs = []
+
+        for field_name, info in model_fields.items():
+            assert isinstance(info.json_schema_extra, dict), (
+                "Expected json_schema_extra to be a dict"
+            )
+            assert "graphql_type_string" in info.json_schema_extra, (
+                "Expected graphql_type in json_schema_extra"
+            )
+            graphql_type = info.json_schema_extra["graphql_type_string"]
+            input_pairs.append(f"{field_name}: ${field_name}, ")
+            variable_pairs.append(f"{field_name}: ${graphql_type}, ")
+
+        input_args = "".join(input_pairs).rstrip(", ")
+        variable_args = "".join(variable_pairs).rstrip(", ")
 
         query = f"""
-mutation {self.mutation.name}($input: {self.mutation.graphql_input_type_name}!) {{
-  {self.mutation.name}(input: $input) {{
+mutation {self.mutation.name}({variable_args}) {{
+  {self.mutation.name}({input_args}) {{
 {fields}
   }}
 }}

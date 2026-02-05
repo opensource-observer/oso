@@ -127,10 +127,12 @@ async def test_generated_tool_makes_graphql_mutation(
             name="createItem",
             arguments={
                 "input": {
-                    "name": "Test Item",
-                    "description": "A test item",
-                    "count": 42,
-                }
+                    "input": {
+                        "name": "Test Item",
+                        "description": "A test item",
+                        "count": 42,
+                    }
+                },
             },
         )
 
@@ -282,9 +284,11 @@ async def test_ensure_nested_items_are_not_requests(
             name="createItem",
             arguments={
                 "input": {
-                    "name": "Test Item",
-                    "description": "A test item",
-                    "count": 42,
+                    "input": {
+                        "name": "Test Item",
+                        "description": "A test item",
+                        "count": 42,
+                    }
                 }
             },
         )

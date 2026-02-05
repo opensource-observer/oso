@@ -79,6 +79,7 @@ class GraphQLSchemaTypeTraverser:
         gql_type: GraphQLType,
         field_name: str = "",
         skip_root_hooks: bool = False,
+        override_description: str | None = None,
     ) -> VisitorControl:
         """Visit a GraphQL type and recursively visit its nested types.
 
@@ -99,14 +100,13 @@ class GraphQLSchemaTypeTraverser:
         base_type = gql_type
 
         description = getattr(base_type, "description", None)
+        if override_description is not None:
+            description = override_description
 
         # Unwrap NonNull wrapper
         if isinstance(gql_type, GraphQLNonNull):
             is_required = True
             base_type = gql_type.of_type
-
-        if not description:
-            description = getattr(base_type, "description", None)
 
         # Unwrap List wrapper
         if isinstance(base_type, GraphQLList):
@@ -254,7 +254,7 @@ class GraphQLSchemaTypeTraverser:
         """Visit an object type (internal - handles traversal)."""
         # Call enter hook (skip if requested)
         if not skip_hooks:
-            print("Visiting object:", object_type.name)
+            logger.debug(f"Visiting object: {object_type.name}")
             control = self._visitor.handle_enter_object(
                 field_name, object_type, is_required, is_list, description
             )
@@ -263,6 +263,10 @@ class GraphQLSchemaTypeTraverser:
             elif control == VisitorControl.SKIP:
                 # Skip this object's fields but continue with siblings
                 return VisitorControl.CONTINUE
+
+        logger.debug(
+            f"Processing fields for object {object_type.name} with selection set: {self._selection_set}"
+        )
 
         # Check if this is a mutation or query root type
         is_mutation_type = object_type.name == self._mutation_type_name
@@ -282,6 +286,10 @@ class GraphQLSchemaTypeTraverser:
             fields_to_visit = [
                 (name, field, None) for name, field in object_type.fields.items()
             ]
+
+        logger.debug(
+            f"Visiting object {object_type.name} with fields: {[name for name, _, _ in fields_to_visit]}"
+        )
 
         # Traverse each field
         for child_field_name, field_def, nested_selection_set in fields_to_visit:
@@ -333,55 +341,68 @@ class GraphQLSchemaTypeTraverser:
     ) -> VisitorControl:
         """Visit a mutation field with enter/leave hooks."""
         # Extract and unwrap input types from args
-        input_type: t.Optional[GraphQLInputObjectType] = None
-        input_arg = field_def.args.get("input")
-        if input_arg:
-            unwrapped = self._unwrap_type(input_arg.type)
-            if isinstance(unwrapped, GraphQLInputObjectType):
-                input_type = unwrapped
 
         # Unwrap return type
         return_type = self._unwrap_type(field_def.type)
 
-        input_description = input_type.description if input_type else None
-        return_description = getattr(return_type, "description", None)
+        description = field_def.description
 
         # Enter mutation field
         control = self._visitor.handle_enter_mutation_field(
             field_name,
             field_def,
-            input_type,
             return_type,
-            input_description=input_description,
-            return_description=return_description,
+            description=description,
         )
         if control == VisitorControl.STOP:
             return VisitorControl.STOP
         if control == VisitorControl.SKIP:
-            # Still call leave hook even when skipping
-            return self._visitor.handle_leave_mutation_field(
-                field_name,
-                field_def,
-                input_type,
-                return_type,
-                input_description=input_description,
-                return_description=return_description,
-            )
+            return VisitorControl.CONTINUE
 
-        # Visit input type first (allows visitor to build input model via inherited hooks)
-        if input_type is not None:
-            control = self._visit_input_object(
-                field_name="input",
-                input_type=input_type,
-                is_required=True,
-                is_list=False,
-                description=input_description,
+        # Enter the arguments
+        control = self._visitor.handle_enter_mutation_arguments(
+            mutation_name=field_name,
+        )
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
+
+        return_description = getattr(return_type, "description", None)
+
+        # Visit each argument
+        for arg_name, arg_def in field_def.args.items():
+            arg_type = arg_def.type
+            logger.debug(
+                f"Visiting argument {arg_name} of type {arg_type} for mutation {field_name} with description: {arg_def.description}"
+            )
+            control = self.visit(
+                arg_type,
+                field_name=arg_name,
+                # We need to override the description here because the argument
+                # definition's description is lost when we visit its type (since
+                # it's not a field/enum/object itself). Additionally, the
+                # default description used by the graphql parser is highly
+                # verbose and will not be useful for tool generation.
+                override_description=arg_def.description or "",
             )
             if control == VisitorControl.STOP:
                 return VisitorControl.STOP
+        control = self._visitor.handle_leave_mutation_arguments(
+            mutation_name=field_name,
+        )
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
+
+        control = self._visitor.handle_enter_mutation_return_type(
+            mutation_name=field_name, return_type=return_type
+        )
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
 
         # Visit return type as an object (allows visitor to build payload model via inherited hooks)
         if isinstance(return_type, GraphQLObjectType):
+            logger.debug(
+                f"Visiting mutation return type for {field_name}: {return_type.name}"
+            )
             control = self._visit_object(
                 field_name=field_name,
                 object_type=return_type,
@@ -392,14 +413,18 @@ class GraphQLSchemaTypeTraverser:
             if control == VisitorControl.STOP:
                 return VisitorControl.STOP
 
+        control = self._visitor.handle_leave_mutation_return_type(
+            mutation_name=field_name, return_type=return_type
+        )
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
+
         # Leave mutation field
         return self._visitor.handle_leave_mutation_field(
             field_name,
             field_def,
-            input_type,
             return_type,
-            input_description=input_description,
-            return_description=return_description,
+            description=description,
         )
 
     def _visit_query_field(

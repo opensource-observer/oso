@@ -105,7 +105,29 @@ query ListDatasets($first: Int = 50, $after: String, $where: JSON) {
 # Args:
 #   datasetName (String!): The name of the dataset.
 #   where (JSON!): Filter conditions for the tables.
-query ListTablesForDataset($datasetName: String!, $where: JSON!) {
+query ListTablesForDataset($datasetName: String!) {
+  datasets(where: { name: { eq: $datasetName } }, single: true) {
+    edges {
+      node {
+        id
+        name
+        tables {
+          edges {
+            node {
+              name
+            }
+          }
+          pageInfo {
+            ...PageInfoFields
+          }
+          totalCount
+        }
+      }
+    }
+  }
+}
+
+query ListTablesForDatasetWhere($datasetName: String!, $where: JSON!) {
   datasets(where: { name: { eq: $datasetName } }, single: true) {
     edges {
       node {

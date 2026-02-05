@@ -31,6 +31,8 @@ class ToolGenerator:
             mutations: List of mutations to generate tools for
             config: Tool configuration
             queries: Optional list of queries to generate tools for
+            graphql_endpoint: GraphQL endpoint URL
+            graphql_client_factory: Factory to create GraphQL clients
         """
         self.mcp = mcp
         self.mutations = mutations

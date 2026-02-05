@@ -106,6 +106,24 @@ class UnionTypeBuildContext(TypeBuildContext):
         return t.Union[tuple(self._member_types)]
 
 
+def create_graphql_type_string(type_name: str, is_required: bool, is_list: bool) -> str:
+    """Create a string representation of the GraphQL type for documentation.
+
+    Args:
+        type_name: The base name of the GraphQL type (e.g. "User", "String")
+        is_required: Whether the field is non-nullable (True if required)
+        is_list: Whether the field is a list
+    Returns:
+        A string representation of the GraphQL type
+    """
+    graphql_type_string = type_name
+    if is_list:
+        graphql_type_string = f"[{graphql_type_string}]"
+    if is_required:
+        graphql_type_string = f"{graphql_type_string}!"
+    return graphql_type_string
+
+
 class PydanticModelBuildContext(TypeBuildContext):
     """Context for building a single Pydantic model.
 
@@ -389,16 +407,23 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         # Map to Python type
         python_type = self._map_scalar_to_python(scalar_type)
 
-        # Apply list wrapper if needed
-        if is_list:
-            python_type = list[python_type]
+        graphql_type_string = create_graphql_type_string(
+            scalar_type.name, is_required=is_required, is_list=is_list
+        )
 
         # Apply optional wrapper and create field info
         if not is_required:
             python_type = t.Optional[python_type]
-            field_info = Field(default=None, description=description)
+            field_info = Field(
+                default=None,
+                description=description,
+                json_schema_extra={"graphql_type_string": graphql_type_string},
+            )
         else:
-            field_info = Field(description=description)
+            field_info = Field(
+                description=description,
+                json_schema_extra={"graphql_type_string": graphql_type_string},
+            )
 
         # Add to current context
         ctx.add_field(field_name, python_type, field_info)
@@ -434,12 +459,25 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         if is_list:
             python_type = list[python_type]  # type: ignore
 
+        graphql_type_string = create_graphql_type_string(
+            type_name, is_required=is_required, is_list=is_list
+        )
+
         # Apply optional wrapper and create field info
         if not is_required:
             python_type = t.Optional[python_type]  # type: ignore
-            field_info = Field(default=None, description=description)
+            field_info = Field(
+                default=None,
+                description=description,
+                json_schema_extra={"graphql_type_string": graphql_type_string},
+            )
         else:
-            field_info = Field(description=description)
+            field_info = Field(
+                description=description,
+                json_schema_extra={
+                    "graphql_type_string": graphql_type_string,
+                },
+            )
 
         # Add to current context
         ctx.add_field(field_name, python_type, field_info)
@@ -466,6 +504,10 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         except PydanticModelAlreadyRegistered as e:
             python_type = self.get_type(e.model_name)
 
+            graphql_type_string = create_graphql_type_string(
+                object_type.name, is_required=is_required, is_list=is_list
+            )
+
             # If we're at the root no need to add the field to anything
             # And this type is already registered so we can skip
             if self.current_context is None:
@@ -481,9 +523,18 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             # Apply optional wrapper
             if not is_required:
                 python_type = t.Optional[python_type]  # type: ignore
-                field_info = Field(default=None, description=description)
+                field_info = Field(
+                    default=None,
+                    description=description,
+                    json_schema_extra={"graphql_type_string": graphql_type_string},
+                )
             else:
-                field_info = Field(description=description)
+                field_info = Field(
+                    description=description,
+                    json_schema_extra={
+                        "graphql_type_string": graphql_type_string,
+                    },
+                )
 
             match current_context:
                 case PydanticModelBuildContext():
@@ -518,12 +569,23 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             if is_list:
                 python_type = list[python_type]
 
+            graphql_type_string = create_graphql_type_string(
+                object_type.name, is_required=is_required, is_list=is_list
+            )
+
             # Apply optional wrapper
             if not is_required:
                 python_type = t.Optional[python_type]
-                field_info = Field(default=None, description=description)
+                field_info = Field(
+                    default=None,
+                    description=description,
+                    json_schema_extra={"graphql_type_string": graphql_type_string},
+                )
             else:
-                field_info = Field(description=description)
+                field_info = Field(
+                    description=description,
+                    json_schema_extra={"graphql_type_string": graphql_type_string},
+                )
 
             current_context = self.current_context
             match current_context:
@@ -556,12 +618,23 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
                 if is_list:
                     python_type = list[python_type]  # type: ignore
 
+                graphql_type_string = create_graphql_type_string(
+                    type_name, is_required=is_required, is_list=is_list
+                )
+
                 # Apply optional wrapper
                 if not is_required:
                     python_type = t.Optional[python_type]  # type: ignore
-                    field_info = Field(default=None, description=description)
+                    field_info = Field(
+                        default=None,
+                        description=description,
+                        json_schema_extra={"graphql_type_string": graphql_type_string},
+                    )
                 else:
-                    field_info = Field(description=description)
+                    field_info = Field(
+                        description=description,
+                        json_schema_extra={"graphql_type_string": graphql_type_string},
+                    )
 
                 current_context = self.current_context
                 match current_context:
@@ -592,6 +665,10 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         if self.current_context:
             python_type: t.Any = model
 
+            graphql_type_string = create_graphql_type_string(
+                input_type.name, is_required=is_required, is_list=is_list
+            )
+
             # Apply list wrapper if needed
             if is_list:
                 python_type = list[python_type]
@@ -599,9 +676,16 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             # Apply optional wrapper
             if not is_required:
                 python_type = t.Optional[python_type]
-                field_info = Field(default=None, description=description)
+                field_info = Field(
+                    default=None,
+                    description=description,
+                    json_schema_extra={"graphql_type_string": graphql_type_string},
+                )
             else:
-                field_info = Field(description=description)
+                field_info = Field(
+                    description=description,
+                    json_schema_extra={"graphql_type_string": graphql_type_string},
+                )
 
             current_context = self.current_context
             match current_context:
@@ -643,10 +727,25 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             if not is_required:
                 existing_type = t.Optional[existing_type]  # type: ignore
                 field_info = Field(
-                    default=None, description=description, discriminator="typename__"
+                    default=None,
+                    description=description,
+                    discriminator="typename__",
+                    json_schema_extra={
+                        "graphql_type_string": create_graphql_type_string(
+                            union_type.name, is_required=is_required, is_list=is_list
+                        )
+                    },
                 )
             else:
-                field_info = Field(description=description, discriminator="typename__")
+                field_info = Field(
+                    description=description,
+                    discriminator="typename__",
+                    json_schema_extra={
+                        "graphql_type_string": create_graphql_type_string(
+                            union_type.name, is_required=is_required, is_list=is_list
+                        )
+                    },
+                )
             current_context.add_field(field_name, existing_type, field_info)
 
         return VisitorControl.CONTINUE
@@ -677,9 +776,26 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             # Apply optional wrapper
             if not is_required:
                 python_type = t.Optional[python_type]
-                field_info = Field(default=None, description=description)
+                field_info = Field(
+                    default=None,
+                    description=description,
+                    # discriminator="typename__",
+                    json_schema_extra={
+                        "graphql_type_string": create_graphql_type_string(
+                            union_type.name, is_required=is_required, is_list=is_list
+                        )
+                    },
+                )
             else:
-                field_info = Field(description=description)
+                field_info = Field(
+                    description=description,
+                    # discriminator="typename__",
+                    json_schema_extra={
+                        "graphql_type_string": create_graphql_type_string(
+                            union_type.name, is_required=is_required, is_list=is_list
+                        )
+                    },
+                )
 
             current_context = self.require_model_context("add union field")
             current_context.add_field(field_name, python_type, field_info)
@@ -737,6 +853,35 @@ def map_variable_scalar(scalar_name: str) -> t.Any:
     return scalar_map.get(scalar_name, str)
 
 
+class MutationInfoContext:
+    def __init__(self, name: str, field_def: GraphQLField, description: str | None):
+        self._name = name
+        self._field_def = field_def
+        self._description = description
+        self._input_type: type[BaseModel] | None = None
+        self._return_type: t.Any = None
+
+    def set_input_type(self, input_type: type[BaseModel]) -> None:
+        self._input_type = input_type
+
+    def set_return_type(self, return_type: t.Any) -> None:
+        self._return_type = return_type
+
+    def materialize(self) -> MutationInfo:
+        assert self._input_type is not None, (
+            "Input type must be set before materializing"
+        )
+        logger.debug(
+            f"Materializing mutation info for {self._name} with input type {self._input_type} and return type {self._return_type}"
+        )
+        return MutationInfo(
+            name=self._name,
+            description=self._description or "",
+            input_model=self._input_type,
+            payload_model=self._return_type,
+        )
+
+
 class MutationCollectorVisitor(PydanticModelVisitor):
     """Collects MutationInfo during schema traversal using mutation field hooks.
 
@@ -766,7 +911,7 @@ class MutationCollectorVisitor(PydanticModelVisitor):
         """
         # Initialize parent visitor
         super().__init__(
-            max_depth=2,
+            max_depth=4,
             use_context_prefix=False,
             ignore_unknown_types=ignore_unknown_types,
         )
@@ -775,10 +920,7 @@ class MutationCollectorVisitor(PydanticModelVisitor):
         self._mutations: list[MutationInfo] = []
 
         # Mutation context tracking
-        self._current_mutation_name: str | None = None
-        self._current_mutation_def: GraphQLField | None = None
-        self._current_input_type: GraphQLInputObjectType | None = None
-        self._current_return_type: GraphQLObjectType | None = None
+        self._current_mutation_context: t.Optional[MutationInfoContext] = None
 
     @property
     def mutations(self) -> list[MutationInfo]:
@@ -789,89 +931,92 @@ class MutationCollectorVisitor(PydanticModelVisitor):
         self,
         field_name: str,
         field_def: GraphQLField,
-        input_type: GraphQLInputObjectType | None,
         return_type: t.Any,
-        input_description: str | None,
-        return_description: str | None,
+        description: str | None,
     ) -> VisitorControl:
         """Handle entering a mutation field - store context for later collection."""
-        # Skip mutations without input type
-        if not input_type:
-            return VisitorControl.SKIP
 
-        # Skip if return type is not an object
-        if not isinstance(return_type, GraphQLObjectType):
-            return VisitorControl.SKIP
-
-        # Clear context stack so depth counting starts fresh for each mutation
-        # (the Mutation root type context shouldn't count toward payload depth)
-        self._context_stack.clear()
-
-        # # Store mutation context (models will be built by inherited hooks during traversal)
-        self._current_mutation_name = field_name
-        self._current_mutation_def = field_def
-        self._current_input_type = input_type
-        self._current_return_type = return_type
+        self._current_mutation_context = MutationInfoContext(
+            name=field_name,
+            field_def=field_def,
+            description=description,
+        )
 
         return VisitorControl.CONTINUE  # Let traverser visit input and return types
+
+    def handle_enter_mutation_arguments(self, mutation_name: str):
+        """Handle entering mutation arguments - store input type context."""
+        self.start_model_context(f"{mutation_name}Arguments")
+
+        return VisitorControl.CONTINUE
+
+    def handle_leave_mutation_arguments(self, mutation_name: str):
+        """Handle leaving mutation arguments - store input type context."""
+        arguments_name = self.finish_context()
+        input_model = self.get_type(arguments_name)
+        assert self._current_mutation_context is not None
+        assert isinstance(input_model, type), (
+            "Schema should only accept model types as inputs"
+        )
+        assert issubclass(input_model, BaseModel)
+        self._current_mutation_context.set_input_type(input_model)
+
+        return VisitorControl.CONTINUE
+
+    def handle_enter_mutation_return_type(self, mutation_name: str, return_type: t.Any):
+        """Handle entering mutation return type - store return type context."""
+        logger.debug(
+            f"Entering mutation return type for {mutation_name}: {return_type}"
+        )
+        if not isinstance(return_type, GraphQLObjectType):
+            if isinstance(return_type, GraphQLScalarType):
+                logger.debug(
+                    f"Return type is scalar for {mutation_name}, mapping to Python type {return_type.name}"
+                )
+                python_type = self._map_scalar_to_python(return_type)
+                assert self._current_mutation_context is not None, (
+                    "Mutation context should be set"
+                )
+                self._current_mutation_context.set_return_type(python_type)
+            else:
+                raise TypeError(
+                    f"Unsupported return type for mutation {mutation_name}: {return_type}"
+                )
+            return VisitorControl.SKIP
+        self.start_model_context(f"{mutation_name}ReturnType")
+
+        return VisitorControl.CONTINUE
+
+    def handle_leave_mutation_return_type(self, mutation_name: str, return_type: t.Any):
+        """Handle leaving mutation return type - store return type context."""
+        logger.debug(f"Leaving mutation return type for {mutation_name}: {return_type}")
+        if not isinstance(return_type, GraphQLObjectType):
+            return VisitorControl.CONTINUE  # Already handled in enter
+        return_type_model_name = self.finish_context()
+        assert self._current_mutation_context is not None, (
+            "Mutation context should be set"
+        )
+        return_type_model = self.get_type(return_type_model_name)
+        self._current_mutation_context.set_return_type(return_type_model)
+
+        return VisitorControl.CONTINUE
 
     def handle_leave_mutation_field(
         self,
         field_name: str,
         field_def: GraphQLField,
-        input_type: GraphQLInputObjectType | None,
         return_type: t.Any,
-        input_description: str | None,
-        return_description: str | None,
+        description: str | None,
     ) -> VisitorControl:
         """Handle leaving a mutation field - collect the mutation info."""
 
-        if self._current_mutation_name is None:
-            return VisitorControl.CONTINUE
-
-        # Get models built by inherited hooks during traversal
-        input_model = self.get_type(input_type.name) if input_type else None
-        payload_model = (
-            self.get_type(return_type.name)
-            if isinstance(return_type, GraphQLObjectType)
-            else None
+        assert self._current_mutation_context is not None, (
+            "Mutation context on leave must be set"
         )
 
-        if input_model and payload_model and isinstance(return_type, GraphQLObjectType):
-            assert isinstance(input_model, type), (
-                "Schema should only accept model types as inputs"
-            )
-            assert isinstance(payload_model, type), (
-                "Schema should only return model types"
-            )
-            assert issubclass(input_model, BaseModel)
-            assert issubclass(payload_model, BaseModel)
+        mutation_info = self._current_mutation_context.materialize()
 
-            current_mutation_def = self._current_mutation_def
-            description = ""
-            if current_mutation_def:
-                description = current_mutation_def.description or ""
-            current_input_type = self._current_input_type
-            graphql_input_type_name = ""
-            if current_input_type:
-                graphql_input_type_name = current_input_type.name
-
-            mutation_info = MutationInfo(
-                name=self._current_mutation_name,
-                description=description,
-                input_model=input_model,
-                payload_model=payload_model,
-                payload_fields=list(return_type.fields.keys()),
-                graphql_input_type_name=graphql_input_type_name,
-            )
-
-            if not any(f.should_ignore(mutation_info) for f in self._filters):
-                self._mutations.append(mutation_info)
-
-        # Clear context
-        self._current_mutation_name = None
-        self._current_mutation_def = None
-        self._current_input_type = None
-        self._current_return_type = None
+        if not any(f.should_ignore(mutation_info) for f in self._filters):
+            self._mutations.append(mutation_info)
 
         return VisitorControl.CONTINUE
