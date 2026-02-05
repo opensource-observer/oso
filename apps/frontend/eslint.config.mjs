@@ -72,6 +72,15 @@ export default defineConfig(resolveFlatConfig([
         },
     },
     {
+        files: [
+            "app/api/v1/osograph/schema/resolvers/{organization,user,resource,system}/**/*.{ts,tsx}",
+        ],
+        rules: {
+            "@typescript-eslint/no-deprecated": "error",
+            "oso-frontend/type-safety/no-inline-resolver-types": "error",
+        },
+    },
+    {
         files: ["app/api/v1/osograph/schema/resolvers/**/*.{ts,tsx}"],
 
         plugins: {
