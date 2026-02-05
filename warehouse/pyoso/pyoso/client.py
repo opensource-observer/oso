@@ -183,7 +183,6 @@ class Client:
                 response.raise_for_status()
                 json_response = JsonResponse.model_validate(response.json())
                 time.sleep(period)
-                period = min(period * 2, 5)
             if json_response.status != "completed" or json_response.url is None:
                 raise requests.HTTPError(
                     f"Query failed with status: {json_response.status}",
