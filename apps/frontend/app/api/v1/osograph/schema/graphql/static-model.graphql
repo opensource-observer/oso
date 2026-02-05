@@ -14,6 +14,7 @@ type StaticModel {
     single: Boolean
     where: JSON
   ): MaterializationConnection!
+  previewData: [JSON!]!
 }
 
 type StaticModelEdge {

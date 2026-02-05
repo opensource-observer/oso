@@ -1551,6 +1551,7 @@ export type DataConnectionAlias = {
   materializations: MaterializationConnection;
   modelContext?: Maybe<ModelContext>;
   orgId: Scalars["ID"]["output"];
+  previewData: Array<Scalars["JSON"]["output"]>;
   schema: Scalars["String"]["output"];
 };
 
@@ -1563,6 +1564,10 @@ export type DataConnectionAliasMaterializationsArgs = {
 };
 
 export type DataConnectionAliasModelContextArgs = {
+  tableName: Scalars["String"]["input"];
+};
+
+export type DataConnectionAliasPreviewDataArgs = {
   tableName: Scalars["String"]["input"];
 };
 
@@ -1628,6 +1633,7 @@ export type DataIngestion = {
   materializations: MaterializationConnection;
   modelContext?: Maybe<ModelContext>;
   orgId: Scalars["ID"]["output"];
+  previewData: Array<Scalars["JSON"]["output"]>;
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
@@ -1640,6 +1646,10 @@ export type DataIngestionMaterializationsArgs = {
 };
 
 export type DataIngestionModelContextArgs = {
+  tableName: Scalars["String"]["input"];
+};
+
+export type DataIngestionPreviewDataArgs = {
   tableName: Scalars["String"]["input"];
 };
 
@@ -1687,6 +1697,7 @@ export type DataModel = {
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
+  previewData: Array<Scalars["JSON"]["output"]>;
   releases: DataModelReleaseConnection;
   revisions: DataModelRevisionConnection;
   runs: RunConnection;
@@ -8453,6 +8464,7 @@ export type StaticModel = {
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
+  previewData: Array<Scalars["JSON"]["output"]>;
   runs: RunConnection;
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
