@@ -129,6 +129,7 @@ class QueryDocumentFragment:
 
     ast_node: FragmentDefinitionNode
     name: str
+    type_condition_name: str
     type_condition: GraphQLObjectType
     children: t.List[QueryDocumentSelection] = field(default_factory=list)
     dependencies: t.Set[str] = field(default_factory=set)
