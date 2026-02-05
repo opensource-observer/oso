@@ -74,6 +74,7 @@ class GraphQLSchemaTypeTraverser:
         self,
         gql_type: GraphQLType,
         field_name: str = "",
+        skip_root_hooks: bool = False,
     ) -> VisitorControl:
         """Visit a GraphQL type and recursively visit its nested types.
 
@@ -82,6 +83,7 @@ class GraphQLSchemaTypeTraverser:
         Args:
             gql_type: GraphQL type to visit (can be wrapped in NonNull/List)
             field_name: Name of the field being visited (empty string for root)
+            skip_root_hooks: If True, skip enter/leave object hooks for this visit
 
         Returns:
             VisitorControl indicating how traversal ended
@@ -117,7 +119,9 @@ class GraphQLSchemaTypeTraverser:
                 field_name, base_type, is_required, is_list
             )
         elif isinstance(base_type, GraphQLObjectType):
-            return self._visit_object(field_name, base_type, is_required, is_list)
+            return self._visit_object(
+                field_name, base_type, is_required, is_list, skip_root_hooks
+            )
         elif isinstance(base_type, GraphQLInputObjectType):
             return self._visit_input_object(field_name, base_type, is_required, is_list)
         elif isinstance(base_type, GraphQLUnionType):
@@ -142,12 +146,33 @@ class GraphQLSchemaTypeTraverser:
         elif control == VisitorControl.SKIP:
             return VisitorControl.CONTINUE
 
-        # Visit each possible type in the union
+        # Build a map of inline fragment selection sets by type name
+        inline_fragments_by_type: t.Dict[str, SelectionSetNode] = {}
+        if self._selection_set:
+            for selection in self._selection_set.selections:
+                if isinstance(selection, InlineFragmentNode):
+                    if selection.type_condition:
+                        type_name = selection.type_condition.name.value
+                        inline_fragments_by_type[type_name] = selection.selection_set
+
+        # Visit each possible type in the union with its corresponding inline fragment selection set
         for possible_type in union_type.types:
+            # Save current selection set
+            prev_selection_set = self._selection_set
+
+            # Use the inline fragment's selection set if available
+            type_name = possible_type.name
+            if type_name in inline_fragments_by_type:
+                self._selection_set = inline_fragments_by_type[type_name]
+
             control = self.visit(
                 possible_type,
                 field_name=field_name,
             )
+
+            # Restore previous selection set
+            self._selection_set = prev_selection_set
+
             if control == VisitorControl.STOP:
                 return VisitorControl.STOP
 
@@ -203,17 +228,19 @@ class GraphQLSchemaTypeTraverser:
         object_type: GraphQLObjectType,
         is_required: bool,
         is_list: bool,
+        skip_hooks: bool = False,
     ) -> VisitorControl:
         """Visit an object type (internal - handles traversal)."""
-        # Call enter hook
-        control = self._visitor.handle_enter_object(
-            field_name, object_type, is_required, is_list
-        )
-        if control == VisitorControl.STOP:
-            return VisitorControl.STOP
-        elif control == VisitorControl.SKIP:
-            # Skip this object's fields but continue with siblings
-            return VisitorControl.CONTINUE
+        # Call enter hook (skip if requested)
+        if not skip_hooks:
+            control = self._visitor.handle_enter_object(
+                field_name, object_type, is_required, is_list
+            )
+            if control == VisitorControl.STOP:
+                return VisitorControl.STOP
+            elif control == VisitorControl.SKIP:
+                # Skip this object's fields but continue with siblings
+                return VisitorControl.CONTINUE
 
         # Check if this is a mutation or query root type
         is_mutation_type = object_type.name == self._mutation_type_name
@@ -240,7 +267,9 @@ class GraphQLSchemaTypeTraverser:
             if is_mutation_type:
                 control = self._visit_mutation_field(child_field_name, field_def)
             elif is_query_type:
-                control = self._visit_query_field(child_field_name, field_def)
+                control = self._visit_query_field(
+                    child_field_name, field_def, nested_selection_set
+                )
             else:
                 # Regular field traversal
                 # Save and update selection_set for this field's nested selections
@@ -254,11 +283,14 @@ class GraphQLSchemaTypeTraverser:
             if control == VisitorControl.STOP:
                 return VisitorControl.STOP
 
-        # Call leave hook
-        control = self._visitor.handle_leave_object(
-            field_name, object_type, is_required, is_list
-        )
-        return control
+        # Call leave hook (skip if requested)
+        if not skip_hooks:
+            control = self._visitor.handle_leave_object(
+                field_name, object_type, is_required, is_list
+            )
+            return control
+
+        return VisitorControl.CONTINUE
 
     def _unwrap_type(self, gql_type: t.Any) -> t.Any:
         """Unwrap NonNull and List wrappers to get the base type."""
@@ -332,33 +364,37 @@ class GraphQLSchemaTypeTraverser:
         self,
         field_name: str,
         field_def: GraphQLField,
+        nested_selection_set: t.Optional[SelectionSetNode] = None,
     ) -> VisitorControl:
         """Visit a query field with enter/leave hooks."""
-        # Unwrap return type
-        return_type = self._unwrap_type(field_def.type)
-
         # Enter query field
         control = self._visitor.handle_enter_query_field(
-            field_name, field_def, return_type
+            field_name, field_def, field_def.type
         )
         if control == VisitorControl.STOP:
             return VisitorControl.STOP
         if control == VisitorControl.SKIP:
             # Still call leave hook even when skipping
             return self._visitor.handle_leave_query_field(
-                field_name, field_def, return_type
+                field_name, field_def, field_def.type
             )
 
-        # Visit return type's fields (if object type)
-        if isinstance(return_type, GraphQLObjectType):
-            for child_name, child_def in return_type.fields.items():
-                control = self.visit(child_def.type, field_name=child_name)
-                if control == VisitorControl.STOP:
-                    return VisitorControl.STOP
+        # Save and update selection_set for this field's nested selections
+        prev_selection_set = self._selection_set
+        self._selection_set = nested_selection_set
+
+        # Visit return type as a field (this will handle adding it to the parent context)
+        control = self.visit(field_def.type, field_name=field_name)
+
+        # Restore previous selection_set
+        self._selection_set = prev_selection_set
+
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
 
         # Leave query field
         return self._visitor.handle_leave_query_field(
-            field_name, field_def, return_type
+            field_name, field_def, field_def.type
         )
 
     def _visit_input_object(
