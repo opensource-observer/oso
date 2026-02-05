@@ -211,6 +211,7 @@ class QueryDocumentParser:
             fragments[fragment_name] = QueryDocumentFragment(
                 ast_node=raw_fragment,
                 name=fragment_name,
+                type_condition_name=type_condition_name,
                 type_condition=type_condition,
                 children=children,
             )
@@ -514,15 +515,15 @@ class QueryDocumentTraverser(TraverserProtocol):
         )
         document = graphql_type
 
-        # Traverse fragments first in topographical order
-        for fragment_name, fragment in document.fragments.items():
-            control = self._traverse_fragment(fragment)
-            if control == VisitorControl.STOP:
-                return None
-
         fragments_definitions: t.Dict[str, FragmentDefinitionNode] = {
             name: fragment.ast_node for name, fragment in document.fragments.items()
         }
+
+        # Traverse fragments first in topographical order
+        for fragment_name, fragment in document.fragments.items():
+            control = self._traverse_fragment(fragment, fragments_definitions)
+            if control == VisitorControl.STOP:
+                return None
 
         for operation in document.operations:
             control = self._traverse_operation(operation, fragments_definitions)
@@ -611,7 +612,11 @@ class QueryDocumentTraverser(TraverserProtocol):
                 return VisitorControl.STOP
         return VisitorControl.CONTINUE
 
-    def _traverse_fragment(self, fragment: QueryDocumentFragment) -> VisitorControl:
+    def _traverse_fragment(
+        self,
+        fragment: QueryDocumentFragment,
+        fragments: t.Dict[str, FragmentDefinitionNode],
+    ) -> VisitorControl:
         """Traverse a fragment definition."""
         self._visited_fragments = set()
 
@@ -623,24 +628,24 @@ class QueryDocumentTraverser(TraverserProtocol):
         if control == VisitorControl.SKIP:
             return VisitorControl.CONTINUE
 
-        for child in fragment.children:
-            control = self._visit_selection(child)
-            if control == VisitorControl.STOP:
-                return VisitorControl.STOP
+        traverser = GraphQLSchemaTypeTraverser(
+            self._visitor,
+            schema=self._schema,
+            selection_set=fragment.ast_node.selection_set,
+            fragments=fragments,
+        )
+        logger.debug(
+            f"Delegating to GraphQLSchemaTypeTraverser for fragment: {fragment.name} on type {fragment.type_condition_name}"
+        )
+        schema_start = fragment.type_condition
+        assert schema_start is not None, (
+            f"Schema does not have a {schema_start} type defined"
+        )
+        control = traverser.visit(schema_start, field_name="", skip_root_hooks=True)
 
         return self._visitor.handle_leave_fragment(
             fragment=fragment,
         )
-
-    def _visit_selection(self, selection: QueryDocumentSelection) -> VisitorControl:
-        """Dispatch to appropriate visit method based on selection type."""
-        match selection:
-            case QueryDocumentField():
-                return self._visit_field(selection)
-            case QueryDocumentFragmentSpread():
-                return self._visit_fragment_spread(selection)
-            case QueryDocumentInlineFragment():
-                return self._visit_inline_fragment(selection)
 
     def _visit_field(self, field: QueryDocumentField) -> VisitorControl:
         """Visit a field - dispatches to appropriate visitor method based on type."""
@@ -656,98 +661,6 @@ class QueryDocumentTraverser(TraverserProtocol):
             selection_set=field.ast_node.selection_set,
         )
         return traverser.visit(schema_type, field.field_name)
-
-        # if isinstance(schema_type, GraphQLScalarType):
-        #     return self._visitor.handle_scalar(
-        #         field.field_name, schema_type, field.is_required, field.is_list
-        #     )
-        # elif isinstance(schema_type, GraphQLEnumType):
-        #     return self._visitor.handle_enum(
-        #         field.field_name, schema_type, field.is_required, field.is_list
-        #     )
-        # elif isinstance(schema_type, GraphQLObjectType):
-        #     control = self._visitor.handle_enter_object(
-        #         field.field_name, schema_type, field.is_required, field.is_list
-        #     )
-        #     if control == VisitorControl.STOP:
-        #         return VisitorControl.STOP
-        #     if control == VisitorControl.SKIP:
-        #         return VisitorControl.CONTINUE
-
-        #     for child in field.children:
-        #         control = self._visit_selection(child)
-        #         if control == VisitorControl.STOP:
-        #             return VisitorControl.STOP
-
-        #     return self._visitor.handle_leave_object(
-        #         field.field_name, schema_type, field.is_required, field.is_list
-        #     )
-        # elif isinstance(schema_type, GraphQLUnionType):
-        #     control = self._visitor.handle_enter_union(
-        #         field.field_name, schema_type, field.is_required, field.is_list
-        #     )
-        #     if control == VisitorControl.STOP:
-        #         return VisitorControl.STOP
-        #     if control == VisitorControl.SKIP:
-        #         return VisitorControl.CONTINUE
-
-        #     # Traverse all the possible types in the union
-        #     for possible_type in schema_type.types:
-        #         selection_set = field.ast_node.selection_set
-        #         traverser = GraphQLSchemaTypeTraverser(
-        #             self._visitor,
-        #             schema=self._schema,
-        #             selection_set=selection_set,
-        #         )
-        #         control = traverser.visit(possible_type, field.field_name)
-
-        #     return self._visitor.handle_leave_union(
-        #         field.field_name, schema_type, field.is_required, field.is_list
-        #     )
-        # elif isinstance(schema_type, GraphQLInputObjectType):
-        #     control = self._visitor.handle_enter_input_object(
-        #         field.field_name, schema_type, field.is_required, field.is_list
-        #     )
-        #     if control == VisitorControl.STOP:
-        #         return VisitorControl.STOP
-        #     if control == VisitorControl.SKIP:
-        #         return VisitorControl.CONTINUE
-        #     return self._visitor.handle_leave_input_object(
-        #         field.field_name, schema_type, field.is_required, field.is_list
-        #     )
-        # else:
-        #     return self._visitor.handle_unknown(
-        #         field.field_name, schema_type, field.is_required, field.is_list
-        #     )
-
-    def _visit_fragment_spread(
-        self, spread: QueryDocumentFragmentSpread
-    ) -> VisitorControl:
-        """Visit a fragment spread by traversing into the referenced fragment."""
-        if not self._expand_fragments:
-            return VisitorControl.CONTINUE
-
-        if spread.fragment_name in self._visited_fragments:
-            return VisitorControl.CONTINUE
-
-        self._visited_fragments.add(spread.fragment_name)
-
-        for child in spread.fragment.children:
-            control = self._visit_selection(child)
-            if control == VisitorControl.STOP:
-                return VisitorControl.STOP
-
-        return VisitorControl.CONTINUE
-
-    def _visit_inline_fragment(
-        self, inline: QueryDocumentInlineFragment
-    ) -> VisitorControl:
-        """Visit an inline fragment's children."""
-        for child in inline.children:
-            control = self._visit_selection(child)
-            if control == VisitorControl.STOP:
-                return VisitorControl.STOP
-        return VisitorControl.CONTINUE
 
 
 class QueryCollectorVisitor(PydanticModelVisitor):
