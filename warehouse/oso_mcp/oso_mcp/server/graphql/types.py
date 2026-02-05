@@ -14,6 +14,7 @@ from graphql import (
     GraphQLEnumType,
     GraphQLField,
     GraphQLInputObjectType,
+    GraphQLNamedType,
     GraphQLObjectType,
     GraphQLScalarType,
     GraphQLUnionType,
@@ -96,7 +97,7 @@ class QueryDocumentVariable:
 
     ast_node: VariableDefinitionNode
     name: str
-    graphql_type: t.Any  # The original wrapped type for reference
+    graphql_type: GraphQLNamedType  # The original wrapped type for reference
     is_required: bool
     is_list: bool
     default_value: t.Optional[t.Any] = None
@@ -177,9 +178,6 @@ class QueryInfo(BaseModel):
     )
     query_string: str = Field(
         description="The full query string with inlined fragments"
-    )
-    variable_definitions: t.List[t.Any] = Field(
-        description="Variable definitions from query (VariableDefinitionNode)"
     )
     input_model: t.Type[BaseModel] = Field(
         description="Generated Pydantic model for variables"
@@ -562,6 +560,66 @@ class QueryDocumentVisitor(GraphQLSchemaTypeVisitor, t.Protocol):
 
         Args:
             fragment: The query document fragment being left
+
+        Returns:
+            VisitorControl to control traversal flow
+        """
+        return VisitorControl.CONTINUE
+
+    def handle_enter_variables(
+        self,
+        operation: QueryDocumentOperation,
+    ) -> VisitorControl:
+        """Called when entering a query document's variables section (before all variables).
+
+        Args:
+            operation: The query document operation being entered
+
+        Returns:
+            VisitorControl to control traversal flow
+        """
+        return VisitorControl.CONTINUE
+
+    def handle_leave_variables(
+        self,
+        operation: QueryDocumentOperation,
+    ) -> VisitorControl:
+        """Called when leaving a query document's variables section (after all variables).
+
+        Args:
+            operation: The query document operation being left
+
+        Returns:
+            VisitorControl to control traversal flow
+        """
+        return VisitorControl.CONTINUE
+
+    def handle_enter_variable_definition(
+        self,
+        operation: QueryDocumentOperation,
+        variable: QueryDocumentVariable,
+    ) -> VisitorControl:
+        """Called when entering a single variable definition.
+
+        Args:
+            operation: The query document operation
+            variable: The variable definition being entered
+
+        Returns:
+            VisitorControl to control traversal flow
+        """
+        return VisitorControl.CONTINUE
+
+    def handle_leave_variable_definition(
+        self,
+        operation: QueryDocumentOperation,
+        variable: QueryDocumentVariable,
+    ) -> VisitorControl:
+        """Called when leaving a single variable definition.
+
+        Args:
+            operation: The query document operation
+            variable: The variable definition being left
 
         Returns:
             VisitorControl to control traversal flow

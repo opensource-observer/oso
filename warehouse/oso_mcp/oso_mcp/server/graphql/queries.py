@@ -21,6 +21,7 @@ from graphql import (
     GraphQLEnumType,
     GraphQLInputObjectType,
     GraphQLList,
+    GraphQLNamedType,
     GraphQLNonNull,
     GraphQLObjectType,
     GraphQLScalarType,
@@ -32,10 +33,15 @@ from graphql import (
     SelectionSetNode,
     parse,
     print_ast,
+    type_from_ast,
 )
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel, Field
 
-from .pydantic_generator import PydanticModelBuildContext, PydanticModelVisitor
+from .pydantic_generator import (
+    PydanticModelBuildContext,
+    PydanticModelVisitor,
+    map_variable_scalar,
+)
 from .types import (
     AsyncGraphQLClient,
     QueryDocument,
@@ -291,17 +297,28 @@ class QueryDocumentParser:
         variables = []
         for var_def in operation.variable_definitions:
             var_name = var_def.variable.name.value
-            is_required, is_list, _ = self._unwrap_type(var_def.type)
+            var_type = type_from_ast(self._schema, var_def.type)
+            is_required, is_list, graphql_type = self._unwrap_type(var_type)
 
             default_value = None
             if var_def.default_value:
                 default_value = var_def.default_value
 
+            assert graphql_type is not None, (
+                f"Unable to resolve type for variable '${var_name}'"
+            )
+            logger.debug(
+                f"GraphQL Type for variable '${var_name}': {graphql_type} {type(graphql_type)}"
+            )
+            assert isinstance(graphql_type, GraphQLNamedType), (
+                f"Variable '${var_name}' type is not a named type"
+            )
+
             variables.append(
                 QueryDocumentVariable(
                     ast_node=var_def,
                     name=var_name,
-                    graphql_type=var_def.type,
+                    graphql_type=graphql_type,
                     is_required=is_required,
                     is_list=is_list,
                     default_value=default_value,
@@ -512,6 +529,7 @@ class QueryDocumentTraverser(TraverserProtocol):
 
     def _traverse_operation(self, operation: QueryDocumentOperation) -> VisitorControl:
         """Traverse a single operation."""
+        logger.debug(f"Traversing operation: {operation.name}")
         self._visited_fragments = set()
 
         # Enter the root object type
@@ -523,6 +541,11 @@ class QueryDocumentTraverser(TraverserProtocol):
         if control == VisitorControl.SKIP:
             return VisitorControl.CONTINUE
 
+        # Traverse the variables
+        control = self._traverse_variables(operation)
+
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
         # Visit children
         for child in operation.children:
             control = self._visit_selection(child)
@@ -533,6 +556,38 @@ class QueryDocumentTraverser(TraverserProtocol):
         return self._visitor.handle_leave_operation(
             operation=operation,
         )
+
+    def _traverse_variables(self, operation: QueryDocumentOperation) -> VisitorControl:
+        """Traverse variable definitions."""
+        logger.debug(f"Traversing variables for operation: {operation.name}")
+        control = self._visitor.handle_enter_variables(operation)
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
+        if control == VisitorControl.SKIP:
+            return VisitorControl.CONTINUE
+        control = self._traverse_variable_definitions(operation)
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
+        return self._visitor.handle_leave_variables(operation)
+
+    def _traverse_variable_definitions(
+        self, operation: QueryDocumentOperation
+    ) -> VisitorControl:
+        """Traverse variable definitions."""
+        for variable in operation.variables:
+            control = self._visitor.handle_enter_variable_definition(
+                operation, variable
+            )
+            if control == VisitorControl.STOP:
+                return VisitorControl.STOP
+            if control == VisitorControl.SKIP:
+                continue
+            control = self._visitor.handle_leave_variable_definition(
+                operation, variable
+            )
+            if control == VisitorControl.STOP:
+                return VisitorControl.STOP
+        return VisitorControl.CONTINUE
 
     def _traverse_fragment(self, fragment: QueryDocumentFragment) -> VisitorControl:
         """Traverse a fragment definition."""
@@ -680,7 +735,6 @@ class QueryCollectorVisitor(PydanticModelVisitor):
         # Initialize parent visitor with query-specific settings
         super().__init__(
             model_name="",  # Unused - contexts created during traversal
-            parent_type=query_type,
             max_depth=100,  # Queries need deeper traversal than mutations
             use_context_prefix=True,  # Prefix nested types with operation name
             ignore_unknown_types=ignore_unknown_types,
@@ -699,21 +753,9 @@ class QueryCollectorVisitor(PydanticModelVisitor):
         self, operation: QueryDocumentOperation
     ) -> VisitorControl:
         """Handle entering an operation definition."""
-        model_name = f"{operation.name}Response"
 
-        # Clear context stack for fresh depth counting
-        self._context_stack.clear()
-
-        # Push context for the root response model
-        # This ensures query fields (like 'item') become fields of the response model
-        ctx = PydanticModelBuildContext(
-            model_name=model_name,
-            parent_type=operation.root_type,
-            depth=0,
-            context_prefix=model_name if self._use_context_prefix else "",
-        )
-        self._context_stack.append(ctx)
-
+        logger.debug(f"Starting operation: {operation.name}")
+        self.start_context(operation.name)
         return VisitorControl.CONTINUE
 
     def handle_leave_operation(
@@ -721,20 +763,9 @@ class QueryCollectorVisitor(PydanticModelVisitor):
     ) -> VisitorControl:
         """Handle leaving an operation definition."""
         # Pop the root context and materialize the model
-        ctx = self._context_stack.pop()
-        payload_model = ctx.materialize()
-        self._type_registry[ctx.model_name] = payload_model
-
-        # Generate variable model (uses static method, not traversal)
-        variable_definitions = [v.ast_node for v in operation.variables]
-        if variable_definitions:
-            input_model = PydanticModelVisitor.generate_model_from_variables(
-                operation.name,
-                variable_definitions,
-                ignore_unknown_types=self._ignore_unknown_types,
-            )
-        else:
-            input_model = create_model(f"{operation.name}Variables")
+        logger.debug(f"Finishing operation: {operation.name}")
+        operation_name = self.finish_context()
+        payload_model = self.get_type(operation_name)
 
         # Build query string with inlined fragments
         query_string = self._build_query_string(operation, self._document)
@@ -746,12 +777,17 @@ class QueryCollectorVisitor(PydanticModelVisitor):
             "Payload model must be a subclass of BaseModel"
         )
 
+        input_model = self.get_type(f"{operation.name}Variables")
+        assert isinstance(input_model, type), "Input model must be a class"
+        assert issubclass(input_model, BaseModel), (
+            "Input model must be a subclass of BaseModel"
+        )
+
         # Create and collect QueryInfo
         query_info = QueryInfo(
             name=operation.name,
             description=None,
             query_string=query_string,
-            variable_definitions=variable_definitions,
             input_model=input_model,
             payload_model=payload_model,
             selection_set=operation.ast_node.selection_set,
@@ -760,14 +796,77 @@ class QueryCollectorVisitor(PydanticModelVisitor):
 
         return VisitorControl.CONTINUE
 
+    def handle_enter_variables(
+        self,
+        operation: QueryDocumentOperation,
+    ) -> VisitorControl:
+        """Handle entering a variable definition."""
+        # Generate variable model (uses static method, not traversal)
+
+        self.start_context(f"{operation.name}Variables", no_prefix=True)
+        logger.debug(f"Starting variable model context: {operation.name}Variables")
+
+        return VisitorControl.CONTINUE
+
+    def handle_leave_variables(
+        self,
+        operation: QueryDocumentOperation,
+    ) -> VisitorControl:
+        finished_model = self.finish_context()
+        logger.debug(f"Finished variable model: {finished_model}")
+        return VisitorControl.CONTINUE
+
+    def handle_enter_variable_definition(
+        self,
+        operation: QueryDocumentOperation,
+        variable: QueryDocumentVariable,
+    ) -> VisitorControl:
+        """Handle entering a variable definition."""
+        logger.debug(
+            f"Processing variable definition: {variable.name} of type {variable.graphql_type} (required={variable.is_required}, list={variable.is_list})"
+        )
+
+        # Add field to current context for this variable
+        var_name = variable.name
+        var_type = variable.graphql_type
+        is_required = variable.is_required
+        is_list = variable.is_list
+        current_context = self.require_context("add variable definition")
+
+        logger.debug(f"Context name {current_context.model_name}")
+        # TODO we need to handle input object types here as well
+
+        python_type = map_variable_scalar(var_type.name)
+        field_info = Field()
+        if is_list:
+            python_type = t.List[python_type]
+        if not is_required:
+            python_type = t.Optional[python_type]
+            field_info = Field(default=None)
+
+        current_context.add_field(
+            field_name=var_name,
+            python_type=python_type,
+            field_info=field_info,
+        )
+
+        logger.debug(f"Added variable field: {var_name} with type {python_type}")
+        return VisitorControl.CONTINUE
+
+    def handle_leave_variable_definition(
+        self,
+        operation: QueryDocumentOperation,
+        variable: QueryDocumentVariable,
+    ) -> VisitorControl:
+        """Handle leaving a variable definition."""
+        return VisitorControl.CONTINUE
+
     def handle_enter_fragment(self, fragment: QueryDocumentFragment) -> VisitorControl:
         """Handle entering a fragment definition."""
         model_name = f"{fragment.name}Response"
         ctx = PydanticModelBuildContext(
             model_name=model_name,
-            parent_type=fragment.type_condition,
             depth=0,
-            context_prefix=model_name if self._use_context_prefix else "",
         )
         self._context_stack.append(ctx)
         return VisitorControl.CONTINUE
