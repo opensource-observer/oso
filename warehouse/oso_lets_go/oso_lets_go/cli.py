@@ -6,6 +6,7 @@ import asyncio
 import getpass
 import json
 import logging
+import os
 import subprocess
 import sys
 import typing as t
@@ -66,6 +67,18 @@ CURR_DIR = os.path.dirname(__file__)
 OSO_SQLMESH_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../oso_sqlmesh"))
 REPO_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../../"))
 PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID", "opensource-observer")
+
+# Subcommands that modify database state (require initialization)
+MODIFY_SUBCOMMANDS = {"plan", "run", "apply", "test"}
+
+# SQLMesh flags that take values (for subcommand detection)
+FLAGS_WITH_VALUES = {
+    "--gateway", "-g",
+    "--config", "-c",
+    "--paths", "-p",
+    "--start", "--end",
+    "--log-file-dir",
+}
 
 
 @click.group()
@@ -627,6 +640,33 @@ async def run_cleanup(
         )
 
 
+def find_subcommand(args: list[str]) -> str | None:
+    """Find first sqlmesh subcommand, skipping any flags/options."""
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg.startswith("-"):
+            if "=" in arg:
+                i += 1
+            elif arg in FLAGS_WITH_VALUES:
+                i += 2
+            else:
+                i += 1
+            continue
+        return arg
+    return None
+
+
+def has_user_gateway(args: list[str]) -> bool:
+    """Check if user supplied --gateway/-g in any form."""
+    for arg in args:
+        if arg == "--gateway" or arg.startswith("--gateway="):
+            return True
+        if arg == "-g" or arg.startswith("-g="):
+            return True
+    return False
+
+
 @local.command(
     name="sqlmesh",
     context_settings=dict(ignore_unknown_options=True, allow_extra_args=True),
@@ -636,6 +676,9 @@ async def run_cleanup(
 @click.option("--redeploy-image/--no-redeploy-image", default=False)
 @click.option("--timeseries-start", default="2024-12-01")
 @click.option("--repo-dir", default=REPO_DIR)
+@click.option("--trino-docker/--no-trino-docker", default=False, help="Run against Trino in Docker Compose")
+@click.option("--initialize/--no-initialize", default=True, help="Seed database before running modify subcommands")
+@click.option("--keep-containers/--no-keep-containers", default=False, help="Keep Docker containers running after completion (requires --trino-docker)")
 @click.pass_context
 def local_sqlmesh(
     ctx: click.Context,
@@ -644,11 +687,38 @@ def local_sqlmesh(
     redeploy_image: bool,
     timeseries_start: str,
     repo_dir: str,
+    trino_docker: bool,
+    initialize: bool,
+    keep_containers: bool,
 ):
     """Proxy to the sqlmesh command that can be used against a local kind
     deployment or a local duckdb"""
 
+    # Validation: --keep-containers requires --trino-docker
+    if keep_containers and not trino_docker:
+        click.echo(
+            "ERROR: --keep-containers requires --trino-docker",
+            err=True
+        )
+        sys.exit(1)
+
+    extra_args = ctx.args if ctx.args else []
+
+    # Detect subcommand for initialization logic
+    subcommand = find_subcommand(extra_args)
+    click.echo(f"Detected subcommand: {subcommand or 'None'}", err=True)
+
+    # Determine if we should seed the database
+    should_seed = initialize and subcommand in MODIFY_SUBCOMMANDS
+
+    # Route to appropriate path
     if local_trino:
+        # Deprecated path: local-trino (kind cluster)
+        click.echo(
+            "WARNING: --local-trino is deprecated. Use --trino-docker for Docker Compose testing.",
+            err=True
+        )
+
         # If git has changes then log a warning
         logger.info("Checking for git changes")
         repo = git.Repo(repo_dir)  # '.' represents the current directory
@@ -669,10 +739,6 @@ def local_sqlmesh(
                 f"localhost:{local_registry_port}/oso",
                 "latest",
             )
-
-        extra_args = ctx.args
-        if not ctx.args:
-            extra_args = []
 
         # Open up a port to the trino deployment on the kind cluster
         kr8s_api = kr8s.api(context="kind-oso-local-test-cluster")
@@ -702,13 +768,86 @@ def local_sqlmesh(
                 },
                 check=True,
             )
+
+    elif trino_docker:
+        # New path: Trino in Docker Compose
+        if has_user_gateway(extra_args):
+            click.echo(
+                "ERROR: --trino-docker automatically sets --gateway local-trino-docker. "
+                "Do not specify --gateway manually.",
+                err=True
+            )
+            sys.exit(1)
+
+        # Only start Docker if we have a subcommand (not for --help)
+        if subcommand:
+            click.echo(f"Starting docker compose (warehouse/docker-compose.yml)", err=True)
+            compose_file = os.path.join(repo_dir, "warehouse/docker-compose.yml")
+            docker_client = DockerClient(compose_files=[compose_file])
+
+            try:
+                docker_client.compose.up(wait=True)
+
+                if should_seed:
+                    click.echo(f"Seeding database: trino", err=True)
+                    asyncio.run(db_seed("trino"))
+                else:
+                    click.echo("Skipping database seeding", err=True)
+
+                # Inject --gateway local-trino-docker
+                sqlmesh_args = ["sqlmesh", "--gateway", "local-trino-docker", *extra_args]
+                click.echo(f"Running: sqlmesh {' '.join(sqlmesh_args[1:])}", err=True)
+
+                subprocess.run(
+                    sqlmesh_args,
+                    cwd=os.path.join(repo_dir, "warehouse/oso_sqlmesh"),
+                    env={
+                        **os.environ,
+                        "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_trino_duckdb_path"],
+                        "SQLMESH_TRINO_HOST": "localhost",
+                        "SQLMESH_TRINO_PORT": os.environ.get("SQLMESH_TRINO_PORT", "8080"),
+                        "SQLMESH_TESTING_ENABLED": "1",
+                    },
+                    check=True,
+                )
+
+            finally:
+                if not keep_containers:
+                    docker_client.compose.down()
+                else:
+                    click.echo(
+                        "Keeping Docker containers running (--keep-containers flag set)",
+                        err=True
+                    )
+        else:
+            click.echo("Skipping docker compose (no subcommand detected)", err=True)
+            # Still run sqlmesh for --help etc
+            sqlmesh_args = ["sqlmesh", *extra_args]
+            click.echo(f"Running: sqlmesh {' '.join(sqlmesh_args[1:])}", err=True)
+            subprocess.run(
+                sqlmesh_args,
+                cwd=os.path.join(repo_dir, "warehouse/oso_sqlmesh"),
+                check=True,
+            )
+
     else:
+        # Default path: DuckDB
+        if should_seed:
+            click.echo(f"Seeding database: duckdb", err=True)
+            asyncio.run(db_seed("duckdb"))
+        else:
+            click.echo("Skipping database seeding", err=True)
+
+        sqlmesh_args = ["sqlmesh", *extra_args]
+        click.echo(f"Running: sqlmesh {' '.join(sqlmesh_args[1:])}", err=True)
+
         subprocess.run(
-            ["sqlmesh", *ctx.args],
+            sqlmesh_args,
             cwd=os.path.join(repo_dir, "warehouse/oso_sqlmesh"),
             env={
                 **os.environ,
                 "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],
+                "SQLMESH_TESTING_ENABLED": "1",
             },
             check=True,
         )
@@ -784,53 +923,46 @@ def reset(
     help="Keep Docker containers running after test completion",
 )
 def sqlmesh_test(ctx: click.Context, duckdb: bool, keep_containers: bool):
-    extra_args = ctx.args
-    if not ctx.args:
-        extra_args = []
-
-    if duckdb:
-        asyncio.run(db_seed("duckdb"))
-
-        subprocess.run(
-            ["sqlmesh", *extra_args],
-            cwd=os.path.join(REPO_DIR, "warehouse/oso_sqlmesh"),
-            env={
-                **os.environ,
-                "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],
-                "SQLMESH_TESTING_ENABLED": "1",
-            },
-            check=True,
-        )
+    # Allow suppression for CI/automation
+    if os.environ.get('OSO_SUPPRESS_DEPRECATION_WARNINGS') == '1':
+        pass
     else:
-        docker_client = DockerClient(
-            compose_files=[os.path.join(REPO_DIR, "warehouse/docker-compose.yml")]
+        click.secho(
+            "\nWARNING: 'oso local sqlmesh-test' is DEPRECATED",
+            fg='yellow',
+            bold=True,
+            err=True
         )
-        try:
-            docker_client.compose.up(wait=True)
+        click.secho(
+            "    This command will be removed in a future release.",
+            fg='yellow',
+            err=True
+        )
+        click.secho(
+            "    Use 'oso local sqlmesh' (DuckDB) or 'oso local sqlmesh --trino-docker' (Trino)\n",
+            fg='yellow',
+            err=True
+        )
 
-            asyncio.run(db_seed("trino"))
-
-            subprocess.run(
-                ["sqlmesh", "--gateway", "local-trino-docker", *extra_args],
-                # shell=True,
-                cwd=os.path.join(REPO_DIR, "warehouse/oso_sqlmesh"),
-                env={
-                    **os.environ,
-                    "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_trino_duckdb_path"],
-                    "SQLMESH_TRINO_HOST": "localhost",
-                    "SQLMESH_TRINO_PORT": os.environ.get("SQLMESH_TRINO_PORT", "8080"),
-                    "SQLMESH_TESTING_ENABLED": "1",
-                },
-                check=True,
-            )
-
-        finally:
-            if not keep_containers:
-                docker_client.compose.down()
-            else:
-                logger.info(
-                    "Keeping Docker containers running (--keep-containers flag set)"
-                )
+    # Build the delegation command
+    cmd = ["oso", "local", "sqlmesh"]
+    
+    if not duckdb:  # Default is Trino Docker
+        cmd.append("--trino-docker")
+    
+    # Always initialize for sqlmesh-test
+    cmd.append("--initialize")
+    
+    # Preserve --keep-containers behavior (only for Trino)
+    if keep_containers and not duckdb:
+        cmd.append("--keep-containers")
+    
+    # Append all passthrough args
+    if ctx.args:
+        cmd.extend(ctx.args)
+    
+    # Execute the delegation
+    subprocess.run(cmd, check=True)
 
 
 @local.command()

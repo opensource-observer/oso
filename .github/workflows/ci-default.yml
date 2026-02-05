@@ -135,13 +135,13 @@ jobs:
       - name: Test SQLMesh (DuckDB)
         working-directory: warehouse
         run: |
-          uv run oso local sqlmesh-test --duckdb plan dev --start '1 week' --end now --auto-apply
+           uv run oso local sqlmesh plan dev --start '1 week' --end now --auto-apply
         if: ${{ always() && matrix.component == 'sqlmesh' }}
 
       - name: Test SQLMesh (Docker)
         working-directory: warehouse
         run: |
-          uv run oso local sqlmesh-test plan dev --start '1 week' --end now --auto-apply
+           uv run oso local sqlmesh --trino-docker plan dev --start '1 week' --end now --auto-apply
         if: ${{ always() && matrix.component == 'sqlmesh-docker' }}
 
       # ─────────────────────────────────────────────────────────────────────

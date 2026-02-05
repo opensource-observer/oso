@@ -251,7 +251,7 @@ Then you should run the sqlmesh local test setup to get your local sqlmesh
 duckdb initialized with oso local seed data.
 
 ```bash
-uv run oso local sqlmesh-test --duckdb
+uv run oso local sqlmesh
 ```
 
 Now it should be possible run sqlmesh and dagster locally. When materializing

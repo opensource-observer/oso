@@ -36,7 +36,7 @@ git clone https://github.com/opensource-observer/oss-directory.git
 You should be able to run a `sqlmesh plan` successfully, eg:
 
 ```bash
-uv run oso local sqlmesh-test --duckdb plan dev --start '1 week' --end now
+uv run oso local sqlmesh plan dev --start '1 week' --end now
 ```
 
 ### Run Dagster locally

@@ -55,6 +55,9 @@ config = Config(
                 concurrent_tasks=1,
                 database=os.environ.get("SQLMESH_DUCKDB_LOCAL_PATH"),
             ),
+            variables={
+                "testing_enabled": constants.testing_enabled,
+            },
         ),
         # This is a local trino gateway that connects to a local trino deployed
         # onto a kind cluster. It also uses duckdb for state storage as opposed
@@ -77,6 +80,7 @@ config = Config(
             ),
             variables={
                 "oso_source_rewrite": LOCAL_TRINO_REWRITE_RULES,
+                "testing_enabled": constants.testing_enabled,
             },
         ),
         "local-trino-docker": GatewayConfig(
@@ -100,6 +104,7 @@ config = Config(
             ),
             variables={
                 "oso_source_rewrite": LOCAL_TRINO_DOCKER_REWRITE_RULES,
+                "testing_enabled": constants.testing_enabled,
             },
         ),
         "trino": GatewayConfig(

@@ -35,7 +35,7 @@ source ../../.venv/bin/activate
 Run sqlmesh with our test seed data:
 
 ```bash
-oso local sqlmesh-test --duckdb plan dev --start '1 week' --end now
+oso local sqlmesh plan dev --start '1 week' --end now
 ```
 
 _Note, the command above uses a wrapper `oso local sqlmesh` that will
@@ -133,6 +133,18 @@ cd warehouse/oso_sqlmesh
 sqlmesh plan
 ```
 
+### Deprecated Commands
+
+The following commands are deprecated and will be removed in a future release:
+
+| Deprecated Command | New Command |
+|-------------------|-------------|
+| `oso local sqlmesh-test --duckdb` | `oso local sqlmesh` |
+| `oso local sqlmesh-test` | `oso local sqlmesh --trino-docker` |
+| `oso local sqlmesh --local-trino` | `oso local sqlmesh --trino-docker` |
+
+**Note**: The `--local-trino` flag (Kind cluster) is deprecated. Use `--trino-docker` (Docker Compose) for local Trino testing.
+
 ## Running sqlmesh on a local Trino with docker-compose
 
 This is the recommended way to test on Trino.
@@ -154,7 +166,7 @@ In addition to having the normal dev tools for running the repo, you will also n
 Run sqlmesh with our test seed data:
 
 ```bash
-oso local sqlmesh-test plan dev --start '1 week' --end now
+oso local sqlmesh --trino-docker plan dev --start '1 week' --end now
 ```
 
 This command will handle the docker containers and seed data initialization before
@@ -175,7 +187,7 @@ This will open up a web server to interact with Trino directly at
 Then, you can run sqlmesh with the test seed data again without shutting down the docker containers.
 
 ```bash
-oso local sqlmesh-test plan dev --start '1 week' --end now --keep-containers
+oso local sqlmesh --trino-docker plan dev --start '1 week' --end now --keep-containers
 ```
 
 This is also a good way if you want to keep running sqlmesh on top of the same containers
@@ -186,6 +198,10 @@ oso local run-seed
 ```
 
 ## Running sqlmesh on a local Trino with Kind
+
+> **Deprecated**: The Kind cluster approach (`--local-trino`) is deprecated. 
+> We recommend using `--trino-docker` (Docker Compose) instead for simpler setup.
+> See the "Running with Trino Docker" section above.
 
 Be warned, running local trino with [kind](https://kind.sigs.k8s.io/)
 requires running kubernetes on your machine.
