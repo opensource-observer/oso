@@ -1312,8 +1312,10 @@ class OsoAppClient {
 
     const payload = data.syncDataConnection;
 
-    if (payload.success) {
-      logger.log(`Successfully created run to sync data connection "${id}"`);
+    if (!payload.success) {
+      throw new Error(
+        `Error syncing connector: ${payload.message || "Unknown error"}`,
+      );
     }
 
     return payload;
