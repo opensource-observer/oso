@@ -98,22 +98,17 @@ class OSOAsyncGraphQLClient(AsyncGraphQLClient):
         response = await self.http_client.post(
             self.endpoint, json=payload, headers=headers
         )
-        if response.status_code >= 400:
-            logger.error(
-                f"GraphQL request failed with status {response.status_code}: {response.text}"
-            )
-            # Collect errors from graphql response if available
-            try:
-                error_data = response.json()
-                if "errors" in error_data:
-                    logger.error(f"GraphQL errors: {error_data['errors']}")
-                    raise GraphQLError(
-                        f"GraphQL request failed with status {response.status_code} and errors {error_data.get('errors')}"
-                    )
-            except Exception as e:
-                logger.error(f"Failed to parse error response as JSON: {e}")
+
+        # Check for HTTP errors and GraphQL errors in the response
+        result = response.json()
+        if response.status_code >= 400 or "errors" in result:
+            # Handle errors
+            if "errors" in result:
+                raise GraphQLError(
+                    f"GraphQL request failed with status {response.status_code} and errors {result.get('errors')}"
+                )
             response.raise_for_status()
-        return response.json()
+        return result
 
 
 def default_http_client_factory(config: MCPConfig) -> GraphQLClientFactory:
