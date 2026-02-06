@@ -76,7 +76,6 @@ fragment NotebookFields on Notebook {
   orgId
   name
   description
-  data
   preview
   creatorId
   createdAt
