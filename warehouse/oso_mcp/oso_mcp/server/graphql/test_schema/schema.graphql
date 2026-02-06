@@ -92,7 +92,7 @@ type CreateItemPayload {
 input UpdateItemInput {
   id: ID!
   """
-  BOOPER
+  Should find me in tests
   """
   name: String
   description: String
