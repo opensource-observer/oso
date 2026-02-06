@@ -1,0 +1,320 @@
+test_int_artifacts_by_project_in_op_atlas_ossd_fallback:
+  model: oso.int_artifacts_by_project_in_op_atlas
+  inputs:
+    oso.stg_op_atlas_project:
+      columns:
+        atlas_id: varchar
+        open_source_observer_slug: varchar
+        twitter_url: varchar
+      rows:
+      - atlas_id: atlas_001
+        open_source_observer_slug: null
+        twitter_url: null
+    oso.stg_op_atlas_project_website:
+      columns:
+        atlas_id: varchar
+        website_url: varchar
+      rows: []
+    oso.stg_op_atlas_project_farcaster:
+      columns:
+        atlas_id: varchar
+        farcaster_url: varchar
+      rows: []
+    oso.seed_op_atlas_registry_updates:
+      columns:
+        atlas_id: varchar
+        value: varchar
+        action: varchar
+        artifact_type: varchar
+      rows: []
+    oso.stg_op_atlas_project_repository:
+      columns:
+        atlas_id: varchar
+        repository_url: varchar
+      rows:
+      - atlas_id: atlas_001
+        repository_url: https://github.com/testorg/testrepo
+    oso.int_artifacts__github:
+      columns:
+        artifact_url: varchar
+        artifact_source_id: varchar
+      rows: []
+    oso.int_repositories__ossd:
+      columns:
+        artifact_source_id: varchar
+        artifact_namespace: varchar
+        artifact_name: varchar
+      rows:
+      - artifact_source_id: ossd_id_100
+        artifact_namespace: testorg
+        artifact_name: testrepo
+    oso.int_op_atlas_deduped_deployers:
+      columns:
+        atlas_id: varchar
+        chain_id: bigint
+        deployer_address: varchar
+        contract_address: varchar
+      rows: []
+    oso.seed_chain_id_to_chain_name:
+      columns:
+        chain_id: bigint
+        chain_name: varchar
+      rows: []
+    oso.stg_op_atlas_published_contract:
+      columns:
+        atlas_id: varchar
+        chain_id: bigint
+        contract_address: varchar
+      rows: []
+    oso.stg_op_atlas_project_defillama:
+      columns:
+        atlas_id: varchar
+        defillama_slug: varchar
+      rows: []
+    oso.int_defillama_protocols:
+      columns:
+        parent_protocol: varchar
+        url: varchar
+      rows: []
+    oso.int_projects:
+      columns:
+        project_id: varchar
+        project_source: varchar
+        project_name: varchar
+      rows: []
+    oso.int_artifacts_by_project_in_ossd:
+      columns:
+        project_id: varchar
+        artifact_source_id: varchar
+        artifact_source: varchar
+        artifact_namespace: varchar
+        artifact_name: varchar
+        artifact_url: varchar
+        artifact_type: varchar
+      rows: []
+  outputs:
+    query:
+      partial: true
+      rows:
+      - artifact_source_id: ossd_id_100
+        artifact_namespace: testorg
+        artifact_name: testrepo
+test_int_artifacts_by_project_in_op_atlas_gharchive_only:
+  model: oso.int_artifacts_by_project_in_op_atlas
+  inputs:
+    oso.stg_op_atlas_project:
+      columns:
+        atlas_id: varchar
+        open_source_observer_slug: varchar
+        twitter_url: varchar
+      rows:
+      - atlas_id: atlas_002
+        open_source_observer_slug: null
+        twitter_url: null
+    oso.stg_op_atlas_project_website:
+      columns:
+        atlas_id: varchar
+        website_url: varchar
+      rows: []
+    oso.stg_op_atlas_project_farcaster:
+      columns:
+        atlas_id: varchar
+        farcaster_url: varchar
+      rows: []
+    oso.seed_op_atlas_registry_updates:
+      columns:
+        atlas_id: varchar
+        value: varchar
+        action: varchar
+        artifact_type: varchar
+      rows: []
+    oso.stg_op_atlas_project_repository:
+      columns:
+        atlas_id: varchar
+        repository_url: varchar
+      rows:
+      - atlas_id: atlas_002
+        repository_url: https://github.com/orga/repoa
+    oso.int_artifacts__github:
+      columns:
+        artifact_source_id: varchar
+        artifact_id: varchar
+        artifact_namespace: varchar
+        artifact_name: varchar
+        artifact_type: varchar
+        artifact_url: varchar
+      rows:
+      - artifact_source_id: gharchive_id_200
+        artifact_id: aid_200
+        artifact_namespace: orga
+        artifact_name: repoa
+        artifact_type: REPOSITORY
+        artifact_url: https://github.com/orga/repoa
+    oso.int_repositories__ossd:
+      columns:
+        artifact_source_id: varchar
+        artifact_namespace: varchar
+        artifact_name: varchar
+      rows: []
+    oso.int_op_atlas_deduped_deployers:
+      columns:
+        atlas_id: varchar
+        chain_id: bigint
+        deployer_address: varchar
+        contract_address: varchar
+      rows: []
+    oso.seed_chain_id_to_chain_name:
+      columns:
+        chain_id: bigint
+        chain_name: varchar
+      rows: []
+    oso.stg_op_atlas_published_contract:
+      columns:
+        atlas_id: varchar
+        chain_id: bigint
+        contract_address: varchar
+      rows: []
+    oso.stg_op_atlas_project_defillama:
+      columns:
+        atlas_id: varchar
+        defillama_slug: varchar
+      rows: []
+    oso.int_defillama_protocols:
+      columns:
+        parent_protocol: varchar
+        url: varchar
+      rows: []
+    oso.int_projects:
+      columns:
+        project_id: varchar
+        project_source: varchar
+        project_name: varchar
+      rows: []
+    oso.int_artifacts_by_project_in_ossd:
+      columns:
+        project_id: varchar
+        artifact_source_id: varchar
+        artifact_source: varchar
+        artifact_namespace: varchar
+        artifact_name: varchar
+        artifact_url: varchar
+        artifact_type: varchar
+      rows: []
+  outputs:
+    query:
+      partial: true
+      rows:
+      - artifact_source_id: gharchive_id_200
+        artifact_namespace: orga
+        artifact_name: repoa
+test_int_artifacts_by_project_in_op_atlas_ossd_preferred:
+  model: oso.int_artifacts_by_project_in_op_atlas
+  inputs:
+    oso.stg_op_atlas_project:
+      columns:
+        atlas_id: varchar
+        open_source_observer_slug: varchar
+        twitter_url: varchar
+      rows:
+      - atlas_id: atlas_003
+        open_source_observer_slug: null
+        twitter_url: null
+    oso.stg_op_atlas_project_website:
+      columns:
+        atlas_id: varchar
+        website_url: varchar
+      rows: []
+    oso.stg_op_atlas_project_farcaster:
+      columns:
+        atlas_id: varchar
+        farcaster_url: varchar
+      rows: []
+    oso.seed_op_atlas_registry_updates:
+      columns:
+        atlas_id: varchar
+        value: varchar
+        action: varchar
+        artifact_type: varchar
+      rows: []
+    oso.stg_op_atlas_project_repository:
+      columns:
+        atlas_id: varchar
+        repository_url: varchar
+      rows:
+      - atlas_id: atlas_003
+        repository_url: https://github.com/bothorg/bothrepo
+    oso.int_artifacts__github:
+      columns:
+        artifact_source_id: varchar
+        artifact_id: varchar
+        artifact_namespace: varchar
+        artifact_name: varchar
+        artifact_type: varchar
+        artifact_url: varchar
+      rows:
+      - artifact_source_id: gharchive_id_300
+        artifact_id: aid_300
+        artifact_namespace: bothorg
+        artifact_name: bothrepo
+        artifact_type: REPOSITORY
+        artifact_url: https://github.com/bothorg/bothrepo
+    oso.int_repositories__ossd:
+      columns:
+        artifact_source_id: varchar
+        artifact_namespace: varchar
+        artifact_name: varchar
+      rows:
+      - artifact_source_id: ossd_id_300
+        artifact_namespace: bothorg
+        artifact_name: bothrepo
+    oso.int_op_atlas_deduped_deployers:
+      columns:
+        atlas_id: varchar
+        chain_id: bigint
+        deployer_address: varchar
+        contract_address: varchar
+      rows: []
+    oso.seed_chain_id_to_chain_name:
+      columns:
+        chain_id: bigint
+        chain_name: varchar
+      rows: []
+    oso.stg_op_atlas_published_contract:
+      columns:
+        atlas_id: varchar
+        chain_id: bigint
+        contract_address: varchar
+      rows: []
+    oso.stg_op_atlas_project_defillama:
+      columns:
+        atlas_id: varchar
+        defillama_slug: varchar
+      rows: []
+    oso.int_defillama_protocols:
+      columns:
+        parent_protocol: varchar
+        url: varchar
+      rows: []
+    oso.int_projects:
+      columns:
+        project_id: varchar
+        project_source: varchar
+        project_name: varchar
+      rows: []
+    oso.int_artifacts_by_project_in_ossd:
+      columns:
+        project_id: varchar
+        artifact_source_id: varchar
+        artifact_source: varchar
+        artifact_namespace: varchar
+        artifact_name: varchar
+        artifact_url: varchar
+        artifact_type: varchar
+      rows: []
+  outputs:
+    query:
+      partial: true
+      rows:
+      - artifact_source_id: ossd_id_300
+        artifact_namespace: bothorg
+        artifact_name: bothrepo
