@@ -369,21 +369,32 @@ class GraphQLExecutor:
 
         # Get the inner payload model specific to this mutation (we need to get
         # it based on the name of the mutation)
-        # payload_model_fields = self.mutation.payload_model.model_fields.get(
-        #     self.mutation.name
-        # )
-        # logger.debug(f"Payload model fields for mutation {self.mutation.name}: {self.mutation.payload_model.model_fields}")
-        # assert payload_model_fields is not None, (
-        #     f"Expected payload model to have a field for the mutation name {self.mutation.name}"
-        # )
-        # inner_payload_model = payload_model_fields.annotation
-        # assert isinstance(inner_payload_model, type) and issubclass(
-        #     inner_payload_model, BaseModel
-        # ), "Expected inner payload model to be a Pydantic model"
-
-        fields = self._build_field_selection(
-            self.mutation.payload_model, indent_level=2
+        payload_model_fields = self.mutation.payload_model.model_fields.get(
+            self.mutation.name
         )
+        logger.debug(
+            f"Payload model fields for mutation {self.mutation.name}: {self.mutation.payload_model.model_fields}"
+        )
+        assert payload_model_fields is not None, (
+            f"Expected payload model to have a field for the mutation name {self.mutation.name}"
+        )
+        inner_payload_model = payload_model_fields.annotation
+
+        if isinstance(inner_payload_model, type) and issubclass(
+            inner_payload_model, BaseModel
+        ):
+            logger.debug(
+                f"Inner payload model fields: {inner_payload_model.model_fields}"
+            )
+            fields = self._build_field_selection(
+                self.mutation.payload_model, indent_level=2
+            )
+            selection = f"{{ \n{fields}\n  }}"
+        else:
+            logger.debug(
+                "Inner payload model is not a Model and is assumed to be a scalar or enum type"
+            )
+            selection = ""
 
         # Generate the argument line for the mutation (e.g. $input: InputType!)
         # by iterating over the mutation's arguments
@@ -406,13 +417,9 @@ class GraphQLExecutor:
         input_args = "".join(input_pairs).rstrip(", ")
         variable_args = "".join(variable_pairs).rstrip(", ")
 
-        # selection = f"{{ \n{fields}\n  }}"
-
         query = f"""
 mutation {self.mutation.name}({variable_args}) {{
-  {self.mutation.name}({input_args}) {{
-{fields}
-  }}
+  {self.mutation.name}({input_args}) {selection}
 }}
 """.strip()
 
