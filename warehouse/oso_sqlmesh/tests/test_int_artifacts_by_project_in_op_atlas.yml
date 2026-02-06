@@ -1,0 +1,156 @@
+# Tests for int_artifacts_by_project_in_op_atlas
+# Validates artifact_source_id COALESCE: OSSD > gharchive
+
+test_int_artifacts_by_project_in_op_atlas_ossd_fallback:
+  # When int_artifacts__github has no match but int_repositories__ossd does,
+  # artifact_source_id should come from OSSD
+  model: oso.int_artifacts_by_project_in_op_atlas
+  inputs:
+    oso.stg_op_atlas_project:
+      rows:
+        - atlas_id: "atlas_001"
+          open_source_observer_slug: null
+          twitter_url: null
+    oso.stg_op_atlas_project_website:
+      rows: []
+    oso.stg_op_atlas_project_farcaster:
+      rows: []
+    oso.seed_op_atlas_registry_updates:
+      rows: []
+    oso.stg_op_atlas_project_repository:
+      rows:
+        - atlas_id: "atlas_001"
+          repository_url: "https://github.com/testorg/testrepo"
+    oso.int_artifacts__github:
+      rows: []
+    oso.int_repositories__ossd:
+      rows:
+        - artifact_source_id: "ossd_id_100"
+          artifact_namespace: "testorg"
+          artifact_name: "testrepo"
+    oso.int_op_atlas_deduped_deployers:
+      rows: []
+    oso.seed_chain_id_to_chain_name:
+      rows: []
+    oso.stg_op_atlas_published_contract:
+      rows: []
+    oso.stg_op_atlas_project_defillama:
+      rows: []
+    oso.int_defillama_protocols:
+      rows: []
+    oso.int_projects:
+      rows: []
+    oso.int_artifacts_by_project_in_ossd:
+      rows: []
+  outputs:
+    query:
+      partial: true
+      rows:
+        - artifact_source_id: "ossd_id_100"
+          artifact_namespace: "testorg"
+          artifact_name: "testrepo"
+
+test_int_artifacts_by_project_in_op_atlas_gharchive_only:
+  # When only int_artifacts__github has the ID, use it
+  model: oso.int_artifacts_by_project_in_op_atlas
+  inputs:
+    oso.stg_op_atlas_project:
+      rows:
+        - atlas_id: "atlas_002"
+          open_source_observer_slug: null
+          twitter_url: null
+    oso.stg_op_atlas_project_website:
+      rows: []
+    oso.stg_op_atlas_project_farcaster:
+      rows: []
+    oso.seed_op_atlas_registry_updates:
+      rows: []
+    oso.stg_op_atlas_project_repository:
+      rows:
+        - atlas_id: "atlas_002"
+          repository_url: "https://github.com/orga/repoa"
+    oso.int_artifacts__github:
+      rows:
+        - artifact_source_id: "gharchive_id_200"
+          artifact_id: "aid_200"
+          artifact_namespace: "orga"
+          artifact_name: "repoa"
+          artifact_type: "REPOSITORY"
+          artifact_url: "https://github.com/orga/repoa"
+    oso.int_repositories__ossd:
+      rows: []
+    oso.int_op_atlas_deduped_deployers:
+      rows: []
+    oso.seed_chain_id_to_chain_name:
+      rows: []
+    oso.stg_op_atlas_published_contract:
+      rows: []
+    oso.stg_op_atlas_project_defillama:
+      rows: []
+    oso.int_defillama_protocols:
+      rows: []
+    oso.int_projects:
+      rows: []
+    oso.int_artifacts_by_project_in_ossd:
+      rows: []
+  outputs:
+    query:
+      partial: true
+      rows:
+        - artifact_source_id: "gharchive_id_200"
+          artifact_namespace: "orga"
+          artifact_name: "repoa"
+
+test_int_artifacts_by_project_in_op_atlas_ossd_preferred:
+  # When both sources have a match, OSSD takes priority
+  model: oso.int_artifacts_by_project_in_op_atlas
+  inputs:
+    oso.stg_op_atlas_project:
+      rows:
+        - atlas_id: "atlas_003"
+          open_source_observer_slug: null
+          twitter_url: null
+    oso.stg_op_atlas_project_website:
+      rows: []
+    oso.stg_op_atlas_project_farcaster:
+      rows: []
+    oso.seed_op_atlas_registry_updates:
+      rows: []
+    oso.stg_op_atlas_project_repository:
+      rows:
+        - atlas_id: "atlas_003"
+          repository_url: "https://github.com/bothorg/bothrepo"
+    oso.int_artifacts__github:
+      rows:
+        - artifact_source_id: "gharchive_id_300"
+          artifact_id: "aid_300"
+          artifact_namespace: "bothorg"
+          artifact_name: "bothrepo"
+          artifact_type: "REPOSITORY"
+          artifact_url: "https://github.com/bothorg/bothrepo"
+    oso.int_repositories__ossd:
+      rows:
+        - artifact_source_id: "ossd_id_300"
+          artifact_namespace: "bothorg"
+          artifact_name: "bothrepo"
+    oso.int_op_atlas_deduped_deployers:
+      rows: []
+    oso.seed_chain_id_to_chain_name:
+      rows: []
+    oso.stg_op_atlas_published_contract:
+      rows: []
+    oso.stg_op_atlas_project_defillama:
+      rows: []
+    oso.int_defillama_protocols:
+      rows: []
+    oso.int_projects:
+      rows: []
+    oso.int_artifacts_by_project_in_ossd:
+      rows: []
+  outputs:
+    query:
+      partial: true
+      rows:
+        - artifact_source_id: "ossd_id_300"
+          artifact_namespace: "bothorg"
+          artifact_name: "bothrepo"
