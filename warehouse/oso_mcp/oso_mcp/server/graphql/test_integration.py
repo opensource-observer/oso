@@ -444,3 +444,82 @@ async def test_query_tool_generation(
                 assert field in node
 
         assert item_data["item"]["source"]["id"] == "warehouse-789"
+
+
+@pytest.mark.asyncio
+async def test_delete_item_returns_scalar_value(
+    mcp_config: MCPConfig,
+    mock_http_client_factory: GraphQLClientFactory,
+    mock_http_client: t.Any,
+):
+    """Test that deleteItem mutation returns a proper scalar Boolean value."""
+
+    # Update mock to return scalar boolean response
+    async def mock_post_delete(url, json=None, **kwargs):
+        mock_http_client.requests.append(
+            {
+                "url": url,
+                "json": json,
+                "kwargs": kwargs,
+            }
+        )
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {"data": {"deleteItem": True}}
+        return mock_response
+
+    mock_http_client.post = mock_post_delete
+
+    # Create MCP server
+    mcp = FastMCP("Test Server")
+
+    generate_from_schema(
+        schema_path=TEST_SCHEMA_PATH,
+        mcp=mcp,
+        config=mcp_config,
+        filters=[],
+        graphql_client_factory=mock_http_client_factory,
+    )
+
+    # Create client
+    client = Client(mcp)
+
+    async with client:
+        # List available tools to verify deleteItem is registered
+        tools = await client.list_tools()
+        tool_names = [tool.name for tool in tools]
+        assert "deleteItem" in tool_names
+
+        # Call the deleteItem tool
+        result = await client.call_tool(
+            name="deleteItem",
+            arguments={
+                "input": {"id": "item-to-delete-123"},
+            },
+        )
+
+        # Verify the GraphQL request was made
+        assert len(mock_http_client.requests) == 1
+        request = mock_http_client.requests[0]
+
+        # Verify endpoint
+        assert request["url"] == "https://api.example.com/graphql"
+
+        # Verify request structure
+        assert "query" in request["json"]
+        assert "variables" in request["json"]
+
+        # Verify the mutation query contains deleteItem
+        assert "deleteItem" in request["json"]["query"]
+
+        # Verify the variable contains the ID
+        assert request["json"]["variables"]["id"] == "item-to-delete-123"
+
+        # Verify result contains the scalar boolean value
+        assert len(result.content) > 0
+
+        # Parse the result and verify it's a boolean
+        result_data = json.loads(result.content[0].model_dump()["text"])
+        assert result_data["deleteItem"] is True
