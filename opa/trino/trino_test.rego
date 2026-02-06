@@ -183,6 +183,30 @@ test_rw_user_can_write_to_user_shared_catalog if {
 			}},
 		},
 	}
+	trino.allow with input as {
+		"action": {
+			"operation": "AccessCatalog",
+			"resource": {"catalog": {"name": "user_shared"}},
+		},
+		"context": {"identity": {
+			"groups": [],
+			"user": "rw-orgname-orgid",
+		}},
+	}
+	trino.allow with input as {
+		"action": {
+			"operation": "SelectFromColumns",
+			"resource": {"table": {
+				"catalogName": "user_shared",
+				"columns": ["table_schema", "table_catalog", "table_name", "table_type"],
+				"schemaName": "information_schema", "tableName": "tables",
+			}},
+		},
+		"context": {"identity": {
+			"groups": [],
+			"user": "rw-orgname-orgid",
+		}},
+	}
 }
 
 test_rw_user_denied_write_to_wrong_catalog if {
@@ -231,6 +255,20 @@ test_rw_user_denied_write_to_wrong_schema if {
 			}},
 		},
 	}
+	not trino.allow with input as {
+		"context": {
+			"identity": {"user": "rw-orgname-orgid"},
+			"softwareStack": {"trinoVersion": "434"},
+		},
+		"action": {
+			"operation": "CreateTable",
+			"resource": {"table": {
+				"catalogName": "user_shared",
+				"schemaName": "random_schema",
+				"tableName": "new_table",
+			}},
+		},
+	}	
 	not trino.allow with input as {
 		"context": {
 			"identity": {"user": "rw-orgname-orgid"},

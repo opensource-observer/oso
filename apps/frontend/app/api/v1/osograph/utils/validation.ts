@@ -292,12 +292,16 @@ export const CreateDataConnectionSchema = z.discriminatedUnion("type", [
     type: z.literal("GSHEETS").transform(() => "gsheets" as ConnectorType),
     config: z
       .object({
-        "metadata-sheet-id": z.string().regex(DYNAMIC_CONNECTOR_VALUES_REGEX),
+        "gsheets.metadata-sheet-id": z
+          .string()
+          .regex(DYNAMIC_CONNECTOR_VALUES_REGEX),
       })
       .strict(),
     credentials: z
       .object({
-        "credentials-key": z.string().regex(DYNAMIC_CONNECTOR_VALUES_REGEX),
+        "gsheets.credentials-key": z
+          .string()
+          .regex(DYNAMIC_CONNECTOR_VALUES_REGEX),
       })
       .strict(),
   }),
@@ -306,12 +310,14 @@ export const CreateDataConnectionSchema = z.discriminatedUnion("type", [
     type: z.literal("BIGQUERY").transform(() => "bigquery" as ConnectorType),
     config: z
       .object({
-        "project-id": z.string().regex(DYNAMIC_CONNECTOR_VALUES_REGEX),
+        "bigquery.project-id": z.string().regex(DYNAMIC_CONNECTOR_VALUES_REGEX),
       })
       .strict(),
     credentials: z
       .object({
-        "credentials-key": z.string().regex(DYNAMIC_CONNECTOR_VALUES_REGEX),
+        "bigquery.credentials-key": z
+          .string()
+          .regex(DYNAMIC_CONNECTOR_VALUES_REGEX),
       })
       .strict(),
   }),

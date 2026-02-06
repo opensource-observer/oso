@@ -59,14 +59,26 @@ is_org_catalog if {
 	))
 }
 
-default is_org_schema := false
+default is_user_shared_access := false
 
-is_org_schema if {
+is_user_shared_access if {
 	current_catalog_name == "user_shared"
-	startswith(current_schema_name, concat(
-		"",
-		["org_", parsed_user.org_id],
-	))
+	not current_schema_name
+}
+
+is_user_shared_access if {
+	current_catalog_name == "user_shared"
+	current_schema_name == "information_schema"
+}
+
+default is_user_shared_schema := false
+
+is_user_shared_schema if {
+	current_catalog_name == "user_shared"
+	startswith(
+		current_schema_name,
+		concat("", ["org_", parsed_user.org_id]),
+	)
 }
 
 default is_public_catalog := false
@@ -99,7 +111,8 @@ allow if {
 	# Org schemas are in the format: org_{org_id}__{dataset_id}
 	some x in [
 		is_org_catalog,
-		is_org_schema,
+		is_user_shared_access,
+		is_user_shared_schema,
 		is_public_catalog,
 	]
 	x
@@ -116,31 +129,11 @@ allow if {
 
 	# any action allowed
 
-	current_catalog_name == "user_shared" # Write users can only write to user_shared catalog
-	is_org_schema # Ensure schema belongs to the org
+	is_user_shared_schema # Ensure schema belongs to the org
 }
+
 # For writes, we need to query the system catalog.
 allow if {
 	read_and_write_user(parsed_user)
 	current_catalog_name == "system"
-}
-
-# FOR BACKWARDS COMPATIBILITY ONLY
-# When trying to query a private catalog
-allow if {
-	startswith(user, "jwt-")
-	org_id := substring(user, count("jwt-"), -1)
-
-	org_id # Ensure org_id is not empty
-	current_catalog_name # Ensure current_catalog_name is not empty
-
-	# Allow if catalog belongs to the org or is a public catalog
-	is_org_catalog := startswith(current_catalog_name, concat("", [org_id, "__"]))
-	is_public_catalog := current_catalog_name in {"iceberg", "user_shared"}
-
-	some x in [
-		is_org_catalog,
-		is_public_catalog,
-	]
-	x
 }

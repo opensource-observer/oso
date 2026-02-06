@@ -1549,7 +1549,9 @@ export type DataConnectionAlias = {
   datasetId: Scalars["ID"]["output"];
   id: Scalars["ID"]["output"];
   materializations: MaterializationConnection;
+  modelContext?: Maybe<ModelContext>;
   orgId: Scalars["ID"]["output"];
+  previewData: Array<Scalars["JSON"]["output"]>;
   schema: Scalars["String"]["output"];
 };
 
@@ -1559,6 +1561,14 @@ export type DataConnectionAliasMaterializationsArgs = {
   single?: InputMaybe<Scalars["Boolean"]["input"]>;
   tableName: Scalars["String"]["input"];
   where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type DataConnectionAliasModelContextArgs = {
+  tableName: Scalars["String"]["input"];
+};
+
+export type DataConnectionAliasPreviewDataArgs = {
+  tableName: Scalars["String"]["input"];
 };
 
 export type DataConnectionConnection = {
@@ -1623,6 +1633,7 @@ export type DataIngestion = {
   materializations: MaterializationConnection;
   modelContext?: Maybe<ModelContext>;
   orgId: Scalars["ID"]["output"];
+  previewData: Array<Scalars["JSON"]["output"]>;
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
@@ -1635,6 +1646,10 @@ export type DataIngestionMaterializationsArgs = {
 };
 
 export type DataIngestionModelContextArgs = {
+  tableName: Scalars["String"]["input"];
+};
+
+export type DataIngestionPreviewDataArgs = {
   tableName: Scalars["String"]["input"];
 };
 
@@ -1682,6 +1697,7 @@ export type DataModel = {
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
+  previewData: Array<Scalars["JSON"]["output"]>;
   releases: DataModelReleaseConnection;
   revisions: DataModelRevisionConnection;
   runs: RunConnection;
@@ -3682,7 +3698,7 @@ export type Mutation = {
   stopRunningSchedule: ScheduleMutationResult;
   /** Disable a sensor from launching runs for a job. */
   stopSensor: StopSensorMutationResultOrError;
-  syncDataConnection: SimplePayload;
+  syncDataConnection: SyncDataConnectionPayload;
   /** Terminates a run. */
   terminatePipelineExecution: TerminateRunResult;
   /** Terminates a run. */
@@ -8448,6 +8464,7 @@ export type StaticModel = {
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
+  previewData: Array<Scalars["JSON"]["output"]>;
   runs: RunConnection;
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
@@ -9287,6 +9304,20 @@ export type DeleteDataConnectionMutation = {
   };
 };
 
+export type SyncDataConnectionMutationVariables = Exact<{
+  id: Scalars["ID"]["input"];
+}>;
+
+export type SyncDataConnectionMutation = {
+  __typename?: "Mutation";
+  syncDataConnection: {
+    __typename?: "SyncDataConnectionPayload";
+    success: boolean;
+    message?: string | null;
+    run: { __typename?: "Run"; id: string };
+  };
+};
+
 export type SavePreviewMutationVariables = Exact<{
   input: SaveNotebookPreviewInput;
 }>;
@@ -9983,6 +10014,65 @@ export const DeleteDataConnectionDocument = {
 } as unknown as DocumentNode<
   DeleteDataConnectionMutation,
   DeleteDataConnectionMutationVariables
+>;
+export const SyncDataConnectionDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "SyncDataConnection" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "ID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "syncDataConnection" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "id" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "run" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  SyncDataConnectionMutation,
+  SyncDataConnectionMutationVariables
 >;
 export const SavePreviewDocument = {
   kind: "Document",
