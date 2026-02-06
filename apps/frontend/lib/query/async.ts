@@ -25,11 +25,7 @@ import { copyFile, fileExists, getSignedUrl } from "@/lib/clients/gcs";
 import { assertNever } from "@opensource-observer/utils";
 import { hashObject } from "@/lib/utils-server";
 
-import {
-  ASYNC_QUERY_BUCKET,
-  ORG_CACHE_BUCKET,
-  PUBLIC_CACHE_BUCKET,
-} from "@/lib/config";
+import { ASYNC_QUERY_BUCKET, ORG_CACHE_BUCKET } from "@/lib/config";
 import { getFromRunMetadata } from "@/lib/runs/utils";
 import { validStatusCodeOr500 } from "@/lib/utils/status-codes";
 import { ErrorDetailsSchema } from "@/app/api/v1/osograph/utils/validation";
@@ -67,22 +63,7 @@ export async function makeAsyncSqlQuery({
 }: AsyncSqlQueryOptions): Promise<NextResponse> {
   logger.info(`Starting async SQL query: ${query}`);
 
-  // First try to serve from a public cache (anon is okay)
   const queryKey = hashObject({ query });
-
-  try {
-    if (await fileExists(PUBLIC_CACHE_BUCKET, queryKey)) {
-      logger.log(`makeAsyncSqlQuery: Public cache hit, short-circuiting`);
-      const cachedUrl = await getSignedUrl(PUBLIC_CACHE_BUCKET, queryKey);
-      return NextResponse.json({
-        id: queryKey,
-        status: "completed",
-        url: cachedUrl,
-      });
-    }
-  } catch (error) {
-    logger.log(`makeAsyncSqlQuery: No public cache hit, ${error}`);
-  }
 
   const user = await getOrgUser(request);
   const tracker = trackServerEvent(user);
@@ -129,17 +110,6 @@ export async function makeAsyncSqlQuery({
         const cachedUrl = await getSignedUrl(
           ORG_CACHE_BUCKET,
           `${user.orgName}/${queryKey}`,
-        );
-
-        await copyFile(
-          {
-            bucketName: ORG_CACHE_BUCKET,
-            fileName: `${user.orgName}/${queryKey}`,
-          },
-          {
-            bucketName: PUBLIC_CACHE_BUCKET,
-            fileName: queryKey,
-          },
         );
 
         return NextResponse.json({
