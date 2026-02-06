@@ -386,9 +386,7 @@ class GraphQLExecutor:
             logger.debug(
                 f"Inner payload model fields: {inner_payload_model.model_fields}"
             )
-            fields = self._build_field_selection(
-                self.mutation.payload_model, indent_level=2
-            )
+            fields = self._build_field_selection(inner_payload_model, indent_level=2)
             selection = f"{{ \n{fields}\n  }}"
         else:
             logger.debug(
