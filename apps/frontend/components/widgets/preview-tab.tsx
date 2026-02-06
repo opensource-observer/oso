@@ -254,16 +254,6 @@ const PreviewTabMeta: CodeComponentMeta<PreviewTabProps> = {
   name: "PreviewTab",
   description: "Display preview data for models in a card (max 25 rows)",
   props: {
-    modelType: {
-      type: "choice",
-      options: [
-        "USER_MODEL",
-        "STATIC_MODEL",
-        "DATA_INGESTION",
-        "DATA_CONNECTION_ALIAS",
-      ],
-      displayName: "Model Type",
-    },
     datasetId: {
       type: "string",
       displayName: "Dataset ID",
@@ -274,6 +264,7 @@ const PreviewTabMeta: CodeComponentMeta<PreviewTabProps> = {
       displayName: "Model ID",
       description:
         "Model for USER_MODEL and STATIC_MODEL, Table name for DATA_INGESTION and DATA_CONNECTION_ALIAS",
+      required: true,
     },
     useTestData: {
       type: "boolean",
