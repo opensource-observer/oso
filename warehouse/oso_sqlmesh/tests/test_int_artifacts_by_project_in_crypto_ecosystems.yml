@@ -41,11 +41,15 @@ test_int_artifacts_by_project_in_crypto_ecosystems_gharchive_only:
       rows:
         - artifact_source_id: "gharchive_id_456"
           artifact_id: "aid_456"
-          artifact_namespace: "orga"
-          artifact_name: "repoa"
+          artifact_namespace: "orgA"
+          artifact_name: "repoA"
           artifact_type: "REPOSITORY"
-          artifact_url: "https://github.com/orga/repoa"
+          artifact_url: "https://github.com/orgA/repoA"
     oso.int_repositories__ossd:
+      columns:
+        artifact_source_id: varchar
+        artifact_namespace: varchar
+        artifact_name: varchar
       rows: []
   outputs:
     query:
