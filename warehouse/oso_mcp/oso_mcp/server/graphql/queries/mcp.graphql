@@ -127,6 +127,10 @@ query ListTablesForDataset($datasetName: String!) {
   }
 }
 
+# List the runs for a given dataset, with optional filtering and pagination. The
+# where parameter accepts a JSON object with field-level filtering. However, the
+# fields should use snake_case due to how the filtering is implemented in the
+# backend.
 query ListTablesForDatasetWhere($datasetName: String!, $where: JSON!) {
   datasets(where: { name: { eq: $datasetName } }, single: true) {
     edges {
@@ -153,6 +157,9 @@ query ListTablesForDatasetWhere($datasetName: String!, $where: JSON!) {
   }
 }
 
+# List all tables with optional filtering and pagination. The where parameter
+# accepts a JSON object with field-level filtering. However, the fields should
+# use snake_case due to how the filtering is implemented in the backend.
 query ListDataModels($first: Int = 50, $after: String, $where: JSON) {
   dataModels(first: $first, after: $after, where: $where) {
     edges {
@@ -174,6 +181,9 @@ query ListDataModels($first: Int = 50, $after: String, $where: JSON) {
   }
 }
 
+# List static models with optional filtering and pagination. The where parameter
+# accepts a JSON object with field-level filtering. However, the fields should
+# use snake_case due to how the filtering is implemented in the backend.
 query ListStaticModels($first: Int = 50, $after: String, $where: JSON) {
   staticModels(first: $first, after: $after, where: $where) {
     edges {
@@ -192,6 +202,10 @@ query ListStaticModels($first: Int = 50, $after: String, $where: JSON) {
   }
 }
 
+# List data ingestions with optional filtering and pagination. The where
+# parameter accepts a JSON object with field-level filtering. However, the
+# fields should use snake_case due to how the filtering is implemented in the
+# backend.
 query ListDataIngestions($first: Int = 50, $after: String, $where: JSON) {
   datasets(first: $first, after: $after, where: $where) {
     edges {
@@ -214,6 +228,9 @@ query ListDataIngestions($first: Int = 50, $after: String, $where: JSON) {
   }
 }
 
+# List Notebooks with optional filtering and pagination. The where parameter
+# accepts a JSON object with field-level filtering. However, the fields should
+# use snake_case due to how the filtering is implemented in the backend.
 query ListNotebooks($first: Int = 50, $after: String, $where: JSON) {
   notebooks(first: $first, after: $after, where: $where) {
     edges {
@@ -379,5 +396,61 @@ query GetViewer($first: Int = 50, $after: String) {
       }
       totalCount
     }
+  }
+}
+
+# Retrieve a single run by ID, along with its associated dataset if it exists.
+# The logsUrl field is included to allow clients to fetch the logs for the run.
+query GetRun($id: ID!) {
+  runs(where: { id: { eq: $id } }, single: true) {
+    edges {
+      node {
+        id
+        datasetId
+        dataset {
+          ...DatasetFields
+        }
+        runType
+        triggerType
+        requestedBy {
+          id
+          email
+          fullName
+        }
+        status
+        startedAt
+        finishedAt
+        logsUrl
+        metadata
+      }
+    }
+  }
+}
+
+query GetRunsForDataset($datasetId: ID!, $first: Int = 50, $after: String) {
+  runs(where: { dataset_id: { eq: $datasetId } }, first: $first, after: $after) {
+    edges {
+      node {
+        id
+        datasetId
+        runType
+        triggerType
+        requestedBy {
+          id
+          email
+          fullName
+        }
+        status
+        startedAt
+        finishedAt
+        logsUrl
+        metadata
+      }
+      cursor
+    }
+    pageInfo {
+      ...PageInfoFields
+    }
+    totalCount
   }
 }
