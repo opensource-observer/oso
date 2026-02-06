@@ -33,12 +33,11 @@ from graphql import (
 )
 from oso_core.pydantictools.utils import is_pydantic_model_class
 from oso_mcp.server.graphql.schema_visitor import GraphQLSchemaTypeTraverser
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .pydantic_generator import (
     PydanticModelBuildContext,
     PydanticModelVisitor,
-    map_variable_scalar,
 )
 from .types import (
     AsyncGraphQLClient,
@@ -833,23 +832,16 @@ class QueryCollectorVisitor(PydanticModelVisitor):
         current_context = self.require_model_context("add variable definition")
 
         logger.debug(f"Context name {current_context.type_name}")
-        # TODO we need to handle input object types here as well
 
-        python_type = map_variable_scalar(var_type.name)
-        field_info = Field()
-        if is_list:
-            python_type = t.List[python_type]
-        if not is_required:
-            python_type = t.Optional[python_type]
-            field_info = Field(default=None)
-
-        current_context.add_field(
+        self.add_field_to_context(
             field_name=var_name,
-            python_type=python_type,
-            field_info=field_info,
+            graphql_type_name=var_type.name,
+            is_required=is_required,
+            is_list=is_list,
+            python_type=self.map_scalar_graphql_type_name_to_python(var_type.name),
+            description="",
         )
 
-        logger.debug(f"Added variable field: {var_name} with type {python_type}")
         return VisitorControl.CONTINUE
 
     def handle_leave_variable_definition(

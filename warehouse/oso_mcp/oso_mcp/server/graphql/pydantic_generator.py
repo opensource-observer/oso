@@ -505,8 +505,14 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             return f"{parent_prefix}{base_name}"
         return base_name
 
-    def _map_scalar_to_python(self, scalar_type: GraphQLScalarType) -> t.Any:
+    def map_scalar_graphql_type_to_python(
+        self, scalar_type: GraphQLScalarType
+    ) -> t.Any:
         """Map GraphQL scalar type to Python type."""
+        return self.map_scalar_graphql_type_name_to_python(scalar_type.name)
+
+    def map_scalar_graphql_type_name_to_python(self, type_name: str) -> t.Any:
+        """Map GraphQL scalar type name to Python type."""
         scalar_map = {
             "String": str,
             "Int": int,
@@ -516,7 +522,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             "JSON": t.Any,
             "DateTime": str,  # ISO 8601 format
         }
-        return scalar_map.get(scalar_type.name, t.Any)
+        return scalar_map.get(type_name, t.Any)
 
     def handle_scalar(
         self,
@@ -534,7 +540,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         )
 
         # Map to Python type
-        python_type = self._map_scalar_to_python(scalar_type)
+        python_type = self.map_scalar_graphql_type_to_python(scalar_type)
 
         self.add_field_to_context(
             field_name=field_name,
