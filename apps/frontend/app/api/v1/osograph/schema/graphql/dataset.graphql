@@ -186,7 +186,7 @@ input CreateDatasetInput {
   """
   orgId: ID!
   """
-  The name of the dataset
+  The name of the dataset. This must be unique within the organization.
   """
   name: String!
   """
