@@ -16,6 +16,7 @@ from graphql import (
     GraphQLSchema,
     GraphQLUnionType,
 )
+from oso_core.pydantictools.utils import is_pydantic_model_class
 from pydantic import BaseModel, Field, create_model
 
 from .schema_visitor import (
@@ -348,7 +349,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             logger.debug(
                 f"Creating required field {field_name} with GraphQL type {graphql_type_string} and Python type {python_type} with description: {description}"
             )
-            if isinstance(python_type, type) and issubclass(python_type, BaseModel):
+            if is_pydantic_model_class(python_type):
                 logger.debug(
                     f"Field {field_name} is a nested model with fields: {python_type.model_fields}"
                 )
@@ -928,10 +929,9 @@ class MutationCollectorVisitor(PydanticModelVisitor):
         arguments_name = self.finish_context()
         input_model = self.get_type(arguments_name)
         assert self._current_mutation_context is not None
-        assert isinstance(input_model, type), (
-            "Schema should only accept model types as inputs"
+        assert is_pydantic_model_class(input_model), (
+            "Expected input model to be a Pydantic model class"
         )
-        assert issubclass(input_model, BaseModel)
         self._current_mutation_context.set_input_type(input_model)
 
         return VisitorControl.CONTINUE

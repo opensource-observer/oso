@@ -90,12 +90,32 @@ type CreateItemPayload {
 }
 
 input UpdateItemInput {
-  id: ID!
   """
-  Should find me in tests
+  The unique identifier of the item to update
+  """
+  id: ID!
+
+  """
+  The new name for the item
   """
   name: String
+
+  """
+  The new description for the item
+  """
   description: String
+
+  """
+  This is a nested input object
+  """
+  nestedItem: NestedItemInput
+}
+
+input NestedItemInput {
+  """
+  This is a nested field that should be included in the generated test tool
+  """
+  nestedField: String!
 }
 
 type UpdateItemPayload {

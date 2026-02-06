@@ -31,6 +31,7 @@ from graphql import (
     print_ast,
     type_from_ast,
 )
+from oso_core.pydantictools.utils import is_pydantic_model_class
 from oso_mcp.server.graphql.schema_visitor import GraphQLSchemaTypeTraverser
 from pydantic import BaseModel, Field
 
@@ -772,17 +773,13 @@ class QueryCollectorVisitor(PydanticModelVisitor):
         # Build query string with inlined fragments
         query_string = self._build_query_string(operation, self._document)
 
-        assert isinstance(payload_model, type), (
+        assert is_pydantic_model_class(payload_model), (
             "Payload model must be a Pydantic model class"
-        )
-        assert issubclass(payload_model, BaseModel), (
-            "Payload model must be a subclass of BaseModel"
         )
 
         input_model = self.get_type(f"{operation.name}Variables")
-        assert isinstance(input_model, type), "Input model must be a class"
-        assert issubclass(input_model, BaseModel), (
-            "Input model must be a subclass of BaseModel"
+        assert is_pydantic_model_class(input_model), (
+            "Input model must be a Pydantic model class"
         )
 
         # Create and collect QueryInfo

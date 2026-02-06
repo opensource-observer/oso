@@ -142,7 +142,9 @@ class GraphQLSchemaTypeTraverser:
             logger.debug(
                 f"Visiting input object type: {base_type.name} with required: {is_required} and list: {is_list} with description: {description}"
             )
-            return self._visit_input_object(field_name, base_type, is_required, is_list)
+            return self._visit_input_object(
+                field_name, base_type, is_required, is_list, description
+            )
         elif isinstance(base_type, GraphQLUnionType):
             return self._visit_union(
                 field_name, base_type, is_required, is_list, description

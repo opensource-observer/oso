@@ -10,6 +10,7 @@ import httpx
 import pytest
 from fastmcp import Client, FastMCP
 from fastmcp.exceptions import ToolError
+from oso_core.pydantictools import is_pydantic_model_class
 from oso_mcp.server.config import MCPConfig
 from pydantic import SecretStr
 
@@ -576,3 +577,53 @@ async def test_query_description_extracted_from_comments(
         # GetItem should not have the ListItems description
         if get_item_tool.description:
             assert "test context" not in get_item_tool.description
+
+
+def test_mutation_input_descriptions_on_pydantic_model():
+    """Test that descriptions from UpdateItemInput and its nested NestedItemInput
+    are present on the generated Pydantic model fields."""
+    from .generator import generate_models_intermediate_mutations_and_query_info
+
+    intermediate = generate_models_intermediate_mutations_and_query_info(
+        schema_path=TEST_SCHEMA_PATH,
+        filters=[],
+    )
+
+    # altUpdateItem uses UpdateItemInput and is not filtered by @mcp-ignore
+    mutation = intermediate.get_mutation("altUpdateItem")
+    assert mutation is not None, "altUpdateItem mutation should exist"
+
+    # The input_model is the arguments wrapper (e.g. altUpdateItemArguments)
+    # which has an `input` field of type UpdateItemInput
+    args_model = mutation.input_model
+    assert "input" in args_model.model_fields
+
+    # Get the UpdateItemInput model from the `input` field's annotation
+    update_input_model = args_model.model_fields["input"].annotation
+    assert is_pydantic_model_class(update_input_model), (
+        "UpdateItemInput should be a Pydantic model class"
+    )
+    update_fields = update_input_model.model_fields
+
+    # Verify descriptions on UpdateItemInput fields
+    assert (
+        update_fields["id"].description == "The unique identifier of the item to update"
+    )
+    assert update_fields["name"].description == "The new name for the item"
+    assert (
+        update_fields["description"].description == "The new description for the item"
+    )
+    assert update_fields["nestedItem"].description == "This is a nested input object"
+
+    # Get the NestedItemInput model from the nestedItem field's annotation
+    # It's Optional[NestedItemInput], so extract the inner type
+    nested_input_model = next(
+        arg
+        for arg in t.get_args(update_fields["nestedItem"].annotation)
+        if arg is not type(None)
+    )
+    nested_fields = nested_input_model.model_fields
+
+    assert nested_fields["nestedField"].description == (
+        "This is a nested field that should be included in the generated test tool"
+    )

@@ -9,6 +9,7 @@ import re
 import typing as t
 from enum import Enum
 
+from oso_core.pydantictools.utils import is_pydantic_model_class
 from pydantic import BaseModel
 
 from .types import AsyncGraphQLClient
@@ -158,9 +159,7 @@ class GraphQLExecutor:
             True if this is a discriminated union (multiple BaseModel types with typename__)
         """
         return len(unioned_type_args) > 1 and all(
-            isinstance(arg, type)
-            and issubclass(arg, BaseModel)
-            and "typename__" in arg.model_fields
+            is_pydantic_model_class(arg) and "typename__" in arg.model_fields
             for arg in unioned_type_args
         )
 
@@ -290,7 +289,7 @@ class GraphQLExecutor:
         indent = "  " * indent_level
 
         # Check if the field type is a Pydantic model (nested object)
-        if isinstance(field_type, type) and issubclass(field_type, BaseModel):
+        if is_pydantic_model_class(field_type):
             # Recursively build nested field selection
             nested_fields = self._build_field_selection(field_type, indent_level + 1)
             if nested_fields:
@@ -356,17 +355,13 @@ class GraphQLExecutor:
         return "\n".join(fields)
 
     def _build_mutation_query(self) -> str:
-        """Build GraphQL mutation query string with nested field selection.
+        """Build GraphQL mutation query string to send to the server with nested
+        field selection.
 
         Returns:
             GraphQL mutation query string
         """
         # Build the query with all payload fields (including nested)
-        if isinstance(self.mutation.payload_model, type) and issubclass(
-            self.mutation.payload_model, BaseModel
-        ):
-            logger.debug(f"Model fields: {self.mutation.payload_model.model_fields}")
-
         # Get the inner payload model specific to this mutation (we need to get
         # it based on the name of the mutation)
         payload_model_fields = self.mutation.payload_model.model_fields.get(
@@ -380,9 +375,7 @@ class GraphQLExecutor:
         )
         inner_payload_model = payload_model_fields.annotation
 
-        if isinstance(inner_payload_model, type) and issubclass(
-            inner_payload_model, BaseModel
-        ):
+        if is_pydantic_model_class(inner_payload_model):
             logger.debug(
                 f"Inner payload model fields: {inner_payload_model.model_fields}"
             )
