@@ -183,8 +183,6 @@ extend type Mutation {
 input CreateDatasetInput {
   """
   The organization ID the dataset belongs to
-
-  BOOPER
   """
   orgId: ID!
   """
