@@ -15,6 +15,7 @@ import {
 } from "@/lib/query/async";
 import { logger } from "@/lib/logger";
 import type { AuthOrgUser, AuthUser } from "@/lib/types/user";
+import { PreviewData } from "@/lib/graphql/generated/graphql";
 
 export function validateTableId(tableId: string) {
   const tableIdHasValidPrefix =
@@ -56,7 +57,7 @@ const PREVIEW_ROW_LIMIT = 25;
 /**
  * Check if a materialization exists for the given org, dataset, and table
  */
-export async function checkMaterializationExists(
+async function checkMaterializationExists(
   orgId: string,
   datasetId: string,
   tableId: string,
@@ -169,11 +170,23 @@ export async function executePreviewQuery(
   tableId: string,
   user: AuthUser,
   tableName: string,
-): Promise<any[]> {
+): Promise<PreviewData> {
   const supabase = createAdminClient();
 
   const organization = await getOrganization(orgId);
   await requireOrgMembership(user.userId, organization.id);
+
+  const materializationExists = await checkMaterializationExists(
+    orgId,
+    datasetId,
+    tableId,
+  );
+  if (!materializationExists) {
+    return {
+      isAvailable: false,
+      rows: [],
+    };
+  }
 
   // Fetch dataset name
   const { data: dataset } = await supabase
@@ -216,5 +229,8 @@ export async function executePreviewQuery(
     `Preview query returned ${results.length} rows for table ${tableId}`,
   );
 
-  return results;
+  return {
+    isAvailable: true,
+    rows: results,
+  };
 }

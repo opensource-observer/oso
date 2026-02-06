@@ -20,10 +20,10 @@ import { DataIngestionsRow } from "@/lib/types/schema-types";
 import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
 import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import {
-  checkMaterializationExists,
   executePreviewQuery,
   generateTableId,
 } from "@/app/api/v1/osograph/utils/model";
+import { PreviewData } from "@/lib/graphql/generated/graphql";
 
 export const dataIngestionResolvers = {
   Mutation: {
@@ -145,19 +145,10 @@ export const dataIngestionResolvers = {
       parent: DataIngestionsRow,
       args: { tableName: string },
       context: GraphQLContext,
-    ) => {
+    ): Promise<PreviewData> => {
       const authenticatedUser = requireAuthentication(context.user);
 
       const tableId = generateTableId("DATA_INGESTION", args.tableName);
-
-      const materializationExists = await checkMaterializationExists(
-        parent.org_id,
-        parent.dataset_id,
-        tableId,
-      );
-      if (!materializationExists) {
-        return [];
-      }
 
       return executePreviewQuery(
         parent.org_id,

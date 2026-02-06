@@ -16,6 +16,11 @@ import { gql } from "@/lib/graphql/generated";
 import { executeGraphQL } from "@/lib/graphql/query";
 import { GetPreviewDataQuery } from "@/lib/graphql/generated/graphql";
 
+export interface PreviewData {
+  isAvailable: boolean;
+  rows: any[];
+}
+
 interface PreviewTabProps {
   datasetId: string;
   tableName: string;
@@ -24,7 +29,7 @@ interface PreviewTabProps {
 
   // Plasmic integration
   useTestData?: boolean;
-  testData?: any[];
+  testData?: PreviewData;
 }
 
 // Unified GraphQL query that handles all model types
@@ -41,7 +46,10 @@ const PREVIEW_QUERY = gql(`
                   node {
                     id
                     name
-                    previewData
+                    previewData {
+                        isAvailable
+                        rows
+                    }
                   }
                 }
               }
@@ -52,7 +60,10 @@ const PREVIEW_QUERY = gql(`
                   node {
                     id
                     name
-                    previewData
+                    previewData {
+                      isAvailable
+                      rows
+                    }
                   }
                 }
               }
@@ -60,14 +71,20 @@ const PREVIEW_QUERY = gql(`
             ... on DataIngestionDefinition {
               dataIngestion {
                 id
-                previewData(tableName: $tableName)
+                previewData(tableName: $tableName) {
+                  isAvailable
+                  rows
+                }
               }
             }
             ... on DataConnectionDefinition {
               dataConnectionAlias {
                 id
                 schema
-                previewData(tableName: $tableName)
+                previewData(tableName: $tableName) {
+                  isAvailable
+                  rows
+                }
               }
             }
           }
@@ -77,31 +94,35 @@ const PREVIEW_QUERY = gql(`
   }
 `);
 
-function extractPreviewData(response: GetPreviewDataQuery): any[] {
+function extractPreviewData(
+  response: GetPreviewDataQuery,
+): PreviewData | undefined {
   const dataset = response?.datasets?.edges?.[0]?.node;
-  if (!dataset) return [];
+  if (!dataset) return undefined;
 
   const typeDef = dataset.typeDefinition;
 
   switch (typeDef?.__typename) {
     case "DataModelDefinition":
-      return typeDef?.dataModels?.edges?.[0]?.node?.previewData || [];
+      return typeDef?.dataModels?.edges?.[0]?.node?.previewData || undefined;
     case "StaticModelDefinition":
-      return typeDef?.staticModels?.edges?.[0]?.node?.previewData || [];
+      return typeDef?.staticModels?.edges?.[0]?.node?.previewData || undefined;
     case "DataIngestionDefinition":
-      return typeDef?.dataIngestion?.previewData || [];
+      return typeDef?.dataIngestion?.previewData || undefined;
     case "DataConnectionDefinition":
-      return typeDef?.dataConnectionAlias?.previewData || [];
+      return typeDef?.dataConnectionAlias?.previewData || undefined;
     default:
       throw new Error(`Unknown type definition: ${typeDef?.__typename}`);
   }
 }
 
 // Generate columns dynamically from data
-function generateColumnsFromData(data: any[]): ColumnDef<any>[] {
-  if (!data || data.length === 0) return [];
+function generateColumnsFromData(
+  data: PreviewData | undefined,
+): ColumnDef<any>[] {
+  if (!data || !data.isAvailable || data.rows.length === 0) return [];
 
-  const firstRow = data[0];
+  const firstRow = data.rows[0];
   const columnNames = Object.keys(firstRow);
 
   return columnNames.map((columnName) => ({
@@ -158,12 +179,15 @@ function PreviewTab(props: PreviewTabProps) {
 
   // Generate columns from data
   const columns = useMemo(
-    () => generateColumnsFromData(previewData || []),
+    () => generateColumnsFromData(previewData),
     [previewData],
   );
 
+  const noMaterialization = !previewData || !previewData.isAvailable;
+  const noData = previewData?.rows.length === 0;
+
   const handleExport = () => {
-    if (!previewData || previewData.length === 0) return;
+    if (noData) return;
 
     const jsonString = JSON.stringify(previewData, null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
@@ -190,7 +214,7 @@ function PreviewTab(props: PreviewTabProps) {
                 size="icon"
                 className="h-8 w-8 rounded-full"
                 onClick={handleExport}
-                disabled={isLoading || !previewData || previewData.length === 0}
+                disabled={isLoading || noData}
               >
                 <Download className="h-4 w-4" />
               </Button>
@@ -231,7 +255,7 @@ function PreviewTab(props: PreviewTabProps) {
               {error.message}
             </p>
           </div>
-        ) : !previewData || previewData.length === 0 ? (
+        ) : noMaterialization ? (
           <div className="flex items-center justify-center p-8">
             <p className="text-sm text-muted-foreground">
               No preview data available. Trigger a run to materialize data.
@@ -240,9 +264,9 @@ function PreviewTab(props: PreviewTabProps) {
         ) : (
           <DataTable
             columns={columns}
-            data={previewData}
+            data={previewData.rows}
             pagination={false}
-            defaultPageSize={previewData.length}
+            defaultPageSize={previewData.rows.length}
           />
         )}
       </CardContent>

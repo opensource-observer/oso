@@ -34,10 +34,10 @@ import { SyncConnectionRunRequest } from "@opensource-observer/osoprotobufs/sync
 import { getMaterializations } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
 import {
-  checkMaterializationExists,
   executePreviewQuery,
   generateTableId,
 } from "@/app/api/v1/osograph/utils/model";
+import { PreviewData } from "@/lib/graphql/generated/graphql";
 
 async function syncDataConnection(
   supabase: SupabaseAdminClient,
@@ -344,19 +344,10 @@ export const dataConnectionResolvers = {
       parent: DataConnectionAliasRow,
       args: { tableName: string },
       context: GraphQLContext,
-    ) => {
+    ): Promise<PreviewData> => {
       const authenticatedUser = requireAuthentication(context.user);
 
       const tableId = generateTableId("DATA_CONNECTION", args.tableName);
-
-      const materializationExists = await checkMaterializationExists(
-        parent.org_id,
-        parent.dataset_id,
-        tableId,
-      );
-      if (!materializationExists) {
-        return [];
-      }
 
       return executePreviewQuery(
         parent.org_id,

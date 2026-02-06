@@ -1551,7 +1551,7 @@ export type DataConnectionAlias = {
   materializations: MaterializationConnection;
   modelContext?: Maybe<ModelContext>;
   orgId: Scalars["ID"]["output"];
-  previewData: Array<Scalars["JSON"]["output"]>;
+  previewData: PreviewData;
   schema: Scalars["String"]["output"];
 };
 
@@ -1633,7 +1633,7 @@ export type DataIngestion = {
   materializations: MaterializationConnection;
   modelContext?: Maybe<ModelContext>;
   orgId: Scalars["ID"]["output"];
-  previewData: Array<Scalars["JSON"]["output"]>;
+  previewData: PreviewData;
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
@@ -1697,7 +1697,7 @@ export type DataModel = {
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
-  previewData: Array<Scalars["JSON"]["output"]>;
+  previewData: PreviewData;
   releases: DataModelReleaseConnection;
   revisions: DataModelRevisionConnection;
   runs: RunConnection;
@@ -6205,6 +6205,12 @@ export type PresetNotFoundError = Error & {
   preset: Scalars["String"]["output"];
 };
 
+export type PreviewData = {
+  __typename?: "PreviewData";
+  isAvailable: Scalars["Boolean"]["output"];
+  rows: Array<Scalars["JSON"]["output"]>;
+};
+
 export type PublishNotebookPayload = {
   __typename?: "PublishNotebookPayload";
   message?: Maybe<Scalars["String"]["output"]>;
@@ -8464,7 +8470,7 @@ export type StaticModel = {
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
-  previewData: Array<Scalars["JSON"]["output"]>;
+  previewData: PreviewData;
   runs: RunConnection;
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
@@ -9264,7 +9270,11 @@ export type GetPreviewDataQuery = {
                 __typename?: "DataConnectionAlias";
                 id: string;
                 schema: string;
-                previewData: Array<any>;
+                previewData: {
+                  __typename?: "PreviewData";
+                  isAvailable: boolean;
+                  rows: Array<any>;
+                };
               };
             }
           | {
@@ -9272,7 +9282,11 @@ export type GetPreviewDataQuery = {
               dataIngestion?: {
                 __typename?: "DataIngestion";
                 id: string;
-                previewData: Array<any>;
+                previewData: {
+                  __typename?: "PreviewData";
+                  isAvailable: boolean;
+                  rows: Array<any>;
+                };
               } | null;
             }
           | {
@@ -9285,7 +9299,11 @@ export type GetPreviewDataQuery = {
                     __typename?: "DataModel";
                     id: string;
                     name: string;
-                    previewData: Array<any>;
+                    previewData: {
+                      __typename?: "PreviewData";
+                      isAvailable: boolean;
+                      rows: Array<any>;
+                    };
                   };
                 }>;
               };
@@ -9300,7 +9318,11 @@ export type GetPreviewDataQuery = {
                     __typename?: "StaticModel";
                     id: string;
                     name: string;
-                    previewData: Array<any>;
+                    previewData: {
+                      __typename?: "PreviewData";
+                      isAvailable: boolean;
+                      rows: Array<any>;
+                    };
                   };
                 }>;
               };
@@ -10057,6 +10079,27 @@ export const GetPreviewDataDocument = {
                                                               value:
                                                                 "previewData",
                                                             },
+                                                            selectionSet: {
+                                                              kind: "SelectionSet",
+                                                              selections: [
+                                                                {
+                                                                  kind: "Field",
+                                                                  name: {
+                                                                    kind: "Name",
+                                                                    value:
+                                                                      "isAvailable",
+                                                                  },
+                                                                },
+                                                                {
+                                                                  kind: "Field",
+                                                                  name: {
+                                                                    kind: "Name",
+                                                                    value:
+                                                                      "rows",
+                                                                  },
+                                                                },
+                                                              ],
+                                                            },
                                                           },
                                                         ],
                                                       },
@@ -10182,6 +10225,27 @@ export const GetPreviewDataDocument = {
                                                               value:
                                                                 "previewData",
                                                             },
+                                                            selectionSet: {
+                                                              kind: "SelectionSet",
+                                                              selections: [
+                                                                {
+                                                                  kind: "Field",
+                                                                  name: {
+                                                                    kind: "Name",
+                                                                    value:
+                                                                      "isAvailable",
+                                                                  },
+                                                                },
+                                                                {
+                                                                  kind: "Field",
+                                                                  name: {
+                                                                    kind: "Name",
+                                                                    value:
+                                                                      "rows",
+                                                                  },
+                                                                },
+                                                              ],
+                                                            },
                                                           },
                                                         ],
                                                       },
@@ -10245,6 +10309,25 @@ export const GetPreviewDataDocument = {
                                                     },
                                                   },
                                                 ],
+                                                selectionSet: {
+                                                  kind: "SelectionSet",
+                                                  selections: [
+                                                    {
+                                                      kind: "Field",
+                                                      name: {
+                                                        kind: "Name",
+                                                        value: "isAvailable",
+                                                      },
+                                                    },
+                                                    {
+                                                      kind: "Field",
+                                                      name: {
+                                                        kind: "Name",
+                                                        value: "rows",
+                                                      },
+                                                    },
+                                                  ],
+                                                },
                                               },
                                             ],
                                           },
@@ -10309,6 +10392,25 @@ export const GetPreviewDataDocument = {
                                                     },
                                                   },
                                                 ],
+                                                selectionSet: {
+                                                  kind: "SelectionSet",
+                                                  selections: [
+                                                    {
+                                                      kind: "Field",
+                                                      name: {
+                                                        kind: "Name",
+                                                        value: "isAvailable",
+                                                      },
+                                                    },
+                                                    {
+                                                      kind: "Field",
+                                                      name: {
+                                                        kind: "Name",
+                                                        value: "rows",
+                                                      },
+                                                    },
+                                                  ],
+                                                },
                                               },
                                             ],
                                           },

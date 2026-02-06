@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { PreviewTab } from "@/components/widgets/preview-tab";
+import { PreviewData, PreviewTab } from "@/components/widgets/preview-tab";
 import { http, HttpResponse, delay } from "msw";
 
 const meta = {
@@ -11,7 +11,7 @@ const meta = {
   tags: ["autodocs"],
   argTypes: {
     datasetId: { control: "text" },
-    modelOrTable: { control: "text" },
+    tableName: { control: "text" },
   },
 } satisfies Meta<typeof PreviewTab>;
 
@@ -145,7 +145,7 @@ function createPreviewDataResponse(
   datasetId: string,
   modelId: string,
   modelName: string,
-  previewData: any[],
+  previewData: PreviewData,
 ) {
   return {
     data: {
@@ -180,15 +180,13 @@ const mswMock = http.post("/api/v1/osograph", async ({ request }) => {
   const {
     variables: { datasetId },
   } = (await request.json()) as { variables: { datasetId: string } };
-
+  console.log(`MSW received request for datasetId: ${datasetId}`);
   if (datasetId === "dataset_abc123") {
     return HttpResponse.json(
-      createPreviewDataResponse(
-        "dataset_abc123",
-        "model_users_001",
-        "users",
-        userActivityData,
-      ),
+      createPreviewDataResponse("dataset_abc123", "model_users_001", "users", {
+        isAvailable: true,
+        rows: userActivityData,
+      }),
     );
   } else if (datasetId === "dataset_wide") {
     return HttpResponse.json(
@@ -196,17 +194,15 @@ const mswMock = http.post("/api/v1/osograph", async ({ request }) => {
         "dataset_wide",
         "model_wide_001",
         "wide_table",
-        wideTableData,
+        { isAvailable: true, rows: wideTableData },
       ),
     );
   } else if (datasetId === "dataset_empty") {
     return HttpResponse.json(
-      createPreviewDataResponse(
-        "dataset_empty",
-        "model_empty_001",
-        "empty",
-        [],
-      ),
+      createPreviewDataResponse("dataset_empty", "model_empty_001", "empty", {
+        isAvailable: true,
+        rows: [],
+      }),
     );
   } else if (datasetId === "dataset_error") {
     return HttpResponse.json(
@@ -221,6 +217,15 @@ const mswMock = http.post("/api/v1/osograph", async ({ request }) => {
     );
   } else if (datasetId === "dataset_loading") {
     await delay("infinite");
+  } else if (datasetId === "dataset_no_preview") {
+    return HttpResponse.json(
+      createPreviewDataResponse(
+        "dataset_no_preview",
+        "model_no_preview_001",
+        "test_table",
+        { isAvailable: false, rows: [] },
+      ),
+    );
   }
 
   throw new Error(`No mock handler for datasetId: ${datasetId}`);
@@ -229,7 +234,7 @@ const mswMock = http.post("/api/v1/osograph", async ({ request }) => {
 export const Default: Story = {
   args: {
     datasetId: "dataset_abc123",
-    modelOrTable: "model_users_001",
+    tableName: "users",
   },
   parameters: {
     msw: {
@@ -242,7 +247,7 @@ export const Default: Story = {
 export const LoadingState: Story = {
   args: {
     datasetId: "dataset_loading",
-    modelOrTable: "model_users_002",
+    tableName: "users",
   },
   parameters: {
     msw: {
@@ -255,7 +260,7 @@ export const LoadingState: Story = {
 export const ErrorState: Story = {
   args: {
     datasetId: "dataset_error",
-    modelOrTable: "model_users_003",
+    tableName: "users",
   },
   parameters: {
     msw: {
@@ -268,7 +273,7 @@ export const ErrorState: Story = {
 export const EmptyData: Story = {
   args: {
     datasetId: "dataset_empty",
-    modelOrTable: "model_empty_001",
+    tableName: "empty",
   },
   parameters: {
     msw: {
@@ -281,7 +286,20 @@ export const EmptyData: Story = {
 export const WideTable: Story = {
   args: {
     datasetId: "dataset_wide",
-    modelOrTable: "model_wide_001",
+    tableName: "wide_table",
+  },
+  parameters: {
+    msw: {
+      handlers: [mswMock],
+    },
+  },
+};
+
+// Preview data not available - no materialization has occurred
+export const NoPreviewDataAvailable: Story = {
+  args: {
+    datasetId: "dataset_no_preview",
+    tableName: "test_table",
   },
   parameters: {
     msw: {
