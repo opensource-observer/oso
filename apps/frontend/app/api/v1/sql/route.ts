@@ -20,11 +20,9 @@ const makeErrorResponse = (errorMsg: string, status: number) =>
   NextResponse.json({ error: errorMsg }, { status });
 
 const DEPRECATION_MESSAGE = `
-This endpoint is no longer available and is 
-being deprecated. We may bring it back in the 
-future with a more secure implementation. 
-If you have any questions or concerns, please 
-contact support.
+This endpoint is no longer available and is being deprecated. 
+We may bring it back in the future but for now suggest using the 
+/api/v1/async-sql endpoint.
 `.replaceAll(/\s+/g, " ");
 
 /**
