@@ -122,6 +122,5 @@ export const PUBSUB_EMULATOR_HOST =
 export const GCP_CREDENTIALS_JSON_B64 =
   process.env.GCP_CREDENTIALS_JSON_B64 ?? undefined;
 
-export const PUBLIC_CACHE_BUCKET = "oso-public-sql-cache";
 export const ORG_CACHE_BUCKET = "oso-org-sql-cache";
 export const ASYNC_QUERY_BUCKET = "oso-async-query";
