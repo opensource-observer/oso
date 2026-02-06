@@ -53,6 +53,7 @@ def mock_http_client():
 
         # Return a mock response
         mock_response = MagicMock()
+        mock_response.status_code = 200
         mock_response.raise_for_status = MagicMock()
         mock_response.json.return_value = {
             "data": {
@@ -179,6 +180,7 @@ async def test_tool_handles_graphql_errors(
     # Modify mock to return GraphQL errors
     async def mock_post_with_error(url, json=None, **kwargs):
         mock_response = MagicMock()
+        mock_response.status_code = 400
         mock_response.raise_for_status = MagicMock()
         mock_response.json.return_value = {
             "errors": [
@@ -323,6 +325,7 @@ async def test_query_tool_generation(
         )
 
         mock_response = MagicMock()
+        mock_response.status_code = 200
         mock_response.raise_for_status = MagicMock()
         mock_response.json.return_value = {
             "data": {

@@ -726,4 +726,8 @@ class TraverserProtocol(t.Protocol):
         ...
 
 
+class GraphQLError(Exception):
+    """Custom exception for GraphQL processing errors."""
+
+
 GraphQLClientFactory = t.Callable[[], t.AsyncContextManager[AsyncGraphQLClient]]

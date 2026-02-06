@@ -248,9 +248,9 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         """Check if a type is registered."""
         return name in self._type_registry
 
-    def should_skip_depth(self) -> bool:
+    def should_skip_depth(self, padding: int = 0) -> bool:
         """Check if we've exceeded max depth."""
-        return self.current_depth >= self._max_depth
+        return self.current_depth + padding >= self._max_depth
 
     def require_context(self, operation: str) -> TypeBuildContext:
         """Get current context or raise error if none exists.
@@ -290,6 +290,127 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             )
         return ctx
 
+    def create_pydantic_field(
+        self,
+        *,
+        field_name: str,
+        graphql_type_name: str,
+        python_type: t.Any,
+        description: str | None,
+        is_required: bool,
+        is_list: bool,
+        discriminator: str | None = None,
+    ) -> tuple[str, t.Any, t.Any]:
+        """Helper to create a Pydantic field with GraphQL metadata.
+
+        Args:
+            field_name: Name of the field
+            python_type: Python type annotation for the field
+            description: Optional description for the field (from GraphQL schema)
+            graphql_type_string: Optional string representation of the GraphQL type for documentation
+            discriminator: Optional discriminator field for the Pydantic model
+
+        Returns:
+            Tuple of (python_type, Field) to be used in create_model
+        """
+        if is_list:
+            python_type = t.List[python_type]
+
+        graphql_type_string = create_graphql_type_string(
+            graphql_type_name, is_required=is_required, is_list=is_list
+        )
+
+        alias = None
+        if field_name.startswith("_"):
+            # We need to alias fields that start with _ since Pydantic doesn't
+            # allow them as-is
+            alias = field_name
+            # Strip leading underscores for the actual field name since Pydantic
+            # doesn't allow them, but we can preserve the original name in the
+            # alias for serialization
+            new_field_name = field_name.lstrip("_")
+            # Number of leading underscores removed
+            underscore_len = len(field_name) - len(new_field_name)
+            # Add trailing underscores with the same number of underscores
+            field_name = f"{new_field_name}{'_' * underscore_len}"
+
+        # Apply optional wrapper and create field info
+        if not is_required:
+            python_type = t.Optional[python_type]
+            field_info = Field(
+                default=None,
+                description=description,
+                json_schema_extra={"graphql_type_string": graphql_type_string},
+                discriminator=discriminator,
+                alias=alias,
+            )
+        else:
+            logger.debug(
+                f"Creating required field {field_name} with GraphQL type {graphql_type_string} and Python type {python_type} with description: {description}"
+            )
+            if isinstance(python_type, type) and issubclass(python_type, BaseModel):
+                logger.debug(
+                    f"Field {field_name} is a nested model with fields: {python_type.model_fields}"
+                )
+            field_info = Field(
+                description=description,
+                json_schema_extra={"graphql_type_string": graphql_type_string},
+                discriminator=discriminator,
+                alias=alias,
+            )
+        return field_name, python_type, field_info
+
+    def add_field_to_context(
+        self,
+        *,
+        field_name: str,
+        graphql_type_name: str,
+        python_type: t.Any,
+        description: str | None,
+        is_required: bool,
+        is_list: bool,
+        discriminator: str | None = None,
+        require_model_context: bool = True,
+    ):
+        logger.debug(
+            f"Adding field {field_name} of type {graphql_type_name} with description: {description} with Python type {python_type} to context required: {is_required} list: {is_list}"
+        )
+
+        updated_field_name, python_type, field_info = self.create_pydantic_field(
+            field_name=field_name,
+            graphql_type_name=graphql_type_name,
+            python_type=python_type,
+            description=description,
+            is_required=is_required,
+            is_list=is_list,
+            discriminator=discriminator,
+        )
+        logger.debug(
+            f"Created field info for {updated_field_name}: {field_info} and Python type: {python_type}"
+        )
+        current_context = self.current_context
+        if not current_context:
+            if require_model_context:
+                raise RuntimeError(
+                    f"Cannot add field {updated_field_name} without a context - "
+                    "traversal may have started from an invalid point"
+                )
+            else:
+                logger.debug(
+                    "No context available to add field %s, skipping context addition",
+                    updated_field_name,
+                )
+                return
+        match current_context:
+            case PydanticModelBuildContext():
+                current_context.add_field(updated_field_name, python_type, field_info)
+            case UnionTypeBuildContext():
+                current_context.add_member(python_type)
+            case _:
+                raise RuntimeError(
+                    "Invalid context type when adding field - this should never happen"
+                )
+
     @property
     def current_context(self) -> t.Optional[TypeBuildContext]:
         """Get the current context, or None if stack is empty.
@@ -308,13 +429,19 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
             name: Name of the new context
         """
         logger.debug(f"Starting context: {name}, no_prefix={no_prefix}")
-        name = self.next_context_name(name, no_prefix=no_prefix)
-        if self.is_type_registered(name):
-            raise PydanticModelAlreadyRegistered(name)
+        prefixed_name = self.next_context_name(name, no_prefix=no_prefix)
+        if self.is_type_registered(prefixed_name):
+            raise PydanticModelAlreadyRegistered(prefixed_name)
 
+        discriminator = None
+        if self.current_context and isinstance(
+            self.current_context, UnionTypeBuildContext
+        ):
+            discriminator = name
         ctx = PydanticModelBuildContext(
-            type_name=name,
+            type_name=prefixed_name,
             depth=self.current_depth,
+            discriminator=discriminator,
         )
         self._context_stack.append(ctx)
         return None
@@ -354,8 +481,29 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         """
         self.require_context("finish context")
         ctx = self._context_stack.pop()
+
         logger.debug(f"Finishing context: {ctx.type_name} at depth {ctx.depth}")
         model = ctx.materialize()
+        if isinstance(model, type) and issubclass(model, BaseModel):
+            if ctx.type_name == "createItemArguments":
+                logger.debug(
+                    f"Materialized model {ctx.type_name} with fields {model.model_fields}"
+                )
+                logger.debug(
+                    f"Materialized model {ctx.type_name} with fields {model.model_fields}"
+                )
+                logger.debug(
+                    f"Materialized model {ctx.type_name} with fields {model.model_fields}"
+                )
+                logger.debug(
+                    f"Materialized model {ctx.type_name} with fields {model.model_fields}"
+                )
+                logger.debug(
+                    f"Materialized model {ctx.type_name} with fields {model.model_fields}"
+                )
+                logger.debug(
+                    f"Materialized model {ctx.type_name} with fields {model.model_fields}"
+                )
         self._type_registry[ctx.type_name] = model
         return ctx.type_name
 
@@ -398,7 +546,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         description: str | None,
     ) -> VisitorControl:
         """Handle a scalar type by adding it to the current context."""
-        ctx = self.require_model_context("add scalar field")
+        self.require_model_context("add scalar field")
 
         logger.debug(
             f"Adding scalar field: {field_name} of type {scalar_type.name} with description: {description}"
@@ -407,26 +555,14 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         # Map to Python type
         python_type = self._map_scalar_to_python(scalar_type)
 
-        graphql_type_string = create_graphql_type_string(
-            scalar_type.name, is_required=is_required, is_list=is_list
+        self.add_field_to_context(
+            field_name=field_name,
+            graphql_type_name=scalar_type.name,
+            python_type=python_type,
+            description=description,
+            is_required=is_required,
+            is_list=is_list,
         )
-
-        # Apply optional wrapper and create field info
-        if not is_required:
-            python_type = t.Optional[python_type]
-            field_info = Field(
-                default=None,
-                description=description,
-                json_schema_extra={"graphql_type_string": graphql_type_string},
-            )
-        else:
-            field_info = Field(
-                description=description,
-                json_schema_extra={"graphql_type_string": graphql_type_string},
-            )
-
-        # Add to current context
-        ctx.add_field(field_name, python_type, field_info)
 
         return VisitorControl.CONTINUE
 
@@ -439,8 +575,6 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         description: str | None,
     ) -> VisitorControl:
         """Handle an enum type by generating a StrEnum and adding to context."""
-        ctx = self.require_model_context("add enum field")
-
         # Enums are always registered with their base name (no prefix)
         type_name = enum_type.name
 
@@ -455,32 +589,14 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         # Get the enum from registry
         python_type = self.get_type(type_name)
 
-        # Apply list wrapper if needed
-        if is_list:
-            python_type = list[python_type]  # type: ignore
-
-        graphql_type_string = create_graphql_type_string(
-            type_name, is_required=is_required, is_list=is_list
+        self.add_field_to_context(
+            field_name=field_name,
+            graphql_type_name=type_name,
+            python_type=python_type,
+            description=description,
+            is_required=is_required,
+            is_list=is_list,
         )
-
-        # Apply optional wrapper and create field info
-        if not is_required:
-            python_type = t.Optional[python_type]  # type: ignore
-            field_info = Field(
-                default=None,
-                description=description,
-                json_schema_extra={"graphql_type_string": graphql_type_string},
-            )
-        else:
-            field_info = Field(
-                description=description,
-                json_schema_extra={
-                    "graphql_type_string": graphql_type_string,
-                },
-            )
-
-        # Add to current context
-        ctx.add_field(field_name, python_type, field_info)
 
         return VisitorControl.CONTINUE
 
@@ -497,6 +613,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         # (fields at max depth are not requested in the query, so they shouldn't
         # be in the model - this avoids validation errors for missing fields)
         if self.should_skip_depth():
+            logger.debug(f"Skipping object {object_type.name} due to depth limit")
             return VisitorControl.SKIP
 
         try:
@@ -504,43 +621,15 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         except PydanticModelAlreadyRegistered as e:
             python_type = self.get_type(e.model_name)
 
-            graphql_type_string = create_graphql_type_string(
-                object_type.name, is_required=is_required, is_list=is_list
+            self.add_field_to_context(
+                field_name=field_name,
+                graphql_type_name=object_type.name,
+                python_type=python_type,
+                description=description,
+                is_required=is_required,
+                is_list=is_list,
+                require_model_context=False,
             )
-
-            # If we're at the root no need to add the field to anything
-            # And this type is already registered so we can skip
-            if self.current_context is None:
-                return VisitorControl.SKIP
-
-            # Use existing model
-            current_context = self.require_context("add object field")
-
-            # Apply list wrapper if needed
-            if is_list:
-                python_type = list[python_type]  # type: ignore
-
-            # Apply optional wrapper
-            if not is_required:
-                python_type = t.Optional[python_type]  # type: ignore
-                field_info = Field(
-                    default=None,
-                    description=description,
-                    json_schema_extra={"graphql_type_string": graphql_type_string},
-                )
-            else:
-                field_info = Field(
-                    description=description,
-                    json_schema_extra={
-                        "graphql_type_string": graphql_type_string,
-                    },
-                )
-
-            match current_context:
-                case PydanticModelBuildContext():
-                    current_context.add_field(field_name, python_type, field_info)
-                case UnionTypeBuildContext():
-                    current_context.add_member(python_type)
 
             return VisitorControl.SKIP  # Don't revisit
         return VisitorControl.CONTINUE
@@ -561,38 +650,15 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         created_model_name = self.finish_context()
         model = self.get_type(created_model_name)
 
-        # Add to parent context if exists
-        if self.current_context:
-            python_type: t.Any = model
-
-            # Apply list wrapper if needed
-            if is_list:
-                python_type = list[python_type]
-
-            graphql_type_string = create_graphql_type_string(
-                object_type.name, is_required=is_required, is_list=is_list
-            )
-
-            # Apply optional wrapper
-            if not is_required:
-                python_type = t.Optional[python_type]
-                field_info = Field(
-                    default=None,
-                    description=description,
-                    json_schema_extra={"graphql_type_string": graphql_type_string},
-                )
-            else:
-                field_info = Field(
-                    description=description,
-                    json_schema_extra={"graphql_type_string": graphql_type_string},
-                )
-
-            current_context = self.current_context
-            match current_context:
-                case PydanticModelBuildContext():
-                    current_context.add_field(field_name, python_type, field_info)
-                case UnionTypeBuildContext():
-                    current_context.add_member(python_type)
+        self.add_field_to_context(
+            field_name=field_name,
+            graphql_type_name=object_type.name,
+            python_type=model,
+            description=description,
+            is_required=is_required,
+            is_list=is_list,
+            require_model_context=False,
+        )
 
         return VisitorControl.CONTINUE
 
@@ -613,35 +679,17 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         except PydanticModelAlreadyRegistered as e:
             python_type = self.get_type(e.model_name)
             # Use existing model
-            if self.current_context:
-                # Apply list wrapper if needed
-                if is_list:
-                    python_type = list[python_type]  # type: ignore
-
-                graphql_type_string = create_graphql_type_string(
-                    type_name, is_required=is_required, is_list=is_list
-                )
-
-                # Apply optional wrapper
-                if not is_required:
-                    python_type = t.Optional[python_type]  # type: ignore
-                    field_info = Field(
-                        default=None,
-                        description=description,
-                        json_schema_extra={"graphql_type_string": graphql_type_string},
-                    )
-                else:
-                    field_info = Field(
-                        description=description,
-                        json_schema_extra={"graphql_type_string": graphql_type_string},
-                    )
-
-                current_context = self.current_context
-                match current_context:
-                    case PydanticModelBuildContext():
-                        current_context.add_field(field_name, python_type, field_info)
-                    case UnionTypeBuildContext():
-                        current_context.add_member(python_type)
+            self.add_field_to_context(
+                field_name=field_name,
+                graphql_type_name=type_name,
+                python_type=python_type,
+                description=description,
+                is_required=is_required,
+                is_list=is_list,
+                # Input objects can be shared across multiple parent contexts,
+                # so we shouldn't require a parent context to add them
+                require_model_context=False,
+            )
 
             return VisitorControl.SKIP  # Don't revisit
         return VisitorControl.CONTINUE
@@ -661,38 +709,17 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         model_name = self.finish_context()
         model = self.get_type(model_name)
 
-        # Add to parent context if exists
-        if self.current_context:
-            python_type: t.Any = model
-
-            graphql_type_string = create_graphql_type_string(
-                input_type.name, is_required=is_required, is_list=is_list
-            )
-
-            # Apply list wrapper if needed
-            if is_list:
-                python_type = list[python_type]
-
-            # Apply optional wrapper
-            if not is_required:
-                python_type = t.Optional[python_type]
-                field_info = Field(
-                    default=None,
-                    description=description,
-                    json_schema_extra={"graphql_type_string": graphql_type_string},
-                )
-            else:
-                field_info = Field(
-                    description=description,
-                    json_schema_extra={"graphql_type_string": graphql_type_string},
-                )
-
-            current_context = self.current_context
-            match current_context:
-                case PydanticModelBuildContext():
-                    current_context.add_field(field_name, python_type, field_info)
-                case UnionTypeBuildContext():
-                    current_context.add_member(python_type)
+        self.add_field_to_context(
+            field_name=field_name,
+            graphql_type_name=input_type.name,
+            python_type=model,
+            description=description,
+            is_required=is_required,
+            is_list=is_list,
+            # Input objects can be shared across multiple parent contexts,
+            # so we shouldn't require a parent context to add them
+            require_model_context=False,
+        )
 
         return VisitorControl.CONTINUE
 
@@ -709,44 +736,34 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         Unions are treated like nested objects for depth purposes - they should be
         skipped when max_depth is reached since they contain nested object types.
         """
-        # Check depth limit - unions should be skipped at max depth
-        if self.should_skip_depth():
+        # Check depth limit - unions should be skipped at max depth. We add
+        # padding to account for the extra depth that will be incurred from the
+        # nested union objects
+        if self.should_skip_depth(padding=1):
+            logger.debug(f"Skipping union %s due to depth limit {union_type.name}")
             return VisitorControl.SKIP
+
+        logger.debug(
+            f"before union depth: {self.current_depth}, union: {union_type.name}, max_depth: {self._max_depth}"
+        )
 
         try:
             self.start_union_context(union_type.name)
         except PydanticModelAlreadyRegistered as e:
             existing_type = self.get_type(e.model_name)
-            assert t.get_origin(existing_type) == t.Union
-            # Use existing union
-            current_context = self.require_model_context("add union field")
-            # Apply list wrapper if needed
-            if is_list:
-                existing_type = list[existing_type]  # type: ignore
-            # Apply optional wrapper
-            if not is_required:
-                existing_type = t.Optional[existing_type]  # type: ignore
-                field_info = Field(
-                    default=None,
-                    description=description,
-                    discriminator="typename__",
-                    json_schema_extra={
-                        "graphql_type_string": create_graphql_type_string(
-                            union_type.name, is_required=is_required, is_list=is_list
-                        )
-                    },
-                )
-            else:
-                field_info = Field(
-                    description=description,
-                    discriminator="typename__",
-                    json_schema_extra={
-                        "graphql_type_string": create_graphql_type_string(
-                            union_type.name, is_required=is_required, is_list=is_list
-                        )
-                    },
-                )
-            current_context.add_field(field_name, existing_type, field_info)
+            assert t.get_origin(existing_type) == t.Union, (
+                "Expected existing type to be a Union"
+            )
+
+            self.add_field_to_context(
+                field_name=field_name,
+                graphql_type_name=union_type.name,
+                python_type=existing_type,
+                description=description,
+                is_required=is_required,
+                is_list=is_list,
+                discriminator="typename__",
+            )
 
         return VisitorControl.CONTINUE
 
@@ -765,40 +782,15 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         union_name = self.finish_context()
         union_type_materialized = self.get_type(union_name)
 
-        # Add to parent context if exists
-        if self.current_context:
-            python_type: t.Any = union_type_materialized
-
-            # Apply list wrapper if needed
-            if is_list:
-                python_type = list[python_type]
-
-            # Apply optional wrapper
-            if not is_required:
-                python_type = t.Optional[python_type]
-                field_info = Field(
-                    default=None,
-                    description=description,
-                    # discriminator="typename__",
-                    json_schema_extra={
-                        "graphql_type_string": create_graphql_type_string(
-                            union_type.name, is_required=is_required, is_list=is_list
-                        )
-                    },
-                )
-            else:
-                field_info = Field(
-                    description=description,
-                    # discriminator="typename__",
-                    json_schema_extra={
-                        "graphql_type_string": create_graphql_type_string(
-                            union_type.name, is_required=is_required, is_list=is_list
-                        )
-                    },
-                )
-
-            current_context = self.require_model_context("add union field")
-            current_context.add_field(field_name, python_type, field_info)
+        self.add_field_to_context(
+            field_name=field_name,
+            graphql_type_name=union_type.name,
+            python_type=union_type_materialized,
+            description=description,
+            is_required=is_required,
+            is_list=is_list,
+            discriminator="typename__",
+        )
 
         return VisitorControl.CONTINUE
 
@@ -815,23 +807,17 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
                 f"Unsupported GraphQL type for field {field_name}: {gql_type}"
             )
 
-        ctx = self.require_context("add unknown field")
-
         # Add as Any
         python_type = t.Any
-        if is_list:
-            python_type = list[python_type]
-        if not is_required:
-            python_type = t.Optional[python_type]
-            field_info = Field(default=None)
-        else:
-            field_info = Field()
 
-        match ctx:
-            case PydanticModelBuildContext():
-                ctx.add_field(field_name, python_type, field_info)
-            case UnionTypeBuildContext():
-                ctx.add_member(python_type)
+        self.add_field_to_context(
+            field_name=field_name,
+            graphql_type_name=str(gql_type),
+            python_type=python_type,
+            description=None,
+            is_required=is_required,
+            is_list=is_list,
+        )
 
         return VisitorControl.CONTINUE
 
@@ -874,6 +860,12 @@ class MutationInfoContext:
         logger.debug(
             f"Materializing mutation info for {self._name} with input type {self._input_type} and return type {self._return_type}"
         )
+
+        # return_model_fields: dict = {}
+        # return_model_fields[self._name] = (self._return_type, Field(description="The result of the mutation"))
+
+        # return_model = create_model(f"{self._name}Response", **return_model_fields)
+
         return MutationInfo(
             name=self._name,
             description=self._description or "",
@@ -936,6 +928,12 @@ class MutationCollectorVisitor(PydanticModelVisitor):
     ) -> VisitorControl:
         """Handle entering a mutation field - store context for later collection."""
 
+        if field_name.startswith("_"):
+            logger.debug(
+                f"Skipping mutation field {field_name} since it starts with an underscore"
+            )
+            return VisitorControl.SKIP
+
         self._current_mutation_context = MutationInfoContext(
             name=field_name,
             field_def=field_def,
@@ -968,21 +966,6 @@ class MutationCollectorVisitor(PydanticModelVisitor):
         logger.debug(
             f"Entering mutation return type for {mutation_name}: {return_type}"
         )
-        if not isinstance(return_type, GraphQLObjectType):
-            if isinstance(return_type, GraphQLScalarType):
-                logger.debug(
-                    f"Return type is scalar for {mutation_name}, mapping to Python type {return_type.name}"
-                )
-                python_type = self._map_scalar_to_python(return_type)
-                assert self._current_mutation_context is not None, (
-                    "Mutation context should be set"
-                )
-                self._current_mutation_context.set_return_type(python_type)
-            else:
-                raise TypeError(
-                    f"Unsupported return type for mutation {mutation_name}: {return_type}"
-                )
-            return VisitorControl.SKIP
         self.start_model_context(f"{mutation_name}ReturnType")
 
         return VisitorControl.CONTINUE
@@ -990,13 +973,28 @@ class MutationCollectorVisitor(PydanticModelVisitor):
     def handle_leave_mutation_return_type(self, mutation_name: str, return_type: t.Any):
         """Handle leaving mutation return type - store return type context."""
         logger.debug(f"Leaving mutation return type for {mutation_name}: {return_type}")
-        if not isinstance(return_type, GraphQLObjectType):
-            return VisitorControl.CONTINUE  # Already handled in enter
+
         return_type_model_name = self.finish_context()
         assert self._current_mutation_context is not None, (
             "Mutation context should be set"
         )
         return_type_model = self.get_type(return_type_model_name)
+        # if not isinstance(return_type, GraphQLObjectType):
+        #     assert isinstance(return_type_model, type), (
+        #         "Expected return type model to be a class for non-object return type"
+        #     )
+        #     assert issubclass(return_type_model, BaseModel), (
+        #         "Expected return type model to not be a Pydantic model for non-object return type"
+        #     )
+        #     # If the return type is not an object, we should use the raw type
+        #     # instead of the model by accessing the field from the return type
+        #     # (which should be named after the mutation)
+        #     return_type_model_fields = return_type_model.model_fields
+        #     assert mutation_name in return_type_model_fields, (
+        #         f"Expected return type model to have a field named {mutation_name} for non-object return type"
+        #     )
+        #     return_type_model = return_type_model_fields[mutation_name].annotation
+
         self._current_mutation_context.set_return_type(return_type_model)
 
         return VisitorControl.CONTINUE

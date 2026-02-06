@@ -12,6 +12,7 @@ from graphql import (
     FieldNode,
     FragmentDefinitionNode,
     FragmentSpreadNode,
+    GraphQLArgument,
     GraphQLEnumType,
     GraphQLField,
     GraphQLInputField,
@@ -107,6 +108,7 @@ class GraphQLSchemaTypeTraverser:
         if isinstance(gql_type, GraphQLNonNull):
             is_required = True
             base_type = gql_type.of_type
+            logger.debug(f"Field {gql_type} is NonNull, unwrapped to {base_type}")
 
         # Unwrap List wrapper
         if isinstance(base_type, GraphQLList):
@@ -137,10 +139,10 @@ class GraphQLSchemaTypeTraverser:
                 description,
             )
         elif isinstance(base_type, GraphQLInputObjectType):
-            logger.debug("Visiting input object type: %s", base_type.name)
+            logger.debug(
+                f"Visiting input object type: {base_type.name} with required: {is_required} and list: {is_list} with description: {description}"
+            )
             return self._visit_input_object(field_name, base_type, is_required, is_list)
-        elif isinstance(base_type, GraphQLInputField):
-            return self._visit_input_field(field_name, base_type, is_required, is_list)
         elif isinstance(base_type, GraphQLUnionType):
             return self._visit_union(
                 field_name, base_type, is_required, is_list, description
@@ -306,7 +308,12 @@ class GraphQLSchemaTypeTraverser:
                 prev_selection_set = self._selection_set
                 self._selection_set = nested_selection_set
 
-                control = self.visit(field_def.type, field_name=child_field_name)
+                assert isinstance(field_def, GraphQLField), (
+                    f"Expected GraphQLField for object type fields, got {type(field_def)}"
+                )
+                control = self.visit_generic_graphql_field(
+                    field_def, field_name=child_field_name
+                )
 
                 self._selection_set = prev_selection_set
 
@@ -343,7 +350,7 @@ class GraphQLSchemaTypeTraverser:
         # Extract and unwrap input types from args
 
         # Unwrap return type
-        return_type = self._unwrap_type(field_def.type)
+        return_type = field_def.type
 
         description = field_def.description
 
@@ -366,7 +373,12 @@ class GraphQLSchemaTypeTraverser:
         if control == VisitorControl.STOP:
             return VisitorControl.STOP
 
-        return_description = getattr(return_type, "description", None)
+        # Scalar values don't have useful descriptions on their return type, but
+        # object types might have descriptions that are useful for tool
+        # generation.
+        return_description = ""
+        if isinstance(return_type, GraphQLObjectType):
+            return_description = getattr(return_type, "description", "") or ""
 
         # Visit each argument
         for arg_name, arg_def in field_def.args.items():
@@ -374,16 +386,11 @@ class GraphQLSchemaTypeTraverser:
             logger.debug(
                 f"Visiting argument {arg_name} of type {arg_type} for mutation {field_name} with description: {arg_def.description}"
             )
-            control = self.visit(
-                arg_type,
+            control = self.visit_generic_graphql_field(
+                field_def=arg_def,
                 field_name=arg_name,
-                # We need to override the description here because the argument
-                # definition's description is lost when we visit its type (since
-                # it's not a field/enum/object itself). Additionally, the
-                # default description used by the graphql parser is highly
-                # verbose and will not be useful for tool generation.
-                override_description=arg_def.description or "",
             )
+
             if control == VisitorControl.STOP:
                 return VisitorControl.STOP
         control = self._visitor.handle_leave_mutation_arguments(
@@ -398,20 +405,15 @@ class GraphQLSchemaTypeTraverser:
         if control == VisitorControl.STOP:
             return VisitorControl.STOP
 
-        # Visit return type as an object (allows visitor to build payload model via inherited hooks)
-        if isinstance(return_type, GraphQLObjectType):
-            logger.debug(
-                f"Visiting mutation return type for {field_name}: {return_type.name}"
-            )
-            control = self._visit_object(
-                field_name=field_name,
-                object_type=return_type,
-                is_required=True,
-                is_list=False,
-                description=return_description,
-            )
-            if control == VisitorControl.STOP:
-                return VisitorControl.STOP
+        logger.debug(
+            f"Visiting return type {return_type} for mutation {field_name} with description: {return_description} with type {type(return_type)}"
+        )
+
+        control = self.visit(
+            return_type,
+            field_name=field_name,
+            override_description=return_description,
+        )
 
         control = self._visitor.handle_leave_mutation_return_type(
             mutation_name=field_name, return_type=return_type
@@ -439,7 +441,7 @@ class GraphQLSchemaTypeTraverser:
             field_name,
             field_def,
             field_def.type,
-            getattr(field_def.type, "description", None),
+            getattr(field_def, "description", None),
         )
         if control == VisitorControl.STOP:
             return VisitorControl.STOP
@@ -449,7 +451,7 @@ class GraphQLSchemaTypeTraverser:
                 field_name,
                 field_def,
                 field_def.type,
-                getattr(field_def.type, "description", None),
+                getattr(field_def, "description", None),
             )
 
         # Save and update selection_set for this field's nested selections
@@ -457,7 +459,9 @@ class GraphQLSchemaTypeTraverser:
         self._selection_set = nested_selection_set
 
         # Visit return type as a field (this will handle adding it to the parent context)
-        control = self.visit(field_def.type, field_name=field_name)
+        control = self.visit_generic_graphql_field(
+            field_name=field_name, field_def=field_def
+        )
 
         # Restore previous selection_set
         self._selection_set = prev_selection_set
@@ -471,6 +475,19 @@ class GraphQLSchemaTypeTraverser:
             field_def,
             field_def.type,
             getattr(field_def.type, "description", None),
+        )
+
+    def visit_generic_graphql_field(
+        self,
+        field_def: GraphQLField | GraphQLArgument | GraphQLInputField,
+        field_name: str,
+    ) -> VisitorControl:
+        """Visit a regular generic GraphQL field and delegate it to the normal
+        visit method"""
+        return self.visit(
+            field_def.type,
+            field_name=field_name,
+            override_description=field_def.description or "",
         )
 
     def _visit_input_object(
@@ -493,7 +510,11 @@ class GraphQLSchemaTypeTraverser:
 
         # Traverse each field (input objects don't use selection sets)
         for child_field_name, field in input_type.fields.items():
-            control = self.visit(field, field_name=child_field_name)
+            assert isinstance(field, GraphQLInputField)
+
+            control = self.visit_generic_graphql_field(
+                field, field_name=child_field_name
+            )
             if control == VisitorControl.STOP:
                 return VisitorControl.STOP
 
@@ -502,68 +523,3 @@ class GraphQLSchemaTypeTraverser:
             field_name, input_type, is_required, is_list, description
         )
         return control
-
-    def _visit_input_field(
-        self,
-        field_name: str,
-        field_type: GraphQLInputField,
-        is_required: bool,
-        is_list: bool,
-    ) -> VisitorControl:
-        """Visit an input field (internal - handles traversal)."""
-
-        logger.debug(f"Visiting input field: {field_name}")
-
-        # Unwrap wrappers (NonNull, List) to get base type
-        is_required = False
-        is_list = False
-        base_type = field_type.type
-
-        description = getattr(field_type, "description", None)
-
-        logger.debug(f"Field description: {description}")
-
-        # Unwrap NonNull wrapper
-        if isinstance(base_type, GraphQLNonNull):
-            is_required = True
-            base_type = base_type.of_type
-
-        # Unwrap List wrapper
-        if isinstance(base_type, GraphQLList):
-            is_list = True
-            # Get the inner type (might be NonNull too)
-            inner_type = base_type.of_type
-            if isinstance(inner_type, GraphQLNonNull):
-                base_type = inner_type.of_type
-            else:
-                base_type = inner_type
-
-        match base_type:
-            case GraphQLScalarType():
-                return self._visitor.handle_scalar(
-                    field_name,
-                    base_type,
-                    is_required,
-                    is_list,
-                    description,
-                )
-            case GraphQLEnumType():
-                return self._visitor.handle_enum(
-                    field_name,
-                    base_type,
-                    is_required,
-                    is_list,
-                    description,
-                )
-            case GraphQLInputObjectType():
-                return self._visit_input_object(
-                    field_name,
-                    base_type,
-                    is_required,
-                    is_list,
-                    description,
-                )
-            case _:
-                return self._visitor.handle_unknown(
-                    field_name, base_type, is_required, is_list
-                )

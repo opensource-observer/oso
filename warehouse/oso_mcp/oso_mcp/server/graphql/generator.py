@@ -18,6 +18,7 @@ from .tool_generator import ToolGenerator
 from .types import (
     AsyncGraphQLClient,
     GraphQLClientFactory,
+    GraphQLError,
     MutationFilter,
     MutationInfo,
     QueryInfo,
@@ -97,7 +98,21 @@ class OSOAsyncGraphQLClient(AsyncGraphQLClient):
         response = await self.http_client.post(
             self.endpoint, json=payload, headers=headers
         )
-        response.raise_for_status()
+        if response.status_code >= 400:
+            logger.error(
+                f"GraphQL request failed with status {response.status_code}: {response.text}"
+            )
+            # Collect errors from graphql response if available
+            try:
+                error_data = response.json()
+                if "errors" in error_data:
+                    logger.error(f"GraphQL errors: {error_data['errors']}")
+                    raise GraphQLError(
+                        f"GraphQL request failed with status {response.status_code} and errors {error_data.get('errors')}"
+                    )
+            except Exception as e:
+                logger.error(f"Failed to parse error response as JSON: {e}")
+            response.raise_for_status()
         return response.json()
 
 

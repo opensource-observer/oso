@@ -369,18 +369,21 @@ class GraphQLExecutor:
 
         # Get the inner payload model specific to this mutation (we need to get
         # it based on the name of the mutation)
-        payload_model_fields = self.mutation.payload_model.model_fields.get(
-            self.mutation.name
-        )
-        assert payload_model_fields is not None, (
-            f"Expected payload model to have a field for the mutation name {self.mutation.name}"
-        )
-        inner_payload_model = payload_model_fields.annotation
-        assert isinstance(inner_payload_model, type) and issubclass(
-            inner_payload_model, BaseModel
-        ), "Expected inner payload model to be a Pydantic model"
+        # payload_model_fields = self.mutation.payload_model.model_fields.get(
+        #     self.mutation.name
+        # )
+        # logger.debug(f"Payload model fields for mutation {self.mutation.name}: {self.mutation.payload_model.model_fields}")
+        # assert payload_model_fields is not None, (
+        #     f"Expected payload model to have a field for the mutation name {self.mutation.name}"
+        # )
+        # inner_payload_model = payload_model_fields.annotation
+        # assert isinstance(inner_payload_model, type) and issubclass(
+        #     inner_payload_model, BaseModel
+        # ), "Expected inner payload model to be a Pydantic model"
 
-        fields = self._build_field_selection(inner_payload_model, indent_level=2)
+        fields = self._build_field_selection(
+            self.mutation.payload_model, indent_level=2
+        )
 
         # Generate the argument line for the mutation (e.g. $input: InputType!)
         # by iterating over the mutation's arguments
@@ -398,10 +401,12 @@ class GraphQLExecutor:
             )
             graphql_type = info.json_schema_extra["graphql_type_string"]
             input_pairs.append(f"{field_name}: ${field_name}, ")
-            variable_pairs.append(f"{field_name}: ${graphql_type}, ")
+            variable_pairs.append(f"${field_name}: {graphql_type}, ")
 
         input_args = "".join(input_pairs).rstrip(", ")
         variable_args = "".join(variable_pairs).rstrip(", ")
+
+        # selection = f"{{ \n{fields}\n  }}"
 
         query = f"""
 mutation {self.mutation.name}({variable_args}) {{
