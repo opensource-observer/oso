@@ -240,7 +240,7 @@ query GetNotebook($id: ID!) {
 }
 
 query GetNotebookByName($orgId: ID!, $name: String!) {
-  notebooks(where: { orgId: { eq: $orgId }, name: { eq: $name } }, single: true) {
+  notebooks(where: { org_id: { eq: $orgId }, name: { eq: $name } }, single: true) {
     edges {
       node {
         ...NotebookFields
@@ -266,7 +266,7 @@ query GetDataModel($id: ID!) {
 }
 
 query GetDataModelByName($orgId: ID!, $datasetId: ID!, $name: String!) {
-  dataModels(where: { orgId: { eq: $orgId }, datasetId: { eq: $datasetId }, name: { eq: $name } }, single: true) {
+  dataModels(where: { org_id: { eq: $orgId }, datasetId: { eq: $datasetId }, name: { eq: $name } }, single: true) {
     edges {
       node {
         ...DataModelFields
@@ -295,7 +295,7 @@ query GetStaticModel($id: ID!) {
 }
 
 query GetStaticModelByName($orgId: ID!, $datasetId: ID!, $name: String!) {
-  staticModels(where: { orgId: { eq: $orgId }, datasetId: { eq: $datasetId }, name: { eq: $name } }, single: true) {
+  staticModels(where: { org_id: { eq: $orgId }, datasetId: { eq: $datasetId }, name: { eq: $name } }, single: true) {
     edges {
       node {
         ...StaticModelFields
@@ -318,7 +318,7 @@ query GetDataset($id: ID!) {
 }
 
 query GetDatasetByName($orgId: ID!, $name: String!) {
-  datasets(where: { orgId: { eq: $orgId }, name: { eq: $name } }, single: true) {
+  datasets(where: { org_id: { eq: $orgId }, name: { eq: $name } }, single: true) {
     edges {
       node {
         ...DatasetFields
@@ -345,7 +345,7 @@ query GetDataIngestion($datasetId: ID!) {
 }
 
 query GetDataIngestionByName($orgId: ID!, $datasetName: String!) {
-  datasets(where: { orgId: { eq: $orgId }, name: { eq: $datasetName } }, single: true) {
+  datasets(where: { org_id: { eq: $orgId }, name: { eq: $datasetName } }, single: true) {
     edges {
       node {
         ...DatasetFields
