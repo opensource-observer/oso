@@ -5,6 +5,7 @@ import { logger } from "@/lib/logger";
 import { EVENTS } from "@/lib/types/posthog";
 import { z } from "zod";
 import { withPostHogTracking } from "@/lib/clients/posthog";
+import { getTableNamesFromSql } from "@/lib/parsing";
 
 // Next.js route control
 export const revalidate = 0;
@@ -45,11 +46,13 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
     return makeErrorResponse(DEPRECATION_MESSAGE, 410);
   }
 
+  const tables = getTableNamesFromSql(query);
+
   // Attempt to track the API call, but don't fail the request if tracking fails
   try {
     tracker.track(EVENTS.API_CALL, {
       type: "sql",
-      models: [],
+      models: tables,
       query: query,
       apiKeyName: user.keyName,
       host: user.host,
