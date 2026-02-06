@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 
 import httpx
 from ariadne_codegen.schema import get_graphql_schema_from_path
-from attr import dataclass
+from dataclasses import dataclass
 from fastmcp import FastMCP
 from oso_mcp.server.config import MCPConfig
 
