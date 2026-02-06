@@ -34,7 +34,11 @@ import { z } from "zod";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { ModelRow, ModelUpdate } from "@/lib/types/schema-types";
 import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
-import { generateTableId } from "@/app/api/v1/osograph/utils/model";
+import {
+  checkMaterializationExists,
+  executePreviewQuery,
+  generateTableId,
+} from "@/app/api/v1/osograph/utils/model";
 
 export const dataModelResolvers = {
   Query: {
@@ -460,6 +464,32 @@ export const dataModelResolvers = {
         parent.org_id,
         parent.dataset_id,
         generateTableId("USER_MODEL", parent.id),
+      );
+    },
+    previewData: async (
+      parent: ModelRow,
+      _args: Record<string, never>,
+      context: GraphQLContext,
+    ) => {
+      const authenticatedUser = requireAuthentication(context.user);
+
+      const tableId = generateTableId("USER_MODEL", parent.id);
+
+      const materializationExists = await checkMaterializationExists(
+        parent.org_id,
+        parent.dataset_id,
+        tableId,
+      );
+      if (!materializationExists) {
+        return [];
+      }
+
+      return executePreviewQuery(
+        parent.org_id,
+        parent.dataset_id,
+        tableId,
+        authenticatedUser,
+        parent.name,
       );
     },
   },

@@ -19,7 +19,11 @@ import z from "zod";
 import { DataIngestionsRow } from "@/lib/types/schema-types";
 import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
 import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
-import { generateTableId } from "@/app/api/v1/osograph/utils/model";
+import {
+  checkMaterializationExists,
+  executePreviewQuery,
+  generateTableId,
+} from "@/app/api/v1/osograph/utils/model";
 
 export const dataIngestionResolvers = {
   Mutation: {
@@ -135,6 +139,32 @@ export const dataIngestionResolvers = {
         parent.org_id,
         parent.dataset_id,
         generateTableId("DATA_INGESTION", tableName),
+      );
+    },
+    previewData: async (
+      parent: DataIngestionsRow,
+      args: { tableName: string },
+      context: GraphQLContext,
+    ) => {
+      const authenticatedUser = requireAuthentication(context.user);
+
+      const tableId = generateTableId("DATA_INGESTION", args.tableName);
+
+      const materializationExists = await checkMaterializationExists(
+        parent.org_id,
+        parent.dataset_id,
+        tableId,
+      );
+      if (!materializationExists) {
+        return [];
+      }
+
+      return executePreviewQuery(
+        parent.org_id,
+        parent.dataset_id,
+        tableId,
+        authenticatedUser,
+        args.tableName,
       );
     },
   },

@@ -32,8 +32,12 @@ import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { SyncConnectionRunRequest } from "@opensource-observer/osoprotobufs/sync-connection";
 import { getMaterializations } from "@/app/api/v1/osograph/utils/resolver-helpers";
-import { generateTableId } from "@/app/api/v1/osograph/utils/model";
 import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
+import {
+  checkMaterializationExists,
+  executePreviewQuery,
+  generateTableId,
+} from "@/app/api/v1/osograph/utils/model";
 
 async function syncDataConnection(
   supabase: SupabaseAdminClient,
@@ -334,6 +338,32 @@ export const dataConnectionResolvers = {
         parent.org_id,
         parent.dataset_id,
         generateTableId("DATA_CONNECTION", tableName),
+      );
+    },
+    previewData: async (
+      parent: DataConnectionAliasRow,
+      args: { tableName: string },
+      context: GraphQLContext,
+    ) => {
+      const authenticatedUser = requireAuthentication(context.user);
+
+      const tableId = generateTableId("DATA_CONNECTION", args.tableName);
+
+      const materializationExists = await checkMaterializationExists(
+        parent.org_id,
+        parent.dataset_id,
+        tableId,
+      );
+      if (!materializationExists) {
+        return [];
+      }
+
+      return executePreviewQuery(
+        parent.org_id,
+        parent.dataset_id,
+        tableId,
+        authenticatedUser,
+        args.tableName,
       );
     },
   },

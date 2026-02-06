@@ -37,8 +37,14 @@ export const GET = withPostHogTracking(async (request: NextRequest) => {
     return makeErrorResponse("Missing id parameter", 400);
   }
 
-  return await retrieveAsyncSqlQueryResults({
+  const results = await retrieveAsyncSqlQueryResults({
     runId,
     user: await getOrgUser(request),
   });
+
+  if ("error" in results) {
+    return makeErrorResponse(results.error, results.statusCode);
+  }
+
+  return NextResponse.json(results);
 });
