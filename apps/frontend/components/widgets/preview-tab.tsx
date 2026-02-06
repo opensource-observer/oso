@@ -18,7 +18,7 @@ import { GetPreviewDataQuery } from "@/lib/graphql/generated/graphql";
 
 interface PreviewTabProps {
   datasetId: string;
-  modelOrTable: string;
+  tableName: string;
 
   className?: string;
 
@@ -29,14 +29,14 @@ interface PreviewTabProps {
 
 // Unified GraphQL query that handles all model types
 const PREVIEW_QUERY = gql(`
-  query GetPreviewData($datasetId: ID!, $modelOrTable: String!) {
+  query GetPreviewData($datasetId: ID!, $tableName: String!) {
     datasets(where: { id: { eq: $datasetId } }, single: true) {
       edges {
         node {
           id
           typeDefinition {
             ... on DataModelDefinition {
-              dataModels(where: { id: { eq: $modelOrTable } }, single: true) {
+              dataModels(where: { name: { eq: $tableName } }, single: true) {
                 edges {
                   node {
                     id
@@ -47,7 +47,7 @@ const PREVIEW_QUERY = gql(`
               }
             }
             ... on StaticModelDefinition {
-              staticModels(where: { id: { eq: $modelOrTable } }, single: true) {
+              staticModels(where: { name: { eq: $tableName } }, single: true) {
                 edges {
                   node {
                     id
@@ -60,14 +60,14 @@ const PREVIEW_QUERY = gql(`
             ... on DataIngestionDefinition {
               dataIngestion {
                 id
-                previewData(tableName: $modelOrTable)
+                previewData(tableName: $tableName)
               }
             }
             ... on DataConnectionDefinition {
               dataConnectionAlias {
                 id
                 schema
-                previewData(tableName: $modelOrTable)
+                previewData(tableName: $tableName)
               }
             }
           }
@@ -119,19 +119,19 @@ function generateColumnsFromData(data: any[]): ColumnDef<any>[] {
 
 // Custom hook for fetching preview data
 function usePreviewData(props: PreviewTabProps) {
-  const { datasetId, modelOrTable, useTestData, testData } = props;
+  const { datasetId, tableName, useTestData, testData } = props;
 
   // SWR cache key as array
   const cacheKey = useTestData
     ? null
-    : ["/api/v1/osograph/preview", datasetId, modelOrTable];
+    : ["/api/v1/osograph/preview", datasetId, tableName];
 
   const { data, error, isLoading, mutate } = useSWR(
     cacheKey,
     async () => {
       const response = await executeGraphQL(
         PREVIEW_QUERY,
-        { datasetId, modelOrTable },
+        { datasetId, tableName },
         "Failed to fetch preview data",
       );
 
@@ -259,11 +259,9 @@ const PreviewTabMeta: CodeComponentMeta<PreviewTabProps> = {
       displayName: "Dataset ID",
       required: true,
     },
-    modelOrTable: {
+    tableName: {
       type: "string",
-      displayName: "Model ID",
-      description:
-        "Model for USER_MODEL and STATIC_MODEL, Table name for DATA_INGESTION and DATA_CONNECTION_ALIAS",
+      displayName: "Table name",
       required: true,
     },
     useTestData: {

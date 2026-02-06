@@ -9245,7 +9245,7 @@ export enum Link__Purpose {
 
 export type GetPreviewDataQueryVariables = Exact<{
   datasetId: Scalars["ID"]["input"];
-  modelOrTable: Scalars["String"]["input"];
+  tableName: Scalars["String"]["input"];
 }>;
 
 export type GetPreviewDataQuery = {
@@ -9870,7 +9870,7 @@ export const GetPreviewDataDocument = {
           kind: "VariableDefinition",
           variable: {
             kind: "Variable",
-            name: { kind: "Name", value: "modelOrTable" },
+            name: { kind: "Name", value: "tableName" },
           },
           type: {
             kind: "NonNullType",
@@ -9977,7 +9977,7 @@ export const GetPreviewDataDocument = {
                                                     kind: "ObjectField",
                                                     name: {
                                                       kind: "Name",
-                                                      value: "id",
+                                                      value: "name",
                                                     },
                                                     value: {
                                                       kind: "ObjectValue",
@@ -9993,7 +9993,7 @@ export const GetPreviewDataDocument = {
                                                             name: {
                                                               kind: "Name",
                                                               value:
-                                                                "modelOrTable",
+                                                                "tableName",
                                                             },
                                                           },
                                                         },
@@ -10102,7 +10102,7 @@ export const GetPreviewDataDocument = {
                                                     kind: "ObjectField",
                                                     name: {
                                                       kind: "Name",
-                                                      value: "id",
+                                                      value: "name",
                                                     },
                                                     value: {
                                                       kind: "ObjectValue",
@@ -10118,7 +10118,7 @@ export const GetPreviewDataDocument = {
                                                             name: {
                                                               kind: "Name",
                                                               value:
-                                                                "modelOrTable",
+                                                                "tableName",
                                                             },
                                                           },
                                                         },
@@ -10240,7 +10240,7 @@ export const GetPreviewDataDocument = {
                                                       kind: "Variable",
                                                       name: {
                                                         kind: "Name",
-                                                        value: "modelOrTable",
+                                                        value: "tableName",
                                                       },
                                                     },
                                                   },
@@ -10304,7 +10304,7 @@ export const GetPreviewDataDocument = {
                                                       kind: "Variable",
                                                       name: {
                                                         kind: "Name",
-                                                        value: "modelOrTable",
+                                                        value: "tableName",
                                                       },
                                                     },
                                                   },
