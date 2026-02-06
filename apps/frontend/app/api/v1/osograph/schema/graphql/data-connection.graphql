@@ -40,7 +40,7 @@ type DataConnectionAlias {
     single: Boolean
     where: JSON
   ): MaterializationConnection!
-  previewData(tableName: String!): [JSON!]!
+  previewData(tableName: String!): PreviewData!
 }
 
 extend type Query {

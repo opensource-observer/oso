@@ -208,3 +208,8 @@ type UpdateDatasetPayload {
   dataset: Dataset
   message: String
 }
+
+type PreviewData {
+  isAvailable: Boolean!
+  rows: [JSON!]!
+}

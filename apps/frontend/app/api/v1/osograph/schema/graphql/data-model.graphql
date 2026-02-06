@@ -29,7 +29,7 @@ type DataModel {
     single: Boolean
     where: JSON
   ): MaterializationConnection!
-  previewData: [JSON!]!
+  previewData: PreviewData!
 }
 
 type DataModelEdge {

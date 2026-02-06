@@ -69,6 +69,7 @@ import {
   ModelContextEditor,
   ModelContextEditorMeta,
 } from "@/components/widgets/model-context-editor";
+import { PreviewTab, PreviewTabMeta } from "@/components/widgets/preview-tab";
 
 export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   // Widgets
@@ -114,4 +115,5 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(FormSaver, FormSaverMeta);
   PLASMIC.registerComponent(LogViewer, LogViewerMeta);
   PLASMIC.registerComponent(ModelContextEditor, ModelContextEditorMeta);
+  PLASMIC.registerComponent(PreviewTab, PreviewTabMeta);
 }

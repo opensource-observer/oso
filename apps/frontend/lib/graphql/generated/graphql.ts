@@ -1551,7 +1551,7 @@ export type DataConnectionAlias = {
   materializations: MaterializationConnection;
   modelContext?: Maybe<ModelContext>;
   orgId: Scalars["ID"]["output"];
-  previewData: Array<Scalars["JSON"]["output"]>;
+  previewData: PreviewData;
   schema: Scalars["String"]["output"];
 };
 
@@ -1633,7 +1633,7 @@ export type DataIngestion = {
   materializations: MaterializationConnection;
   modelContext?: Maybe<ModelContext>;
   orgId: Scalars["ID"]["output"];
-  previewData: Array<Scalars["JSON"]["output"]>;
+  previewData: PreviewData;
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
@@ -1697,7 +1697,7 @@ export type DataModel = {
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
-  previewData: Array<Scalars["JSON"]["output"]>;
+  previewData: PreviewData;
   releases: DataModelReleaseConnection;
   revisions: DataModelRevisionConnection;
   runs: RunConnection;
@@ -6205,6 +6205,12 @@ export type PresetNotFoundError = Error & {
   preset: Scalars["String"]["output"];
 };
 
+export type PreviewData = {
+  __typename?: "PreviewData";
+  isAvailable: Scalars["Boolean"]["output"];
+  rows: Array<Scalars["JSON"]["output"]>;
+};
+
 export type PublishNotebookPayload = {
   __typename?: "PublishNotebookPayload";
   message?: Maybe<Scalars["String"]["output"]>;
@@ -8464,7 +8470,7 @@ export type StaticModel = {
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
-  previewData: Array<Scalars["JSON"]["output"]>;
+  previewData: PreviewData;
   runs: RunConnection;
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
@@ -9243,6 +9249,89 @@ export enum Link__Purpose {
   Security = "SECURITY",
 }
 
+export type GetPreviewDataQueryVariables = Exact<{
+  datasetId: Scalars["ID"]["input"];
+  tableName: Scalars["String"]["input"];
+}>;
+
+export type GetPreviewDataQuery = {
+  __typename?: "Query";
+  datasets: {
+    __typename?: "DatasetConnection";
+    edges: Array<{
+      __typename?: "DatasetEdge";
+      node: {
+        __typename?: "Dataset";
+        id: string;
+        typeDefinition:
+          | {
+              __typename?: "DataConnectionDefinition";
+              dataConnectionAlias: {
+                __typename?: "DataConnectionAlias";
+                id: string;
+                schema: string;
+                previewData: {
+                  __typename?: "PreviewData";
+                  isAvailable: boolean;
+                  rows: Array<any>;
+                };
+              };
+            }
+          | {
+              __typename?: "DataIngestionDefinition";
+              dataIngestion?: {
+                __typename?: "DataIngestion";
+                id: string;
+                previewData: {
+                  __typename?: "PreviewData";
+                  isAvailable: boolean;
+                  rows: Array<any>;
+                };
+              } | null;
+            }
+          | {
+              __typename?: "DataModelDefinition";
+              dataModels: {
+                __typename?: "DataModelConnection";
+                edges: Array<{
+                  __typename?: "DataModelEdge";
+                  node: {
+                    __typename?: "DataModel";
+                    id: string;
+                    name: string;
+                    previewData: {
+                      __typename?: "PreviewData";
+                      isAvailable: boolean;
+                      rows: Array<any>;
+                    };
+                  };
+                }>;
+              };
+            }
+          | {
+              __typename?: "StaticModelDefinition";
+              staticModels: {
+                __typename?: "StaticModelConnection";
+                edges: Array<{
+                  __typename?: "StaticModelEdge";
+                  node: {
+                    __typename?: "StaticModel";
+                    id: string;
+                    name: string;
+                    previewData: {
+                      __typename?: "PreviewData";
+                      isAvailable: boolean;
+                      rows: Array<any>;
+                    };
+                  };
+                }>;
+              };
+            };
+      };
+    }>;
+  };
+};
+
 export type PublishNotebookMutationVariables = Exact<{
   notebookId: Scalars["ID"]["input"];
 }>;
@@ -9780,6 +9869,572 @@ export type TimeseriesMetricsByCollectionQuery = {
   }> | null;
 };
 
+export const GetPreviewDataDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "GetPreviewData" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "datasetId" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "ID" } },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "tableName" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "datasets" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "where" },
+                value: {
+                  kind: "ObjectValue",
+                  fields: [
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "id" },
+                      value: {
+                        kind: "ObjectValue",
+                        fields: [
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "eq" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "datasetId" },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "single" },
+                value: { kind: "BooleanValue", value: true },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "edges" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "node" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "id" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "typeDefinition" },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "InlineFragment",
+                                    typeCondition: {
+                                      kind: "NamedType",
+                                      name: {
+                                        kind: "Name",
+                                        value: "DataModelDefinition",
+                                      },
+                                    },
+                                    selectionSet: {
+                                      kind: "SelectionSet",
+                                      selections: [
+                                        {
+                                          kind: "Field",
+                                          name: {
+                                            kind: "Name",
+                                            value: "dataModels",
+                                          },
+                                          arguments: [
+                                            {
+                                              kind: "Argument",
+                                              name: {
+                                                kind: "Name",
+                                                value: "where",
+                                              },
+                                              value: {
+                                                kind: "ObjectValue",
+                                                fields: [
+                                                  {
+                                                    kind: "ObjectField",
+                                                    name: {
+                                                      kind: "Name",
+                                                      value: "name",
+                                                    },
+                                                    value: {
+                                                      kind: "ObjectValue",
+                                                      fields: [
+                                                        {
+                                                          kind: "ObjectField",
+                                                          name: {
+                                                            kind: "Name",
+                                                            value: "eq",
+                                                          },
+                                                          value: {
+                                                            kind: "Variable",
+                                                            name: {
+                                                              kind: "Name",
+                                                              value:
+                                                                "tableName",
+                                                            },
+                                                          },
+                                                        },
+                                                      ],
+                                                    },
+                                                  },
+                                                ],
+                                              },
+                                            },
+                                            {
+                                              kind: "Argument",
+                                              name: {
+                                                kind: "Name",
+                                                value: "single",
+                                              },
+                                              value: {
+                                                kind: "BooleanValue",
+                                                value: true,
+                                              },
+                                            },
+                                          ],
+                                          selectionSet: {
+                                            kind: "SelectionSet",
+                                            selections: [
+                                              {
+                                                kind: "Field",
+                                                name: {
+                                                  kind: "Name",
+                                                  value: "edges",
+                                                },
+                                                selectionSet: {
+                                                  kind: "SelectionSet",
+                                                  selections: [
+                                                    {
+                                                      kind: "Field",
+                                                      name: {
+                                                        kind: "Name",
+                                                        value: "node",
+                                                      },
+                                                      selectionSet: {
+                                                        kind: "SelectionSet",
+                                                        selections: [
+                                                          {
+                                                            kind: "Field",
+                                                            name: {
+                                                              kind: "Name",
+                                                              value: "id",
+                                                            },
+                                                          },
+                                                          {
+                                                            kind: "Field",
+                                                            name: {
+                                                              kind: "Name",
+                                                              value: "name",
+                                                            },
+                                                          },
+                                                          {
+                                                            kind: "Field",
+                                                            name: {
+                                                              kind: "Name",
+                                                              value:
+                                                                "previewData",
+                                                            },
+                                                            selectionSet: {
+                                                              kind: "SelectionSet",
+                                                              selections: [
+                                                                {
+                                                                  kind: "Field",
+                                                                  name: {
+                                                                    kind: "Name",
+                                                                    value:
+                                                                      "isAvailable",
+                                                                  },
+                                                                },
+                                                                {
+                                                                  kind: "Field",
+                                                                  name: {
+                                                                    kind: "Name",
+                                                                    value:
+                                                                      "rows",
+                                                                  },
+                                                                },
+                                                              ],
+                                                            },
+                                                          },
+                                                        ],
+                                                      },
+                                                    },
+                                                  ],
+                                                },
+                                              },
+                                            ],
+                                          },
+                                        },
+                                      ],
+                                    },
+                                  },
+                                  {
+                                    kind: "InlineFragment",
+                                    typeCondition: {
+                                      kind: "NamedType",
+                                      name: {
+                                        kind: "Name",
+                                        value: "StaticModelDefinition",
+                                      },
+                                    },
+                                    selectionSet: {
+                                      kind: "SelectionSet",
+                                      selections: [
+                                        {
+                                          kind: "Field",
+                                          name: {
+                                            kind: "Name",
+                                            value: "staticModels",
+                                          },
+                                          arguments: [
+                                            {
+                                              kind: "Argument",
+                                              name: {
+                                                kind: "Name",
+                                                value: "where",
+                                              },
+                                              value: {
+                                                kind: "ObjectValue",
+                                                fields: [
+                                                  {
+                                                    kind: "ObjectField",
+                                                    name: {
+                                                      kind: "Name",
+                                                      value: "name",
+                                                    },
+                                                    value: {
+                                                      kind: "ObjectValue",
+                                                      fields: [
+                                                        {
+                                                          kind: "ObjectField",
+                                                          name: {
+                                                            kind: "Name",
+                                                            value: "eq",
+                                                          },
+                                                          value: {
+                                                            kind: "Variable",
+                                                            name: {
+                                                              kind: "Name",
+                                                              value:
+                                                                "tableName",
+                                                            },
+                                                          },
+                                                        },
+                                                      ],
+                                                    },
+                                                  },
+                                                ],
+                                              },
+                                            },
+                                            {
+                                              kind: "Argument",
+                                              name: {
+                                                kind: "Name",
+                                                value: "single",
+                                              },
+                                              value: {
+                                                kind: "BooleanValue",
+                                                value: true,
+                                              },
+                                            },
+                                          ],
+                                          selectionSet: {
+                                            kind: "SelectionSet",
+                                            selections: [
+                                              {
+                                                kind: "Field",
+                                                name: {
+                                                  kind: "Name",
+                                                  value: "edges",
+                                                },
+                                                selectionSet: {
+                                                  kind: "SelectionSet",
+                                                  selections: [
+                                                    {
+                                                      kind: "Field",
+                                                      name: {
+                                                        kind: "Name",
+                                                        value: "node",
+                                                      },
+                                                      selectionSet: {
+                                                        kind: "SelectionSet",
+                                                        selections: [
+                                                          {
+                                                            kind: "Field",
+                                                            name: {
+                                                              kind: "Name",
+                                                              value: "id",
+                                                            },
+                                                          },
+                                                          {
+                                                            kind: "Field",
+                                                            name: {
+                                                              kind: "Name",
+                                                              value: "name",
+                                                            },
+                                                          },
+                                                          {
+                                                            kind: "Field",
+                                                            name: {
+                                                              kind: "Name",
+                                                              value:
+                                                                "previewData",
+                                                            },
+                                                            selectionSet: {
+                                                              kind: "SelectionSet",
+                                                              selections: [
+                                                                {
+                                                                  kind: "Field",
+                                                                  name: {
+                                                                    kind: "Name",
+                                                                    value:
+                                                                      "isAvailable",
+                                                                  },
+                                                                },
+                                                                {
+                                                                  kind: "Field",
+                                                                  name: {
+                                                                    kind: "Name",
+                                                                    value:
+                                                                      "rows",
+                                                                  },
+                                                                },
+                                                              ],
+                                                            },
+                                                          },
+                                                        ],
+                                                      },
+                                                    },
+                                                  ],
+                                                },
+                                              },
+                                            ],
+                                          },
+                                        },
+                                      ],
+                                    },
+                                  },
+                                  {
+                                    kind: "InlineFragment",
+                                    typeCondition: {
+                                      kind: "NamedType",
+                                      name: {
+                                        kind: "Name",
+                                        value: "DataIngestionDefinition",
+                                      },
+                                    },
+                                    selectionSet: {
+                                      kind: "SelectionSet",
+                                      selections: [
+                                        {
+                                          kind: "Field",
+                                          name: {
+                                            kind: "Name",
+                                            value: "dataIngestion",
+                                          },
+                                          selectionSet: {
+                                            kind: "SelectionSet",
+                                            selections: [
+                                              {
+                                                kind: "Field",
+                                                name: {
+                                                  kind: "Name",
+                                                  value: "id",
+                                                },
+                                              },
+                                              {
+                                                kind: "Field",
+                                                name: {
+                                                  kind: "Name",
+                                                  value: "previewData",
+                                                },
+                                                arguments: [
+                                                  {
+                                                    kind: "Argument",
+                                                    name: {
+                                                      kind: "Name",
+                                                      value: "tableName",
+                                                    },
+                                                    value: {
+                                                      kind: "Variable",
+                                                      name: {
+                                                        kind: "Name",
+                                                        value: "tableName",
+                                                      },
+                                                    },
+                                                  },
+                                                ],
+                                                selectionSet: {
+                                                  kind: "SelectionSet",
+                                                  selections: [
+                                                    {
+                                                      kind: "Field",
+                                                      name: {
+                                                        kind: "Name",
+                                                        value: "isAvailable",
+                                                      },
+                                                    },
+                                                    {
+                                                      kind: "Field",
+                                                      name: {
+                                                        kind: "Name",
+                                                        value: "rows",
+                                                      },
+                                                    },
+                                                  ],
+                                                },
+                                              },
+                                            ],
+                                          },
+                                        },
+                                      ],
+                                    },
+                                  },
+                                  {
+                                    kind: "InlineFragment",
+                                    typeCondition: {
+                                      kind: "NamedType",
+                                      name: {
+                                        kind: "Name",
+                                        value: "DataConnectionDefinition",
+                                      },
+                                    },
+                                    selectionSet: {
+                                      kind: "SelectionSet",
+                                      selections: [
+                                        {
+                                          kind: "Field",
+                                          name: {
+                                            kind: "Name",
+                                            value: "dataConnectionAlias",
+                                          },
+                                          selectionSet: {
+                                            kind: "SelectionSet",
+                                            selections: [
+                                              {
+                                                kind: "Field",
+                                                name: {
+                                                  kind: "Name",
+                                                  value: "id",
+                                                },
+                                              },
+                                              {
+                                                kind: "Field",
+                                                name: {
+                                                  kind: "Name",
+                                                  value: "schema",
+                                                },
+                                              },
+                                              {
+                                                kind: "Field",
+                                                name: {
+                                                  kind: "Name",
+                                                  value: "previewData",
+                                                },
+                                                arguments: [
+                                                  {
+                                                    kind: "Argument",
+                                                    name: {
+                                                      kind: "Name",
+                                                      value: "tableName",
+                                                    },
+                                                    value: {
+                                                      kind: "Variable",
+                                                      name: {
+                                                        kind: "Name",
+                                                        value: "tableName",
+                                                      },
+                                                    },
+                                                  },
+                                                ],
+                                                selectionSet: {
+                                                  kind: "SelectionSet",
+                                                  selections: [
+                                                    {
+                                                      kind: "Field",
+                                                      name: {
+                                                        kind: "Name",
+                                                        value: "isAvailable",
+                                                      },
+                                                    },
+                                                    {
+                                                      kind: "Field",
+                                                      name: {
+                                                        kind: "Name",
+                                                        value: "rows",
+                                                      },
+                                                    },
+                                                  ],
+                                                },
+                                              },
+                                            ],
+                                          },
+                                        },
+                                      ],
+                                    },
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<GetPreviewDataQuery, GetPreviewDataQueryVariables>;
 export const PublishNotebookDocument = {
   kind: "Document",
   definitions: [

@@ -6,8 +6,7 @@ import { Database, Tables } from "@/lib/types/supabase";
 import { MissingDataError, AuthError } from "@/lib/types/errors";
 import { logger } from "@/lib/logger";
 import { gql } from "@/lib/graphql/generated/gql";
-import { print } from "graphql";
-import { TypedDocumentNode } from "@graphql-typed-document-node/core";
+import { executeGraphQL } from "@/lib/graphql/query";
 import {
   resourcePermissionResponseSchema,
   type ResourcePermissionResponse,
@@ -879,7 +878,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       PUBLISH_NOTEBOOK_MUTATION,
       {
         notebookId,
@@ -909,7 +908,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       UNPUBLISH_NOTEBOOK_MUTATION,
       {
         notebookId,
@@ -1224,7 +1223,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       CREATE_DATA_CONNECTION_MUTATION,
       {
         input: {
@@ -1268,7 +1267,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       DELETE_DATA_CONNECTION_MUTATION,
       {
         id,
@@ -1302,7 +1301,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       SYNC_DATA_CONNECTION_MUTATION,
       {
         id,
@@ -2436,38 +2435,6 @@ class OsoAppClient {
   }
 
   // GraphQL API methods
-
-  private async executeGraphQL<TResult, TVariables>(
-    document: TypedDocumentNode<TResult, TVariables>,
-    variables: TVariables,
-    errorMessage: string,
-  ): Promise<TResult> {
-    const query = print(document);
-    const response = await fetch("/api/v1/osograph", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query,
-        variables,
-      }),
-    });
-
-    const result = await response.json();
-
-    if (result.errors) {
-      logger.error(`${errorMessage}:`, result.errors[0].message);
-      throw new Error(`${errorMessage}: ${result.errors[0].message}`);
-    }
-
-    if (!result.data) {
-      throw new Error(`No response data from mutation`);
-    }
-
-    return result.data as TResult;
-  }
-
   async saveNotebookPreview(
     args: Partial<{
       notebookId: string;
@@ -2493,7 +2460,7 @@ class OsoAppClient {
       `Uploading notebook preview for ${notebookId}. Image size: ${base64Image.length} bytes`,
     );
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       SAVE_NOTEBOOK_PREVIEW_MUTATION,
       {
         input: {
@@ -2567,7 +2534,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       CREATE_DATASET_MUTATION,
       {
         input: {
@@ -2624,7 +2591,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       UPDATE_DATASET_MUTATION,
       {
         input: {
@@ -2663,7 +2630,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       DELETE_DATASET_MUTATION,
       {
         id: datasetId,
@@ -2709,7 +2676,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       CREATE_DATA_MODEL_MUTATION,
       {
         input: {
@@ -2758,7 +2725,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       UPDATE_DATA_MODEL_MUTATION,
       {
         input: {
@@ -2798,7 +2765,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       DELETE_DATA_MODEL_MUTATION,
       {
         id: dataModelId,
@@ -2862,7 +2829,7 @@ class OsoAppClient {
       delete args.displayName;
     }
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       CREATE_DATA_MODEL_REVISION_MUTATION,
       {
         input: args as any,
@@ -2900,7 +2867,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       CREATE_DATA_MODEL_RELEASE_MUTATION,
       {
         input: {
@@ -2958,7 +2925,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       UPDATE_MODEL_CONTEXT_MUTATION,
       {
         input: {
@@ -3006,7 +2973,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       CREATE_STATIC_MODEL_MUTATION,
       {
         input: {
@@ -3053,7 +3020,7 @@ class OsoAppClient {
         }
       }
     `);
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       UPDATE_STATIC_MODEL_MUTATION,
       {
         input: {
@@ -3092,7 +3059,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       DELETE_STATIC_MODEL_MUTATION,
       {
         id: staticModelId,
@@ -3129,7 +3096,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       CREATE_USER_MODEL_RUN_REQUEST_MUTATION,
       {
         input: {
@@ -3171,7 +3138,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       CREATE_STATIC_MODEL_RUN_REQUEST_MUTATION,
       {
         input: {
@@ -3220,7 +3187,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       CREATE_DATA_INGESTION_CONFIG_MUTATION,
       {
         input: {
@@ -3265,7 +3232,7 @@ class OsoAppClient {
       }
     `);
 
-    const data = await this.executeGraphQL(
+    const data = await executeGraphQL(
       CREATE_DATA_INGESTION_RUN_REQUEST_MUTATION,
       {
         input: {
