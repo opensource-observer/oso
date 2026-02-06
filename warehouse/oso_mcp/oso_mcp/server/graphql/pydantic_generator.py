@@ -484,26 +484,6 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
 
         logger.debug(f"Finishing context: {ctx.type_name} at depth {ctx.depth}")
         model = ctx.materialize()
-        if isinstance(model, type) and issubclass(model, BaseModel):
-            if ctx.type_name == "createItemArguments":
-                logger.debug(
-                    f"Materialized model {ctx.type_name} with fields {model.model_fields}"
-                )
-                logger.debug(
-                    f"Materialized model {ctx.type_name} with fields {model.model_fields}"
-                )
-                logger.debug(
-                    f"Materialized model {ctx.type_name} with fields {model.model_fields}"
-                )
-                logger.debug(
-                    f"Materialized model {ctx.type_name} with fields {model.model_fields}"
-                )
-                logger.debug(
-                    f"Materialized model {ctx.type_name} with fields {model.model_fields}"
-                )
-                logger.debug(
-                    f"Materialized model {ctx.type_name} with fields {model.model_fields}"
-                )
         self._type_registry[ctx.type_name] = model
         return ctx.type_name
 
@@ -861,11 +841,6 @@ class MutationInfoContext:
             f"Materializing mutation info for {self._name} with input type {self._input_type} and return type {self._return_type}"
         )
 
-        # return_model_fields: dict = {}
-        # return_model_fields[self._name] = (self._return_type, Field(description="The result of the mutation"))
-
-        # return_model = create_model(f"{self._name}Response", **return_model_fields)
-
         return MutationInfo(
             name=self._name,
             description=self._description or "",
@@ -979,21 +954,6 @@ class MutationCollectorVisitor(PydanticModelVisitor):
             "Mutation context should be set"
         )
         return_type_model = self.get_type(return_type_model_name)
-        # if not isinstance(return_type, GraphQLObjectType):
-        #     assert isinstance(return_type_model, type), (
-        #         "Expected return type model to be a class for non-object return type"
-        #     )
-        #     assert issubclass(return_type_model, BaseModel), (
-        #         "Expected return type model to not be a Pydantic model for non-object return type"
-        #     )
-        #     # If the return type is not an object, we should use the raw type
-        #     # instead of the model by accessing the field from the return type
-        #     # (which should be named after the mutation)
-        #     return_type_model_fields = return_type_model.model_fields
-        #     assert mutation_name in return_type_model_fields, (
-        #         f"Expected return type model to have a field named {mutation_name} for non-object return type"
-        #     )
-        #     return_type_model = return_type_model_fields[mutation_name].annotation
 
         self._current_mutation_context.set_return_type(return_type_model)
 

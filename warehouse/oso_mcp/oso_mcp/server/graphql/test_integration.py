@@ -444,6 +444,8 @@ async def test_query_tool_generation(
                 assert field in node
 
         assert item_data["item"]["source"]["id"] == "warehouse-789"
+        assert item_data["item"]["source"]["stage"] == "production"
+        assert item_data["item"]["source"]["__typename"] == "InternalWarehouse"
 
 
 @pytest.mark.asyncio
@@ -523,3 +525,54 @@ async def test_delete_item_returns_scalar_value(
         # Parse the result and verify it's a boolean
         result_data = json.loads(result.content[0].model_dump()["text"])
         assert result_data["deleteItem"] is True
+
+
+@pytest.mark.asyncio
+async def test_query_description_extracted_from_comments(
+    mcp_config: MCPConfig,
+    mock_http_client_factory: GraphQLClientFactory,
+):
+    """Test that query descriptions are properly extracted from hash-style comments.
+
+    Client GraphQL documents don't support triple-quote descriptions, so we
+    extract descriptions from comments above query definitions.
+    """
+    # Create MCP server
+    mcp = FastMCP("Test Server")
+
+    generate_from_schema(
+        schema_path=TEST_SCHEMA_PATH,
+        mcp=mcp,
+        config=mcp_config,
+        client_schema_path=TEST_QUERIES_PATH,
+        filters=[],
+        graphql_client_factory=mock_http_client_factory,
+    )
+
+    # Create client
+    client = Client(mcp)
+
+    async with client:
+        # List available tools
+        tools = await client.list_tools()
+
+        # Find the ListItems tool - it has a comment description in items.graphql
+        list_items_tool = next(
+            (tool for tool in tools if tool.name == "ListItems"), None
+        )
+        assert list_items_tool is not None, "ListItems tool should be registered"
+
+        # Verify the description was extracted from the comment
+        # The comment in items.graphql is: "# This is a test context that should appear."
+        assert list_items_tool.description is not None
+        assert (
+            "This is a test context that should appear" in list_items_tool.description
+        )
+
+        # Also verify that GetItem (which has no comment) doesn't have
+        # the comment-based description
+        get_item_tool = next((tool for tool in tools if tool.name == "GetItem"), None)
+        assert get_item_tool is not None, "GetItem tool should be registered"
+        # GetItem should not have the ListItems description
+        if get_item_tool.description:
+            assert "test context" not in get_item_tool.description

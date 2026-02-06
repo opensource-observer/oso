@@ -745,7 +745,6 @@ class QueryCollectorVisitor(PydanticModelVisitor):
         self._schema = schema
         self._queries: t.List[QueryInfo] = []
         self._document = document
-        # _type_registry is inherited from PydanticModelVisitor
 
     @property
     def queries(self) -> t.List[QueryInfo]:
