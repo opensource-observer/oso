@@ -122,18 +122,13 @@ export const runTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      // TODO(jabolo): Handle special case where the caller does
-      // not pass `orgIds` as `system`. In the new implementation,
-      // it will fail and return and empty connection as of now.
-      const _client = getSystemClient(context);
+      const client = getSystemClient(context);
 
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
       return queryWithPagination(args, context, {
+        client,
+        orgIds: parent.org_id,
         tableName: "step",
         whereSchema: StepWhereSchema,
-        requireAuth: false,
-        filterByUserOrgs: false,
-        parentOrgIds: parent.org_id,
         basePredicate: {
           eq: [{ key: "run_id", value: parent.id }],
         },

@@ -113,23 +113,18 @@ export const datasetTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
     ) => {
       switch (parent.dataset_type) {
         case "USER_MODEL": {
-          // TODO(jabolo): Handle special case where the caller does
-          // not pass `orgIds` as `system`. In the new implementation,
-          // it will fail and return and empty connection as of now.
-          const { client: _client } = await getOrgResourceClient(
+          const { client } = await getOrgResourceClient(
             context,
             "dataset",
             parent.id,
             "read",
           );
 
-          // eslint-disable-next-line @typescript-eslint/no-deprecated
           return queryWithPagination(args, context, {
+            client,
+            orgIds: parent.org_id,
             tableName: "model",
             whereSchema: DataModelWhereSchema,
-            requireAuth: false,
-            filterByUserOrgs: false,
-            parentOrgIds: parent.org_id,
             basePredicate: {
               is: [{ key: "deleted_at", value: null }],
               eq: [{ key: "dataset_id", value: parent.id }],
@@ -137,23 +132,18 @@ export const datasetTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
           });
         }
         case "STATIC_MODEL": {
-          // TODO(jabolo): Handle special case where the caller does
-          // not pass `orgIds` as `system`. In the new implementation,
-          // it will fail and return and empty connection as of now.
-          const { client: _client } = await getOrgResourceClient(
+          const { client } = await getOrgResourceClient(
             context,
             "dataset",
             parent.id,
             "read",
           );
 
-          // eslint-disable-next-line @typescript-eslint/no-deprecated
           return queryWithPagination(args, context, {
+            client,
+            orgIds: parent.org_id,
             tableName: "static_model",
             whereSchema: StaticModelWhereSchema,
-            requireAuth: false,
-            filterByUserOrgs: false,
-            parentOrgIds: parent.org_id,
             basePredicate: {
               is: [{ key: "deleted_at", value: null }],
               eq: [{ key: "dataset_id", value: parent.id }],
@@ -161,23 +151,18 @@ export const datasetTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
           });
         }
         case "DATA_INGESTION": {
-          // TODO(jabolo): Handle special case where the caller does
-          // not pass `orgIds` as `system`. In the new implementation,
-          // it will fail and return and empty connection as of now.
-          const { client: _client } = await getOrgResourceClient(
+          const { client } = await getOrgResourceClient(
             context,
             "dataset",
             parent.id,
             "read",
           );
 
-          // eslint-disable-next-line @typescript-eslint/no-deprecated
           const result = (await queryWithPagination(args, context, {
+            client,
+            orgIds: parent.org_id,
             tableName: "data_ingestion_as_table",
             whereSchema: DataIngestionsWhereSchema,
-            requireAuth: false,
-            filterByUserOrgs: false,
-            parentOrgIds: parent.org_id,
             basePredicate: {
               eq: [{ key: "dataset_id", value: parent.id }],
             },
@@ -221,22 +206,17 @@ export const datasetTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      // TODO(jabolo): Handle special case where the caller does
-      // not pass `orgIds` as `system`. In the new implementation,
-      // it will fail and return and empty connection as of now.
-      const { client: _client } = await getOrgResourceClient(
+      const { client } = await getOrgResourceClient(
         context,
         "dataset",
         parent.id,
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
       return queryWithPagination(args, context, {
+        client,
+        orgIds: parent.org_id,
         tableName: "run",
         whereSchema: RunWhereSchema,
-        requireAuth: false,
-        filterByUserOrgs: false,
-        parentOrgIds: parent.org_id,
         basePredicate: {
           eq: [{ key: "dataset_id", value: parent.id }],
         },
@@ -252,23 +232,18 @@ export const datasetTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      // TODO(jabolo): Handle special case where the caller does
-      // not pass `orgIds` as `system`. In the new implementation,
-      // it will fail and return and empty connection as of now.
-      const { client: _client } = await getOrgResourceClient(
+      const { client } = await getOrgResourceClient(
         context,
         "dataset",
         parent.id,
         "read",
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
       return queryWithPagination(args, context, {
+        client,
+        orgIds: parent.org_id,
         tableName: "materialization",
         whereSchema: MaterializationWhereSchema,
-        requireAuth: false,
-        filterByUserOrgs: false,
-        parentOrgIds: parent.org_id,
         basePredicate: {
           eq: [{ key: "dataset_id", value: parent.id }],
         },
@@ -288,23 +263,18 @@ export const datasetTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      // TODO(jabolo): Handle special case where the caller does
-      // not pass `orgIds` as `system`. In the new implementation,
-      // it will fail and return and empty connection as of now.
-      const { client: _client } = await getOrgResourceClient(
+      const { client } = await getOrgResourceClient(
         context,
         "dataset",
         parent.dataset_id,
         "read",
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
       return queryWithPagination(args, context, {
+        client,
+        orgIds: parent.org_id,
         tableName: "model",
         whereSchema: DataModelWhereSchema,
-        requireAuth: false,
-        filterByUserOrgs: false,
-        parentOrgIds: parent.org_id,
         basePredicate: {
           is: [{ key: "deleted_at", value: null }],
           eq: [{ key: "dataset_id", value: parent.dataset_id }],
@@ -321,23 +291,18 @@ export const datasetTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      // TODO(jabolo): Handle special case where the caller does
-      // not pass `orgIds` as `system`. In the new implementation,
-      // it will fail and return and empty connection as of now.
-      const { client: _client } = await getOrgResourceClient(
+      const { client } = await getOrgResourceClient(
         context,
         "dataset",
         parent.dataset_id,
         "read",
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
       return queryWithPagination(args, context, {
+        client,
+        orgIds: parent.org_id,
         tableName: "static_model",
         whereSchema: StaticModelWhereSchema,
-        requireAuth: false,
-        filterByUserOrgs: false,
-        parentOrgIds: parent.org_id,
         basePredicate: {
           is: [{ key: "deleted_at", value: null }],
           eq: [{ key: "dataset_id", value: parent.dataset_id }],

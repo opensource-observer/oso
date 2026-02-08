@@ -69,23 +69,18 @@ export const dataModelTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      // TODO(jabolo): Handle special case where the caller does
-      // not pass `orgIds` as `system`. In the new implementation,
-      // it will fail and return and empty connection as of now.
-      const { client: _client } = await getOrgResourceClient(
+      const { client } = await getOrgResourceClient(
         context,
         "data_model",
         parent.id,
         "read",
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
       return queryWithPagination(args, context, {
+        client,
+        orgIds: parent.org_id,
         tableName: "model_revision",
         whereSchema: DataModelRevisionWhereSchema,
-        requireAuth: false,
-        filterByUserOrgs: false,
-        parentOrgIds: parent.org_id,
         basePredicate: {
           eq: [{ key: "model_id", value: parent.id }],
         },
@@ -96,23 +91,18 @@ export const dataModelTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      // TODO(jabolo): Handle special case where the caller does
-      // not pass `orgIds` as `system`. In the new implementation,
-      // it will fail and return and empty connection as of now.
-      const { client: _client } = await getOrgResourceClient(
+      const { client } = await getOrgResourceClient(
         context,
         "data_model",
         parent.id,
         "read",
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
       return queryWithPagination(args, context, {
+        client,
+        orgIds: parent.org_id,
         tableName: "model_release",
         whereSchema: DataModelReleaseWhereSchema,
-        requireAuth: false,
-        filterByUserOrgs: false,
-        parentOrgIds: parent.org_id,
         basePredicate: {
           eq: [{ key: "model_id", value: parent.id }],
         },
