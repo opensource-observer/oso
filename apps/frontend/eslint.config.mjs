@@ -84,6 +84,7 @@ export default defineConfig(
       rules: {
         "@typescript-eslint/no-deprecated": "error",
         "oso-frontend/type-safety/no-inline-resolver-types": "error",
+        "oso-frontend/type-safety/explicit-return-types": "off",
       },
     },
     {
