@@ -7,7 +7,6 @@ import { gql } from "graphql-tag";
 import { getSystemCredentials, getUser } from "@/lib/auth/auth";
 import { buildSubgraphSchema } from "@apollo/subgraph";
 import { GraphQLContext } from "@/app/api/v1/osograph/types/context";
-import { logger } from "@/lib/logger";
 import { shouldUseNewResolvers } from "@/lib/feature-flags/posthog-features";
 import { resolvers as newResolvers } from "@/app/api/v1/osograph/schema/resolvers";
 import { resolvers as oldResolvers } from "@/app/api/v1/osograph/schema/resolvers/legacy";
@@ -38,27 +37,23 @@ function loadSchemas(): string {
 const schemaString = loadSchemas();
 const typeDefs = gql(schemaString);
 
-const handler = async (req: NextRequest) => {
-  const user = await getUser(req);
-  const useNewResolvers = await shouldUseNewResolvers(user);
+const newResolverServer = new ApolloServer({
+  schema: buildSubgraphSchema([{ typeDefs, resolvers: newResolvers }]),
+  introspection: true,
+  includeStacktraceInErrorResponses: process.env.NODE_ENV === "development",
+});
 
-  logger.log(
-    `Using ${useNewResolvers ? "NEW" : "OLD"} resolvers for ${user.role === "anonymous" ? "anonymous" : user.email}`,
-  );
+const oldResolverServer = new ApolloServer({
+  schema: buildSubgraphSchema([{ typeDefs, resolvers: oldResolvers }]),
+  introspection: true,
+  includeStacktraceInErrorResponses: process.env.NODE_ENV === "development",
+});
 
-  const resolvers = useNewResolvers ? newResolvers : oldResolvers;
-
-  const server = new ApolloServer({
-    schema: buildSubgraphSchema([{ typeDefs, resolvers }]),
-    introspection: true,
-    includeStacktraceInErrorResponses: process.env.NODE_ENV === "development",
-  });
-
-  // NOTE(jabolo): This will cause a warning since `startServerAndCreateNextHandler` should
-  // ideally be called once and reused across requests, but since we need to determine
-  // the context on a per-request basis, we have to create the handler inside the route handler.
-  const apolloHandler = startServerAndCreateNextHandler<NextRequest>(server, {
+const newResolverHandler = startServerAndCreateNextHandler<NextRequest>(
+  newResolverServer,
+  {
     context: async (req) => {
+      const user = await getUser(req);
       const systemCredentials = await getSystemCredentials(req);
       return {
         req,
@@ -70,7 +65,35 @@ const handler = async (req: NextRequest) => {
         },
       } satisfies GraphQLContext;
     },
-  });
+  },
+);
+
+const oldResolverHandler = startServerAndCreateNextHandler<NextRequest>(
+  oldResolverServer,
+  {
+    context: async (req) => {
+      const user = await getUser(req);
+      const systemCredentials = await getSystemCredentials(req);
+      return {
+        req,
+        user,
+        systemCredentials,
+        authCache: {
+          orgMemberships: new Map(),
+          resourcePermissions: new Map(),
+        },
+      } satisfies GraphQLContext;
+    },
+  },
+);
+
+const handler = async (req: NextRequest) => {
+  const user = await getUser(req);
+  const useNewResolvers = await shouldUseNewResolvers(user);
+
+  const apolloHandler = useNewResolvers
+    ? newResolverHandler
+    : oldResolverHandler;
 
   return apolloHandler(req);
 };
