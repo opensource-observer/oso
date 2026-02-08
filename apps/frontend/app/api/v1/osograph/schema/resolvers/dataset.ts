@@ -335,10 +335,37 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
     },
 
     runs: async (
-      parent: { id: string; org_id: string },
+      parent: DatasetsRow,
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
+      if (parent.dataset_type !== "DATA_CONNECTION") {
+        return queryWithPagination(args, context, {
+          tableName: "run",
+          whereSchema: RunWhereSchema,
+          requireAuth: false,
+          filterByUserOrgs: false,
+          parentOrgIds: parent.org_id,
+          basePredicate: {
+            eq: [{ key: "dataset_id", value: parent.id }],
+          },
+          orderBy: {
+            key: "queued_at",
+            ascending: false,
+          },
+        });
+      }
+
+      const supabase = createAdminClient();
+      const { data: connectionAlias, error } = await supabase
+        .from("data_connection_alias")
+        .select("*")
+        .eq("dataset_id", parent.id)
+        .single();
+      if (error || !connectionAlias) {
+        logger.error("Failed to fetch data connection alias:", error);
+        throw ServerErrors.database("Failed to fetch data connection alias");
+      }
       return queryWithPagination(args, context, {
         tableName: "run",
         whereSchema: RunWhereSchema,
@@ -346,7 +373,13 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         filterByUserOrgs: false,
         parentOrgIds: parent.org_id,
         basePredicate: {
-          eq: [{ key: "dataset_id", value: parent.id }],
+          eq: [
+            {
+              // @ts-expect-error - TS doesn't recognize inner fields in JSONB
+              key: "metadata->>dataConnectionId",
+              value: connectionAlias.data_connection_id,
+            },
+          ],
         },
         orderBy: {
           key: "queued_at",

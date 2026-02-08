@@ -98,7 +98,8 @@ github_urls AS (
 github_artifacts AS (
   SELECT
     gh_urls.atlas_id,
-    gh_int.artifact_source_id,
+    COALESCE(ossd_repos.artifact_source_id, gh_int.artifact_source_id)
+      AS artifact_source_id,
     'GITHUB' AS artifact_source,
     parsed_url.artifact_namespace,
     parsed_url.artifact_name,
@@ -108,6 +109,9 @@ github_artifacts AS (
   CROSS JOIN LATERAL @parse_github_repository_artifact(gh_urls.repository_url) AS parsed_url
   LEFT JOIN oso.int_artifacts__github AS gh_int
     ON gh_int.artifact_url = gh_urls.repository_url
+  LEFT JOIN oso.int_repositories__ossd AS ossd_repos
+    ON ossd_repos.artifact_namespace = parsed_url.artifact_namespace
+    AND ossd_repos.artifact_name = parsed_url.artifact_name
 ),
 
 -- =============================================================================

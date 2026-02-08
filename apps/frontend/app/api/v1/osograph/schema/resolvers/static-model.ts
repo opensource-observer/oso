@@ -30,7 +30,11 @@ import {
 } from "@/app/api/v1/osograph/utils/errors";
 import { putSignedUrl } from "@/lib/clients/cloudflare-r2";
 import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
-import { generateTableId } from "@/app/api/v1/osograph/utils/model";
+import {
+  executePreviewQuery,
+  generateTableId,
+} from "@/app/api/v1/osograph/utils/model";
+import { PreviewData } from "@/lib/graphql/generated/graphql";
 
 const FILES_BUCKET = "static-model-files";
 const SIGNED_URL_EXPIRY = 900;
@@ -249,6 +253,23 @@ export const staticModelResolvers = {
         parent.org_id,
         parent.dataset_id,
         generateTableId("STATIC_MODEL", parent.id),
+      );
+    },
+    previewData: async (
+      parent: StaticModelRow,
+      _args: Record<string, never>,
+      context: GraphQLContext,
+    ): Promise<PreviewData> => {
+      const authenticatedUser = requireAuthentication(context.user);
+
+      const tableId = generateTableId("STATIC_MODEL", parent.id);
+
+      return executePreviewQuery(
+        parent.org_id,
+        parent.dataset_id,
+        tableId,
+        authenticatedUser,
+        parent.name,
       );
     },
   },

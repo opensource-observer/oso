@@ -14,7 +14,7 @@ that the community aims to achieve together.
 
 You can find our status page here:
 
-[https://www.oso.xyz/status](https://www.oso.xyz/status)
+[https://status.oso.xyz/](https://status.oso.xyz/)
 
 ## Service Definition
 

@@ -16,7 +16,8 @@ WITH parsed_artifacts AS (
   SELECT
     taxonomy.eco_name,
     taxonomy.branch,
-    gh_int.artifact_source_id,
+    COALESCE(ossd_repos.artifact_source_id, gh_int.artifact_source_id)
+      AS artifact_source_id,
     parsed_url.artifact_namespace,
     parsed_url.artifact_name,
     parsed_url.artifact_url,
@@ -25,6 +26,9 @@ WITH parsed_artifacts AS (
   CROSS JOIN LATERAL @parse_github_repository_artifact(taxonomy.repo_url) AS parsed_url
   LEFT JOIN oso.int_artifacts__github AS gh_int
     ON gh_int.artifact_url = taxonomy.repo_url
+  LEFT JOIN oso.int_repositories__ossd AS ossd_repos
+    ON ossd_repos.artifact_namespace = parsed_url.artifact_namespace
+    AND ossd_repos.artifact_name = parsed_url.artifact_name
   WHERE taxonomy.repo_url LIKE 'https://github.com%'
 ),
 

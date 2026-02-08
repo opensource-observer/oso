@@ -50,12 +50,9 @@ def query_dynamic_models(base_url: str, api_key: str) -> list[SemanticTableRespo
 def create_registry(
     base_url: str, api_key: str, to_pandas_fn: Callable[[str], pd.DataFrame]
 ):
-    from oso_semantic import Dimension, Model
     from oso_semantic import QueryBuilder as InnerQueryBuilder
     from oso_semantic import (
         Registry,
-        Relationship,
-        RelationshipType,
         register_oso_models,
     )
 
@@ -70,34 +67,5 @@ def create_registry(
     registry = Registry(QueryBuilder)
 
     register_oso_models(registry)
-
-    tables = query_dynamic_models(base_url, api_key)
-    for table in tables:
-        model_name = table.name.split(".")[-1]
-        registry.register(
-            Model(
-                name=model_name,
-                description=table.description or "",
-                table=table.name,
-                dimensions=[
-                    Dimension(
-                        name=column.name,
-                        column_name=column.name,
-                        description=column.description or "",
-                    )
-                    for column in table.columns
-                ],
-                relationships=[
-                    Relationship(
-                        name=f"{relationship.source_column}->{relationship.target_table.split('.')[-1]}.{relationship.target_column}",
-                        type=RelationshipType.MANY_TO_ONE,
-                        source_foreign_key=relationship.source_column,
-                        ref_model=relationship.target_table.split(".")[-1],
-                        ref_key=relationship.target_column,
-                    )
-                    for relationship in table.relationships
-                ],
-            )
-        )
 
     return registry
