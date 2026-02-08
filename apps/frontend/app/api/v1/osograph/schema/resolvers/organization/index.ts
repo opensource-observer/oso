@@ -4,7 +4,6 @@ import { notebookMutations } from "@/app/api/v1/osograph/schema/resolvers/organi
 import { datasetMutations } from "@/app/api/v1/osograph/schema/resolvers/organization/dataset/mutations";
 import { dataModelMutations } from "@/app/api/v1/osograph/schema/resolvers/organization/data-model/mutations";
 import { staticModelMutations } from "@/app/api/v1/osograph/schema/resolvers/organization/static-model/mutations";
-import { dataIngestionMutations } from "@/app/api/v1/osograph/schema/resolvers/organization/data-ingestion/mutations";
 import { dataConnectionMutations } from "@/app/api/v1/osograph/schema/resolvers/organization/data-connection/mutations";
 import { organizationOrganizationResolvers } from "@/app/api/v1/osograph/schema/resolvers/organization/organization/index";
 import { invitationResolvers } from "@/app/api/v1/osograph/schema/resolvers/organization/invitation/index";
@@ -24,7 +23,6 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
     ...datasetMutations,
     ...dataModelMutations,
     ...staticModelMutations,
-    ...dataIngestionMutations,
     ...dataConnectionMutations,
     ...organizationOrganizationResolvers.Mutation,
     ...invitationResolvers.Mutation,

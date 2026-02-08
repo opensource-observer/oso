@@ -26,6 +26,7 @@ export const resourceResolvers: GraphQLResolverModule<GraphQLContext> = {
     ...datasetResolvers.Mutation,
     ...dataModelResolvers.Mutation,
     ...staticModelResolvers.Mutation,
+    ...dataIngestionResolvers.Mutation,
     ...dataConnectionResolvers.Mutation,
     ...modelContextResolvers.Mutation,
   },

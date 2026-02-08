@@ -3,7 +3,7 @@ import {
   CreateDataIngestionSchema,
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
-import { getOrgScopedClient } from "@/app/api/v1/osograph/utils/access-control";
+import { getOrgResourceClient } from "@/app/api/v1/osograph/utils/access-control";
 import {
   ResourceErrors,
   ServerErrors,
@@ -14,8 +14,8 @@ import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { MutationCreateDataIngestionConfigArgs } from "@/lib/graphql/generated/graphql";
 
 /**
- * Data ingestion mutations that operate at organization scope.
- * These resolvers use getOrgScopedClient because they don't have a resourceId yet.
+ * Data ingestion mutations that operate on dataset resources.
+ * Uses getOrgResourceClient to validate access to the dataset resource.
  */
 export const dataIngestionMutations: GraphQLResolverModule<GraphQLContext>["Mutation"] =
   {
@@ -26,8 +26,13 @@ export const dataIngestionMutations: GraphQLResolverModule<GraphQLContext>["Muta
     ) {
       const input = validateInput(CreateDataIngestionSchema, args.input);
 
-      // TODO(jabolo): This is incorrect, dataset id is not an org id
-      const { client } = await getOrgScopedClient(context, input.datasetId);
+      // Get resource-scoped client for the dataset (validates access + org membership)
+      const { client } = await getOrgResourceClient(
+        context,
+        "dataset",
+        input.datasetId,
+        "write",
+      );
 
       const { data: dataset, error: datasetError } = await client
         .from("datasets")
@@ -42,12 +47,7 @@ export const dataIngestionMutations: GraphQLResolverModule<GraphQLContext>["Muta
         throw ResourceErrors.notFound("Dataset not found");
       }
 
-      const { client: orgClient } = await getOrgScopedClient(
-        context,
-        dataset.org_id,
-      );
-
-      const { data: existingConfig } = await orgClient
+      const { data: existingConfig } = await client
         .from("data_ingestions")
         .select("id")
         .eq("dataset_id", input.datasetId)
@@ -55,7 +55,7 @@ export const dataIngestionMutations: GraphQLResolverModule<GraphQLContext>["Muta
         .maybeSingle();
 
       const { data: config, error: configError } = existingConfig
-        ? await orgClient
+        ? await client
             .from("data_ingestions")
             .update({
               factory_type: input.factoryType,
@@ -64,7 +64,7 @@ export const dataIngestionMutations: GraphQLResolverModule<GraphQLContext>["Muta
             .eq("id", existingConfig.id)
             .select()
             .single()
-        : await orgClient
+        : await client
             .from("data_ingestions")
             .insert({
               dataset_id: input.datasetId,
