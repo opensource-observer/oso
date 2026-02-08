@@ -16,6 +16,12 @@ export const STATIC_EXPORT = !!process.env.STATIC_EXPORT;
 export const POSTHOG_HOST = "/ingest";
 export const POSTHOG_HOST_DIRECT = "https://us.i.posthog.com";
 export const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+export const FEATURE_FLAG_NEW_RESOLVERS =
+  process.env.FEATURE_FLAG_NEW_RESOLVERS ?? "new-graphql-resolvers";
+export const ENABLE_POSTHOG_LOCAL_EVALUATION =
+  (process.env.ENABLE_POSTHOG_LOCAL_EVALUATION ?? "false") === "true";
+export const POSTHOG_FEATURE_FLAGS_SECURE_KEY =
+  process.env.POSTHOG_FEATURE_FLAGS_SECURE_KEY ?? "";
 export const GOOGLE_ANALYTICS_KEY =
   process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_KEY ??
   "MISSING GOOGLE_ANALYTICS_KEY";
