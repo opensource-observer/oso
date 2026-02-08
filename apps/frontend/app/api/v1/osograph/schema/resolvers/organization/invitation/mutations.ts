@@ -121,9 +121,6 @@ export const invitationMutations: GraphQLResolverModule<GraphQLContext>["Mutatio
       };
     },
 
-    // TODO(jabolo): check if `orgId` is necessary here since `invitationId` should be unique
-    // but if we downgrade to "user/" permission, anyone will be able to revoke with ID, and
-    // user checks won't be done
     revokeInvitation: async (
       _: unknown,
       args: MutationRevokeInvitationArgs,

@@ -55,7 +55,7 @@ export const invitationTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       return getUserProfile(parent.accepted_by, client);
     },
 
-    // TODO(jabolo): Double check if this is needed
-    userRole: () => "ADMIN",
+    // TODO(jabolo): Add user_role column to invitations table and return actual role in invitation. (#6567)
+    userRole: () => "admin",
   },
 };
