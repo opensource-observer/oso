@@ -6,9 +6,17 @@ import { logger } from "@/lib/logger";
 import { DataIngestionsRow } from "@/lib/types/schema-types";
 import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
 import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
-import { generateTableId } from "@/app/api/v1/osograph/utils/model";
+import {
+  executePreviewQuery,
+  generateTableId,
+} from "@/app/api/v1/osograph/utils/model";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
-import { DataIngestionModelContextArgs } from "@/lib/graphql/generated/graphql";
+import {
+  DataIngestionModelContextArgs,
+  DataIngestionPreviewDataArgs,
+  PreviewData,
+} from "@/lib/graphql/generated/graphql";
+import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
 
 /**
  * Type resolvers for DataIngestion.
@@ -67,6 +75,30 @@ export const dataIngestionTypeResolvers: GraphQLResolverModule<GraphQLContext> =
           parent.org_id,
           parent.dataset_id,
           generateTableId("DATA_INGESTION", tableName),
+        );
+      },
+      previewData: async (
+        parent: DataIngestionsRow,
+        args: DataIngestionPreviewDataArgs,
+        context: GraphQLContext,
+      ): Promise<PreviewData> => {
+        const authenticatedUser = requireAuthentication(context.user);
+        const { client } = await getOrgResourceClient(
+          context,
+          "data_ingestion",
+          parent.id,
+          "read",
+        );
+
+        const tableId = generateTableId("DATA_INGESTION", args.tableName);
+
+        return executePreviewQuery(
+          parent.org_id,
+          parent.dataset_id,
+          tableId,
+          authenticatedUser,
+          args.tableName,
+          client,
         );
       },
     },

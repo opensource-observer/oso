@@ -4,7 +4,10 @@ import {
   FilterableConnectionArgs,
 } from "@/app/api/v1/osograph/utils/pagination";
 import { StaticModelRow } from "@/lib/types/schema-types";
-import { getOrganization } from "@/app/api/v1/osograph/utils/auth";
+import {
+  getOrganization,
+  requireAuthentication,
+} from "@/app/api/v1/osograph/utils/auth";
 import {
   getMaterializations,
   getModelRunConnection,
@@ -12,8 +15,12 @@ import {
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
-import { generateTableId } from "@/app/api/v1/osograph/utils/model";
+import {
+  executePreviewQuery,
+  generateTableId,
+} from "@/app/api/v1/osograph/utils/model";
 import { getOrgResourceClient } from "@/app/api/v1/osograph/utils/access-control";
+import type { PreviewData } from "@/lib/graphql/generated/graphql";
 
 /**
  * Type resolvers for StaticModel.
@@ -89,6 +96,30 @@ export const staticModelTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
         parent.org_id,
         parent.dataset_id,
         generateTableId("STATIC_MODEL", parent.id),
+      );
+    },
+    previewData: async (
+      parent: StaticModelRow,
+      _args: Record<string, never>,
+      context: GraphQLContext,
+    ): Promise<PreviewData> => {
+      const authenticatedUser = requireAuthentication(context.user);
+      const { client } = await getOrgResourceClient(
+        context,
+        "static_model",
+        parent.id,
+        "read",
+      );
+
+      const tableId = generateTableId("STATIC_MODEL", parent.id);
+
+      return executePreviewQuery(
+        parent.org_id,
+        parent.dataset_id,
+        tableId,
+        authenticatedUser,
+        parent.name,
+        client,
       );
     },
   },

@@ -16,6 +16,8 @@ import {
 import { logger } from "@/lib/logger";
 import type { AuthOrgUser, AuthUser } from "@/lib/types/user";
 import { PreviewData } from "@/lib/graphql/generated/graphql";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/types/supabase";
 
 export function validateTableId(tableId: string) {
   const tableIdHasValidPrefix =
@@ -163,6 +165,7 @@ export async function fetchPreviewResults(url: string): Promise<any[]> {
 
 /**
  * Execute a preview query for a materialized table
+ * @deprecated Use the overload that accepts a client parameter instead
  */
 export async function executePreviewQuery(
   orgId: string,
@@ -170,11 +173,32 @@ export async function executePreviewQuery(
   tableId: string,
   user: AuthUser,
   tableName: string,
-): Promise<PreviewData> {
-  const supabase = createAdminClient();
+): Promise<PreviewData>;
 
-  const organization = await getOrganization(orgId);
-  await requireOrgMembership(user.userId, organization.id);
+/**
+ * Execute a preview query for a materialized table
+ */
+export async function executePreviewQuery(
+  orgId: string,
+  datasetId: string,
+  tableId: string,
+  user: AuthUser,
+  tableName: string,
+  client: SupabaseClient<Database>,
+): Promise<PreviewData>;
+
+export async function executePreviewQuery(
+  orgId: string,
+  datasetId: string,
+  tableId: string,
+  user: AuthUser,
+  tableName: string,
+  client?: SupabaseClient<Database>,
+): Promise<PreviewData> {
+  const supabase = client ?? createAdminClient();
+
+  const organization = await getOrganization(orgId, supabase);
+  await requireOrgMembership(user.userId, organization.id, supabase);
 
   const materializationExists = await checkMaterializationExists(
     orgId,

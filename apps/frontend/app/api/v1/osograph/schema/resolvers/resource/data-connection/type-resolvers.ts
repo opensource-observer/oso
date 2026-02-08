@@ -1,4 +1,7 @@
-import { getOrganization } from "@/app/api/v1/osograph/utils/auth";
+import {
+  getOrganization,
+  requireAuthentication,
+} from "@/app/api/v1/osograph/utils/auth";
 import {
   DynamicConnectorsRow,
   DataConnectionAliasRow,
@@ -7,8 +10,17 @@ import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { getMaterializations } from "@/app/api/v1/osograph/utils/resolver-helpers";
-import { generateTableId } from "@/app/api/v1/osograph/utils/model";
+import {
+  executePreviewQuery,
+  generateTableId,
+} from "@/app/api/v1/osograph/utils/model";
 import { getOrgResourceClient } from "@/app/api/v1/osograph/utils/access-control";
+import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
+import type {
+  DataConnectionAliasModelContextArgs,
+  DataConnectionAliasPreviewDataArgs,
+  PreviewData,
+} from "@/lib/graphql/generated/graphql";
 
 /**
  * Type resolvers for DataConnection and DataConnectionAlias.
@@ -47,6 +59,12 @@ export const dataConnectionTypeResolvers: GraphQLResolverModule<GraphQLContext> 
       schema: (parent: DataConnectionAliasRow) => parent.schema_name,
       createdAt: (parent: DataConnectionAliasRow) => parent.created_at,
       updatedAt: (parent: DataConnectionAliasRow) => parent.updated_at,
+      modelContext: async (
+        parent: DataConnectionAliasRow,
+        args: DataConnectionAliasModelContextArgs,
+      ) => {
+        return getModelContext(parent.dataset_id, args.tableName);
+      },
       materializations: async (
         parent: DataConnectionAliasRow,
         args: FilterableConnectionArgs & { tableName: string },
@@ -59,6 +77,30 @@ export const dataConnectionTypeResolvers: GraphQLResolverModule<GraphQLContext> 
           parent.org_id,
           parent.dataset_id,
           generateTableId("DATA_CONNECTION", tableName),
+        );
+      },
+      previewData: async (
+        parent: DataConnectionAliasRow,
+        args: DataConnectionAliasPreviewDataArgs,
+        context: GraphQLContext,
+      ): Promise<PreviewData> => {
+        const authenticatedUser = requireAuthentication(context.user);
+        const { client } = await getOrgResourceClient(
+          context,
+          "data_connection",
+          parent.data_connection_id,
+          "read",
+        );
+
+        const tableId = generateTableId("DATA_CONNECTION", args.tableName);
+
+        return executePreviewQuery(
+          parent.org_id,
+          parent.dataset_id,
+          tableId,
+          authenticatedUser,
+          args.tableName,
+          client,
         );
       },
     },

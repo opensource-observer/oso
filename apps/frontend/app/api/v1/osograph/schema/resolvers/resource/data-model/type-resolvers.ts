@@ -1,6 +1,9 @@
 import { getOrgResourceClient } from "@/app/api/v1/osograph/utils/access-control";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
-import { getOrganization } from "@/app/api/v1/osograph/utils/auth";
+import {
+  getOrganization,
+  requireAuthentication,
+} from "@/app/api/v1/osograph/utils/auth";
 import { ResourceErrors } from "@/app/api/v1/osograph/utils/errors";
 import {
   getMaterializations,
@@ -23,7 +26,11 @@ import {
   ModelReleaseRow,
 } from "@/lib/types/schema-types";
 import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
-import { generateTableId } from "@/app/api/v1/osograph/utils/model";
+import {
+  executePreviewQuery,
+  generateTableId,
+} from "@/app/api/v1/osograph/utils/model";
+import type { PreviewData } from "@/lib/graphql/generated/graphql";
 
 /**
  * Type resolvers for DataModel, DataModelRevision, and DataModelRelease.
@@ -188,6 +195,30 @@ export const dataModelTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
         parent.org_id,
         parent.dataset_id,
         generateTableId("USER_MODEL", parent.id),
+      );
+    },
+    previewData: async (
+      parent: ModelRow,
+      _args: Record<string, never>,
+      context: GraphQLContext,
+    ): Promise<PreviewData> => {
+      const authenticatedUser = requireAuthentication(context.user);
+      const { client } = await getOrgResourceClient(
+        context,
+        "data_model",
+        parent.id,
+        "read",
+      );
+
+      const tableId = generateTableId("USER_MODEL", parent.id);
+
+      return executePreviewQuery(
+        parent.org_id,
+        parent.dataset_id,
+        tableId,
+        authenticatedUser,
+        parent.name,
+        client,
       );
     },
   },
