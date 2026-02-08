@@ -47,25 +47,6 @@ export async function evaluateFeatureFlag(
 }
 
 /**
- * Batch evaluate multiple feature flags for better performance.
- */
-export async function evaluateFeatureFlags(
-  flagKeys: FeatureFlagKey[],
-  user: User,
-): Promise<Map<FeatureFlagKey, boolean>> {
-  const results = new Map<FeatureFlagKey, boolean>();
-
-  await Promise.all(
-    flagKeys.map(async (flagKey) => {
-      const value = await evaluateFeatureFlag(flagKey, user);
-      results.set(flagKey, value);
-    }),
-  );
-
-  return results;
-}
-
-/**
  * Helper function specifically for the new resolvers feature flag.
  * Returns true if the user should receive the new GraphQL resolvers.
  */
