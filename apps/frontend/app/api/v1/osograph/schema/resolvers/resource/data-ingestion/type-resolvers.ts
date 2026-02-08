@@ -8,6 +8,7 @@ import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-co
 import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { generateTableId } from "@/app/api/v1/osograph/utils/model";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
+import { DataIngestionModelContextArgs } from "@/lib/graphql/generated/graphql";
 
 /**
  * Type resolvers for DataIngestion.
@@ -50,9 +51,7 @@ export const dataIngestionTypeResolvers: GraphQLResolverModule<GraphQLContext> =
       updatedAt: (parent: DataIngestionsRow) => parent.updated_at,
       modelContext: async (
         parent: DataIngestionsRow,
-        // TODO(jabolo): Find the correct type from @/lib/graphql/generated/graphql
-        // eslint-disable-next-line oso-frontend/type-safety/no-inline-resolver-types
-        args: { tableName: string },
+        args: DataIngestionModelContextArgs,
       ) => {
         return getModelContext(parent.dataset_id, args.tableName);
       },

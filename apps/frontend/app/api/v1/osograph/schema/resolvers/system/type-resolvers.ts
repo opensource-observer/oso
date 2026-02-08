@@ -14,7 +14,10 @@ import {
 import { MaterializationRow, StepRow } from "@/lib/types/schema-types";
 import { logger } from "@/lib/logger";
 import { ServerErrors } from "@/app/api/v1/osograph/utils/errors";
-import { StepStatus } from "@/lib/graphql/generated/graphql";
+import {
+  StepStatus,
+  SystemResolveTablesArgs,
+} from "@/lib/graphql/generated/graphql";
 import { assertNever } from "@opensource-observer/utils";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
@@ -24,12 +27,7 @@ export const systemTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
   System: {
     resolveTables: async (
       _: unknown,
-      // TODO(jabolo): Reconcile this input with a type from @/lib/graphql/generated/graphql
-      // eslint-disable-next-line oso-frontend/type-safety/no-inline-resolver-types
-      input: {
-        references: string[];
-        metadata?: { orgName?: string; datasetName?: string };
-      },
+      input: SystemResolveTablesArgs,
       context: GraphQLContext,
     ) => {
       const client = getSystemClient(context);
@@ -174,18 +172,13 @@ export const systemTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      // TODO(jabolo): Handle special case where the caller does
-      // not pass `orgIds` as `system`. In the new implementation,
-      // it will fail and return and empty connection as of now.
-      const _client = getSystemClient(context);
+      const client = getSystemClient(context);
 
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
       return queryWithPagination(args, context, {
+        client,
+        orgIds: parent.org_id,
         tableName: "materialization",
         whereSchema: MaterializationWhereSchema,
-        requireAuth: false,
-        filterByUserOrgs: false,
-        parentOrgIds: parent.org_id,
         basePredicate: {
           eq: [{ key: "step_id", value: parent.id }],
         },
