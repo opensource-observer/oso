@@ -9,6 +9,7 @@ import { notebookResolvers } from "@/app/api/v1/osograph/schema/resolvers/user/n
 import { organizationResolvers } from "@/app/api/v1/osograph/schema/resolvers/user/organization/index";
 import { dataModelResolvers } from "@/app/api/v1/osograph/schema/resolvers/user/data-model/index";
 import { staticModelResolvers } from "@/app/api/v1/osograph/schema/resolvers/user/static-model/index";
+import { runsResolvers } from "@/app/api/v1/osograph/schema/resolvers/user/runs/index";
 
 /**
  * User-scoped resolvers (viewer query).
@@ -17,6 +18,7 @@ import { staticModelResolvers } from "@/app/api/v1/osograph/schema/resolvers/use
 export const userResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
     ...viewerResolvers.Query,
+    ...runsResolvers.Query,
     ...invitationResolvers.Query,
     ...dataConnectionResolvers.Query,
     ...datasetResolvers.Query,
