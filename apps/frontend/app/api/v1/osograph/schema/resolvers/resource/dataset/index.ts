@@ -1,7 +1,6 @@
 import type { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import { datasetMutations } from "@/app/api/v1/osograph/schema/resolvers/resource/dataset/mutations";
-import { datasetQueries } from "@/app/api/v1/osograph/schema/resolvers/resource/dataset/queries";
 import { datasetTypeResolvers } from "@/app/api/v1/osograph/schema/resolvers/resource/dataset/type-resolvers";
 
 /**
@@ -9,9 +8,6 @@ import { datasetTypeResolvers } from "@/app/api/v1/osograph/schema/resolvers/res
  * Uses getOrgResourceClient for fine-grained permission checks.
  */
 export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
-  Query: {
-    ...datasetQueries,
-  },
   Mutation: {
     ...datasetMutations,
   },
