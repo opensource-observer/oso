@@ -98,7 +98,9 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                 message.query,
                 table_resolvers,
                 metadata={
+                    "resolutionType": "query_run",
                     "orgName": context.organization.name,
+                    "runId": context.run_id,
                 },
             )
         except TableResolutionError as e:
