@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import useSWR from "swr";
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import { ColumnDef } from "@tanstack/react-table";
-import { AlertCircle, RefreshCw, Download } from "lucide-react";
+import { AlertCircle, RefreshCw, Download, Copy } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ export interface PreviewData {
 interface PreviewTabProps {
   datasetId: string;
   tableName: string;
+  tablePath: string;
 
   className?: string;
 
@@ -102,18 +103,17 @@ function extractPreviewData(
 
   const typeDef = dataset.typeDefinition;
 
-  switch (typeDef?.__typename) {
-    case "DataModelDefinition":
-      return typeDef?.dataModels?.edges?.[0]?.node?.previewData || undefined;
-    case "StaticModelDefinition":
-      return typeDef?.staticModels?.edges?.[0]?.node?.previewData || undefined;
-    case "DataIngestionDefinition":
-      return typeDef?.dataIngestion?.previewData || undefined;
-    case "DataConnectionDefinition":
-      return typeDef?.dataConnectionAlias?.previewData || undefined;
-    default:
-      throw new Error(`Unknown type definition: ${typeDef?.__typename}`);
+  if ("dataModels" in typeDef) {
+    return typeDef?.dataModels?.edges?.[0]?.node?.previewData || undefined;
+  } else if ("staticModels" in typeDef) {
+    return typeDef?.staticModels?.edges?.[0]?.node?.previewData || undefined;
+  } else if ("dataIngestion" in typeDef) {
+    return typeDef?.dataIngestion?.previewData || undefined;
+  } else if ("dataConnectionAlias" in typeDef) {
+    return typeDef?.dataConnectionAlias?.previewData || undefined;
   }
+
+  throw new Error(`Unknown type definition`);
 }
 
 // Generate columns dynamically from data
@@ -173,7 +173,7 @@ function usePreviewData(props: PreviewTabProps) {
 }
 
 function PreviewTab(props: PreviewTabProps) {
-  const { className } = props;
+  const { className, tablePath } = props;
 
   const { data: previewData, error, isLoading, mutate } = usePreviewData(props);
 
@@ -185,6 +185,13 @@ function PreviewTab(props: PreviewTabProps) {
 
   const noMaterialization = !previewData || !previewData.isAvailable;
   const noData = previewData?.rows.length === 0;
+
+  const handleCopy = () => {
+    const columnList = columns.map((col) => col.header).join(",\n");
+    void navigator.clipboard.writeText(
+      `SELECT ${columnList} FROM ${tablePath} LIMIT 25;`,
+    );
+  };
 
   const handleExport = () => {
     if (noData) return;
@@ -206,6 +213,21 @@ function PreviewTab(props: PreviewTabProps) {
       <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base">Preview data</CardTitle>
         <div className="flex gap-2">
+          <ToolTip
+            noStyle
+            trigger={
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                onClick={handleCopy}
+                disabled={isLoading || noData}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            }
+            content={<>Copy</>}
+          />
           <ToolTip
             noStyle
             trigger={
@@ -286,6 +308,12 @@ const PreviewTabMeta: CodeComponentMeta<PreviewTabProps> = {
     tableName: {
       type: "string",
       displayName: "Table name",
+      required: true,
+    },
+    tablePath: {
+      type: "string",
+      displayName: "Table path",
+      description: "Qualified path to the table",
       required: true,
     },
     useTestData: {
