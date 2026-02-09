@@ -416,6 +416,8 @@ class GraphQLSchemaTypeTraverser:
             field_name=field_name,
             override_description=return_description,
         )
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
 
         control = self._visitor.handle_leave_mutation_return_type(
             mutation_name=field_name, return_type=return_type

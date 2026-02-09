@@ -194,7 +194,7 @@ class PydanticModelBuildContext(TypeBuildContext):
         return create_model(self._type_name, **fields)  # type: ignore # pyright: ignore
 
 
-class PydanticModelAlreadyRegistered(Exception):
+class PydanticModelAlreadyRegisteredError(Exception):
     """Raised when attempting to register a Pydantic model with a duplicate name."""
 
     def __init__(self, model_name: str):
@@ -432,7 +432,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         logger.debug(f"Starting context: {name}, no_prefix={no_prefix}")
         prefixed_name = self.next_context_name(name, no_prefix=no_prefix)
         if self.is_type_registered(prefixed_name):
-            raise PydanticModelAlreadyRegistered(prefixed_name)
+            raise PydanticModelAlreadyRegisteredError(prefixed_name)
 
         discriminator = None
         if self.current_context and isinstance(
@@ -456,7 +456,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         logger.debug(f"Starting union context: {name}, no_prefix={no_prefix}")
         name = self.next_context_name(name, no_prefix=no_prefix)
         if self.is_type_registered(name):
-            raise PydanticModelAlreadyRegistered(name)
+            raise PydanticModelAlreadyRegisteredError(name)
 
         ctx = UnionTypeBuildContext(
             type_name=name,
@@ -605,7 +605,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
 
         try:
             self.start_model_context(object_type.name)
-        except PydanticModelAlreadyRegistered as e:
+        except PydanticModelAlreadyRegisteredError as e:
             python_type = self.get_type(e.model_name)
 
             self.add_field_to_context(
@@ -663,7 +663,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
 
         try:
             self.start_model_context(type_name, no_prefix=True)
-        except PydanticModelAlreadyRegistered as e:
+        except PydanticModelAlreadyRegisteredError as e:
             python_type = self.get_type(e.model_name)
             # Use existing model
             self.add_field_to_context(
@@ -736,7 +736,7 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
 
         try:
             self.start_union_context(union_type.name)
-        except PydanticModelAlreadyRegistered as e:
+        except PydanticModelAlreadyRegisteredError as e:
             existing_type = self.get_type(e.model_name)
             assert t.get_origin(existing_type) == t.Union, (
                 "Expected existing type to be a Union"
