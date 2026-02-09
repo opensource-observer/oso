@@ -1260,33 +1260,48 @@ export type Database = {
         Row: {
           chat_id: string | null;
           created_at: string;
+          data_connection_id: string | null;
+          data_ingestion_id: string | null;
+          data_model_id: string | null;
+          dataset_id: string | null;
           granted_by: string | null;
           id: string;
           notebook_id: string | null;
           permission_level: string;
           revoked_at: string | null;
+          static_model_id: string | null;
           updated_at: string;
           user_id: string | null;
         };
         Insert: {
           chat_id?: string | null;
           created_at?: string;
+          data_connection_id?: string | null;
+          data_ingestion_id?: string | null;
+          data_model_id?: string | null;
+          dataset_id?: string | null;
           granted_by?: string | null;
           id?: string;
           notebook_id?: string | null;
           permission_level: string;
           revoked_at?: string | null;
+          static_model_id?: string | null;
           updated_at?: string;
           user_id?: string | null;
         };
         Update: {
           chat_id?: string | null;
           created_at?: string;
+          data_connection_id?: string | null;
+          data_ingestion_id?: string | null;
+          data_model_id?: string | null;
+          dataset_id?: string | null;
           granted_by?: string | null;
           id?: string;
           notebook_id?: string | null;
           permission_level?: string;
           revoked_at?: string | null;
+          static_model_id?: string | null;
           updated_at?: string;
           user_id?: string | null;
         };
@@ -1296,6 +1311,34 @@ export type Database = {
             columns: ["chat_id"];
             isOneToOne: false;
             referencedRelation: "chat_history";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "resource_permissions_data_connection_id_fkey";
+            columns: ["data_connection_id"];
+            isOneToOne: false;
+            referencedRelation: "dynamic_connectors";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "resource_permissions_data_ingestion_id_fkey";
+            columns: ["data_ingestion_id"];
+            isOneToOne: false;
+            referencedRelation: "data_ingestions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "resource_permissions_data_model_id_fkey";
+            columns: ["data_model_id"];
+            isOneToOne: false;
+            referencedRelation: "model";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "resource_permissions_dataset_id_fkey";
+            columns: ["dataset_id"];
+            isOneToOne: false;
+            referencedRelation: "datasets";
             referencedColumns: ["id"];
           },
           {
@@ -1310,6 +1353,13 @@ export type Database = {
             columns: ["notebook_id"];
             isOneToOne: false;
             referencedRelation: "notebooks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "resource_permissions_static_model_id_fkey";
+            columns: ["static_model_id"];
+            isOneToOne: false;
+            referencedRelation: "static_model";
             referencedColumns: ["id"];
           },
           {

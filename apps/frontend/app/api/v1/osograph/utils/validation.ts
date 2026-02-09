@@ -67,6 +67,7 @@ export const AcceptInvitationSchema = z.object({
 
 export const RevokeInvitationSchema = z.object({
   invitationId: z.string().uuid("Invalid invitation ID"),
+  orgId: z.string().uuid("Invalid organization ID"),
 });
 
 export const RemoveMemberSchema = z.object({

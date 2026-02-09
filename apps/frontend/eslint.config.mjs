@@ -78,6 +78,16 @@ export default defineConfig(
       },
     },
     {
+      files: [
+        "app/api/v1/osograph/schema/resolvers/{organization,user,resource,system}/**/*.{ts,tsx}",
+      ],
+      rules: {
+        "@typescript-eslint/no-deprecated": "error",
+        "oso-frontend/type-safety/no-inline-resolver-types": "error",
+        "oso-frontend/type-safety/explicit-return-types": "off",
+      },
+    },
+    {
       files: ["app/api/v1/osograph/schema/resolvers/**/*.{ts,tsx}"],
 
       plugins: {

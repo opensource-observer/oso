@@ -25,9 +25,17 @@ type ResourcePermissionColumn = TableColumns<"resource_permissions">;
 
 /**
  * Resource types that support permission-based access control.
- * Currently supports notebook and chat; more types will be added in future phases.
+ * Supports notebooks, chats, datasets, data models, static models,
+ * data ingestions, and data connections.
  */
-export type ResourceType = "notebook" | "chat";
+export type ResourceType =
+  | "notebook"
+  | "chat"
+  | "dataset"
+  | "data_model"
+  | "static_model"
+  | "data_ingestion"
+  | "data_connection";
 
 /**
  * Permission levels in hierarchical order (highest to lowest).
@@ -54,6 +62,7 @@ export type OrgRole = "owner" | "admin" | "member";
 export interface OrgAccessResult {
   client: SupabaseAdminClient;
   orgRole: OrgRole;
+  userId: string;
 }
 
 /**
@@ -136,6 +145,15 @@ export function getSystemClient(context: GraphQLContext): SupabaseAdminClient {
 }
 
 /**
+ * Result returned by getAuthenticatedClient containing both the client and
+ * the user's ID.
+ */
+export interface AuthenticatedClientResult {
+  client: SupabaseAdminClient;
+  userId: string;
+}
+
+/**
  * Get a Supabase admin client for authenticated user operations.
  * Validates that the user is authenticated (not anonymous).
  *
@@ -143,14 +161,17 @@ export function getSystemClient(context: GraphQLContext): SupabaseAdminClient {
  * This is useful for user profile operations.
  *
  * @param context GraphQL context
- * @returns Supabase admin client
+ * @returns Object containing Supabase admin client and user ID
  * @throws {AuthenticationErrors.notAuthenticated()} if user is anonymous
  */
 export function getAuthenticatedClient(
   context: GraphQLContext,
-): SupabaseAdminClient {
-  requireAuthentication(context.user);
-  return createAdminClient();
+): AuthenticatedClientResult {
+  const user = requireAuthentication(context.user);
+  return {
+    client: createAdminClient(),
+    userId: user.userId,
+  };
 }
 
 /**
@@ -179,6 +200,7 @@ export async function getOrgScopedClient(
     return {
       client: createAdminClient(),
       orgRole: cachedRole as OrgRole,
+      userId: user.userId,
     };
   }
 
@@ -198,7 +220,7 @@ export async function getOrgScopedClient(
   const orgRole = membership.user_role as OrgRole;
   context.authCache.orgMemberships.set(cacheKey, orgRole);
 
-  return { client, orgRole };
+  return { client, orgRole, userId: user.userId };
 }
 
 /**
@@ -218,9 +240,25 @@ interface ResourceConfig<T extends keyof Tables> {
 const RESOURCE_CONFIG: {
   notebook: ResourceConfig<"notebooks">;
   chat: ResourceConfig<"chat_history">;
+  dataset: ResourceConfig<"datasets">;
+  data_model: ResourceConfig<"model">;
+  static_model: ResourceConfig<"static_model">;
+  data_ingestion: ResourceConfig<"data_ingestions">;
+  data_connection: ResourceConfig<"dynamic_connectors">;
 } = {
   notebook: { table: "notebooks", permissionColumn: "notebook_id" },
   chat: { table: "chat_history", permissionColumn: "chat_id" },
+  dataset: { table: "datasets", permissionColumn: "dataset_id" },
+  data_model: { table: "model", permissionColumn: "data_model_id" },
+  static_model: { table: "static_model", permissionColumn: "static_model_id" },
+  data_ingestion: {
+    table: "data_ingestions",
+    permissionColumn: "data_ingestion_id",
+  },
+  data_connection: {
+    table: "dynamic_connectors",
+    permissionColumn: "data_connection_id",
+  },
 };
 
 /**

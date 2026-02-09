@@ -31,7 +31,7 @@ export async function requireOrgMembership(
   orgId: string,
   adminClient: SupabaseAdminClient,
 ): Promise<void>;
-/** @deprecated */
+/** @deprecated - use `requireOrgMembership` with explicit client parameter */
 export async function requireOrgMembership(
   userId: string,
   orgId: string,
@@ -60,7 +60,7 @@ export async function getUserProfile(
   userId: string,
   adminClient: SupabaseAdminClient,
 ): Promise<z.infer<typeof userProfilesRowSchema>>;
-/** @deprecated */
+/** @deprecated - use `getUserProfile` with explicit client parameter */
 export async function getUserProfile(
   userId: string,
 ): Promise<z.infer<typeof userProfilesRowSchema>>;
@@ -87,7 +87,7 @@ export async function getOrganization(
   orgId: string,
   adminClient: SupabaseAdminClient,
 ): Promise<z.infer<typeof organizationsRowSchema>>;
-/** @deprecated */
+/** @deprecated - use `getOrganization` with explicit client parameter */
 export async function getOrganization(
   orgId: string,
 ): Promise<z.infer<typeof organizationsRowSchema>>;
