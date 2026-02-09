@@ -1,5 +1,13 @@
-"""Query parsing, extraction, and execution for GraphQL."""
+"""Query parsing, extraction, and execution for GraphQL.
 
+This module provides:
+- QueryDocumentParser for parsing .graphql files
+- QueryDocumentTraverser for walking QueryDocument with visitors
+- QueryExtractor for extracting query information
+- QueryExecutor for executing queries
+"""
+
+import json
 import logging
 import os
 import typing as t
@@ -10,6 +18,9 @@ from graphql import (
     FieldNode,
     FragmentDefinitionNode,
     FragmentSpreadNode,
+    GraphQLList,
+    GraphQLNamedType,
+    GraphQLNonNull,
     GraphQLObjectType,
     GraphQLSchema,
     InlineFragmentNode,
@@ -18,26 +29,105 @@ from graphql import (
     SelectionSetNode,
     parse,
     print_ast,
+    type_from_ast,
 )
-from pydantic import BaseModel, create_model
+from oso_core.pydantictools.utils import is_pydantic_model_class
+from oso_mcp.server.graphql.schema_visitor import GraphQLSchemaTypeTraverser
+from pydantic import BaseModel
 
-from .pydantic_generator import PydanticModelGenerator
-from .types import AsyncGraphQLClient, QueryDocument, QueryInfo
+from .pydantic_generator import (
+    PydanticModelBuildContext,
+    PydanticModelVisitor,
+)
+from .types import (
+    AsyncGraphQLClient,
+    QueryDocument,
+    QueryDocumentField,
+    QueryDocumentFragment,
+    QueryDocumentFragmentSpread,
+    QueryDocumentInlineFragment,
+    QueryDocumentOperation,
+    QueryDocumentSelection,
+    QueryDocumentVariable,
+    QueryDocumentVisitor,
+    QueryInfo,
+    SchemaType,
+    TraverserProtocol,
+    VisitorControl,
+)
 
 logger = logging.getLogger(__name__)
 
 
-class QueryDocumentParser:
-    """Parse GraphQL query documents from .graphql files."""
+def collect_comments(raw_content: str, start_index: int) -> t.List[str]:
+    """Find preceding comment lines before a given index in the content."""
+    comments = []
+    index = start_index - 1
 
-    def __init__(self, directory_path: str):
-        """Initialize the parser with a directory path.
+    while index >= 0:
+        # Move to the start of the current line
+        line_start = raw_content.rfind("\n", 0, index) + 1
+        line = raw_content[line_start : index + 1].strip()
+
+        if line.startswith("#"):
+            comments.append(line[1:].strip())
+            index = line_start - 1
+        elif line == "":
+            index = line_start - 1
+        else:
+            break
+
+    comments.reverse()
+    return comments
+
+
+class QueryDocumentParser:
+    """Parses .graphql files into enriched QueryDocument with schema resolution.
+
+    This parser reads GraphQL query files and builds a fully enriched
+    QueryDocument where all AST nodes are linked to their corresponding
+    schema types. Fragment spreads are resolved to their definitions,
+    and type wrappers (NonNull, List) are unwrapped to is_required/is_list flags.
+    """
+
+    def __init__(self, schema: GraphQLSchema):
+        """Initialize the parser with a GraphQL schema.
+
+        Args:
+            schema: GraphQL schema for type resolution
+        """
+        self._schema = schema
+
+    def parse_file(self, file_path: str) -> t.Optional[QueryDocument]:
+        """Parse a single .graphql file into QueryDocument.
+
+        Args:
+            file_path: Path to .graphql file
+
+        Returns:
+            QueryDocument or None if file contains no operations
+
+        Raises:
+            GraphQLSyntaxError: If file contains invalid GraphQL syntax
+            FileNotFoundError: If file doesn't exist
+        """
+        with open(file_path, "r") as f:
+            content = f.read()
+
+        ast = parse(content)
+        return self._build_document(ast, file_path, content)
+
+    def parse_directory(self, directory_path: str) -> t.List[QueryDocument]:
+        """Parse all .graphql files in directory.
 
         Args:
             directory_path: Directory containing .graphql files
 
+        Returns:
+            List of QueryDocument objects (only files with operations)
+
         Raises:
-            FileNotFoundError: If path doesn't exist
+            FileNotFoundError: If directory doesn't exist
             ValueError: If path is not a directory
         """
         if not os.path.exists(directory_path):
@@ -46,277 +136,118 @@ class QueryDocumentParser:
         if not os.path.isdir(directory_path):
             raise ValueError(f"Path is not a directory: {directory_path}")
 
-        self.directory_path = directory_path
-
-    def parse_all(self) -> t.List[QueryDocument]:
-        """Parse all .graphql files in the directory.
-
-        Returns:
-            List of QueryDocument objects, one per file
-
-        Raises:
-            GraphQLSyntaxError: If any file contains invalid GraphQL syntax
-        """
-        documents = []
-        for filename in os.listdir(self.directory_path):
+        docs = []
+        for filename in os.listdir(directory_path):
             if filename.endswith(".graphql"):
-                file_path = os.path.join(self.directory_path, filename)
-                doc = self._parse_file(file_path)
-                if doc:
-                    documents.append(doc)
+                file_path = os.path.join(directory_path, filename)
+                doc = self.parse_file(file_path)
+                if doc and doc.operations:
+                    docs.append(doc)
+        return docs
 
-        return documents
+    def _build_document(
+        self, ast: DocumentNode, file_path: str, raw_content: str
+    ) -> t.Optional[QueryDocument]:
+        """Build enriched QueryDocument from parsed AST."""
+        # Extract raw AST nodes
+        raw_operations = self._extract_raw_operations(ast)
+        raw_fragments = self._extract_raw_fragments(ast)
 
-    def _parse_file(self, file_path: str) -> t.Optional[QueryDocument]:
-        """Parse a single .graphql file.
-
-        Args:
-            file_path: Path to .graphql file
-
-        Returns:
-            QueryDocument or None if file contains no queries
-
-        Raises:
-            GraphQLSyntaxError: If file contains invalid GraphQL syntax
-        """
-        with open(file_path, "r") as f:
-            content = f.read()
-
-        # Parse the GraphQL document
-        document = parse(content)
-
-        # Extract operations and fragments
-        operations = self._extract_operations(document)
-        fragments = self._extract_fragments(document)
-
-        # Skip files with no query operations
-        if not operations:
+        # Skip files with no operations
+        if not raw_operations:
             return None
 
+        # Build fragments first in topological order (dependencies before dependents)
+        fragments = self._build_fragments(raw_fragments, raw_content)
+
+        # Build operations with fragment references
+        operations = self._build_operations(raw_operations, fragments, raw_content)
+
         return QueryDocument(
-            operations=operations, fragments=fragments, file_path=file_path
+            file_path=file_path,
+            operations=operations,
+            fragments=fragments,
         )
 
-    def _extract_operations(
-        self, document: DocumentNode
+    def _extract_raw_operations(
+        self, ast: DocumentNode
     ) -> t.List[OperationDefinitionNode]:
-        """Extract query operations from document.
-
-        Args:
-            document: Parsed GraphQL document
-
-        Returns:
-            List of query operation nodes
-        """
+        """Extract operation definition nodes from AST."""
         operations = []
-        for definition in document.definitions:
+        for definition in ast.definitions:
             if isinstance(definition, OperationDefinitionNode):
-                # Only include query operations (not mutations or subscriptions)
-                if definition.operation == OperationType.QUERY:
-                    operations.append(definition)
-
+                operations.append(definition)
         return operations
 
-    def _extract_fragments(
-        self, document: DocumentNode
+    def _extract_raw_fragments(
+        self, ast: DocumentNode
     ) -> t.Dict[str, FragmentDefinitionNode]:
-        """Extract fragment definitions from document.
-
-        Args:
-            document: Parsed GraphQL document
-
-        Returns:
-            Dictionary mapping fragment names to fragment nodes
-        """
+        """Extract fragment definition nodes from AST."""
         fragments = {}
-        for definition in document.definitions:
+        for definition in ast.definitions:
             if isinstance(definition, FragmentDefinitionNode):
                 fragment_name = definition.name.value
                 fragments[fragment_name] = definition
+        return fragments
+
+    def _build_fragments(
+        self, raw_fragments: t.Dict[str, FragmentDefinitionNode], raw_content: str
+    ) -> t.Dict[str, QueryDocumentFragment]:
+        """Build enriched fragments in topological dependency order."""
+        if not raw_fragments:
+            return {}
+
+        # Build dependency graph
+        dependencies: t.Dict[str, t.Set[str]] = {}
+        for fragment_name, fragment in raw_fragments.items():
+            deps = self._get_fragment_dependencies(fragment.selection_set)
+            dependencies[fragment_name] = deps & set(raw_fragments.keys())
+
+        # Topological sort
+        ts = TopologicalSorter(dependencies)
+        try:
+            sorted_names = list(ts.static_order())
+        except ValueError as e:
+            raise ValueError(f"Circular fragment dependencies detected: {e}")
+
+        # Build fragments in order
+        fragments: t.Dict[str, QueryDocumentFragment] = {}
+        for fragment_name in sorted_names:
+            raw_fragment = raw_fragments[fragment_name]
+
+            # Resolve type condition
+            type_condition_name = raw_fragment.type_condition.name.value
+            type_condition = self._schema.type_map.get(type_condition_name)
+
+            if not isinstance(type_condition, GraphQLObjectType):
+                raise ValueError(
+                    f"Fragment '{fragment_name}' type condition '{type_condition_name}' "
+                    f"is not an object type"
+                )
+
+            # Build children (can reference already-built fragments)
+            children = self._build_selections(
+                raw_fragment.selection_set, type_condition, fragments
+            )
+
+            fragments[fragment_name] = QueryDocumentFragment(
+                ast_node=raw_fragment,
+                name=fragment_name,
+                type_condition_name=type_condition_name,
+                type_condition=type_condition,
+                children=children,
+            )
 
         return fragments
 
-
-class QueryExtractor:
-    """Extract query information from parsed GraphQL query documents."""
-
-    def extract_queries(
-        self,
-        schema: GraphQLSchema,
-        query_docs: t.List[QueryDocument],
-        model_generator: PydanticModelGenerator,
-    ) -> t.List[QueryInfo]:
-        """Extract all queries and generate their Pydantic models.
-
-        Args:
-            schema: GraphQL schema for type lookup
-            query_docs: List of parsed query documents
-            model_generator: Pydantic model generator instance
-
-        Returns:
-            List of QueryInfo objects
-
-        Raises:
-            ValueError: If a query operation lacks a name or schema has no Query type
-        """
-        queries = []
-
-        # Get the Query type from schema
-        query_type = schema.query_type
-        if not query_type:
-            raise ValueError("Schema does not have a Query type defined")
-
-        for doc in query_docs:
-            # First, generate Pydantic models for all fragments in dependency order
-            # This ensures fragment dependencies are processed before fragments that use them
-            self._generate_fragment_models_in_order(doc, schema, model_generator)
-
-            # Now process each query operation
-            for operation in doc.operations:
-                # Require named operations for tool generation
-                if not operation.name:
-                    raise ValueError(
-                        f"Anonymous queries are not supported. "
-                        f"All query operations must have names in file: {doc.file_path}"
-                    )
-
-                query_name = operation.name.value
-
-                # Build query string (includes fragment spreads, not inlined)
-                query_string = self._build_query_string(operation, doc)
-
-                # Generate variable input model
-                variable_definitions = list(operation.variable_definitions) or []
-                if variable_definitions:
-                    input_model = model_generator.generate_model_from_variables(
-                        query_name, variable_definitions
-                    )
-                else:
-                    # No variables - create empty model
-                    input_model = create_model(f"{query_name}Variables")
-
-                # Generate response model from selection set
-                # This will use fragment models where fragment spreads occur
-                payload_model = model_generator.generate_model_from_selection_set(
-                    query_name,
-                    operation.selection_set,
-                    query_type,
-                    schema,
-                    max_depth=100,  # Unlimited depth for hand-written queries
-                )
-
-                # Create QueryInfo
-                query_info = QueryInfo(
-                    name=query_name,
-                    description=None,  # TODO: Extract from comments if available
-                    query_string=query_string,
-                    variable_definitions=variable_definitions,
-                    input_model=input_model,
-                    payload_model=payload_model,
-                    selection_set=operation.selection_set,
-                )
-
-                queries.append(query_info)
-
-        return queries
-
-    def _build_query_string(
-        self, operation: OperationDefinitionNode, doc: QueryDocument
-    ) -> str:
-        """Build complete query string with inlined fragments.
-
-        Args:
-            operation: Query operation node
-            doc: Query document containing fragments
-
-        Returns:
-            GraphQL query string with fragments inlined
-        """
-        # Inline fragments in the operation's selection set
-        inlined_selection_set = self._inline_fragments_in_selection_set(
-            operation.selection_set, doc.fragments
-        )
-
-        # Create a new operation node with the inlined selection set
-        inlined_operation = OperationDefinitionNode(
-            operation=operation.operation,
-            name=operation.name,
-            variable_definitions=operation.variable_definitions,
-            directives=operation.directives,
-            selection_set=inlined_selection_set,
-        )
-
-        # Print only the operation (fragments are now inlined)
-        return print_ast(inlined_operation)
-
-    def _generate_fragment_models_in_order(
-        self,
-        doc: QueryDocument,
-        schema: GraphQLSchema,
-        model_generator: PydanticModelGenerator,
-    ) -> None:
-        """Generate Pydantic models for fragments in topological dependency order.
-
-        This ensures that when a fragment uses another fragment, the dependency
-        is generated first.
-
-        Args:
-            doc: Query document containing fragments
-            schema: GraphQL schema for type lookup
-            model_generator: Pydantic model generator instance
-
-        Raises:
-            ValueError: If circular fragment dependencies are detected
-        """
-        # Build dependency graph for topological sorting
-        dependencies: t.Dict[str, t.Set[str]] = {}
-        for fragment_name, fragment in doc.fragments.items():
-            deps = self._get_fragment_dependencies(fragment.selection_set)
-            dependencies[fragment_name] = deps
-
-        # Use TopologicalSorter to get the correct order
-        ts = TopologicalSorter(dependencies)
-        try:
-            sorted_fragments = list(ts.static_order())
-        except ValueError as e:
-            raise ValueError(
-                f"Circular fragment dependencies detected in {doc.file_path}: {e}"
-            )
-
-        # Generate models in topological order
-        for fragment_name in sorted_fragments:
-            fragment = doc.fragments[fragment_name]
-            # Get the type this fragment is on
-            type_condition = fragment.type_condition.name.value
-            fragment_type = schema.type_map.get(type_condition)
-
-            # Ensure the fragment type is a GraphQLObjectType
-            if fragment_type and isinstance(fragment_type, GraphQLObjectType):
-                model_generator.generate_model_from_selection_set(
-                    fragment_name,
-                    fragment.selection_set,
-                    fragment_type,
-                    schema,
-                    max_depth=100,  # Unlimited depth for hand-written query fragments
-                )
-
     def _get_fragment_dependencies(self, selection_set: SelectionSetNode) -> t.Set[str]:
-        """Get set of fragment names that this selection set depends on.
-
-        Args:
-            selection_set: Selection set to analyze
-
-        Returns:
-            Set of fragment names used in this selection set
-        """
+        """Get set of fragment names that this selection set depends on."""
         dependencies: t.Set[str] = set()
 
         for selection in selection_set.selections:
             if isinstance(selection, FragmentSpreadNode):
-                # This selection uses a fragment
                 dependencies.add(selection.name.value)
             elif isinstance(selection, (FieldNode, InlineFragmentNode)):
-                # Recursively check nested selections for FieldNode and InlineFragmentNode
                 if selection.selection_set:
                     nested_deps = self._get_fragment_dependencies(
                         selection.selection_set
@@ -325,54 +256,667 @@ class QueryExtractor:
 
         return dependencies
 
+    def _build_operations(
+        self,
+        raw_operations: t.List[OperationDefinitionNode],
+        fragments: t.Dict[str, QueryDocumentFragment],
+        raw_content: str,
+    ) -> t.List[QueryDocumentOperation]:
+        """Build enriched operations with resolved root types."""
+        operations = []
+
+        for raw_op in raw_operations:
+            # Determine root type based on operation type
+            if raw_op.operation == OperationType.QUERY:
+                root_type = self._schema.query_type
+                op_type = "query"
+            elif raw_op.operation == OperationType.MUTATION:
+                root_type = self._schema.mutation_type
+                op_type = "mutation"
+            elif raw_op.operation == OperationType.SUBSCRIPTION:
+                root_type = self._schema.subscription_type
+                op_type = "subscription"
+            else:
+                continue
+
+            # Grab additional context from each operation using hash style
+            # comments
+            assert raw_op.loc is not None, "Operation node missing location info"
+
+            start_index = raw_op.loc.start
+            # Scan in reverse until we hit a newline (we will collect comments _before_ that)
+            lower_bound_index = start_index
+            while lower_bound_index > 0:
+                lower_bound_index -= 1
+                if raw_content[lower_bound_index] == "\n":
+                    break
+            comment_lines = collect_comments(raw_content, lower_bound_index)
+            description = "\n".join(comment_lines) if comment_lines else None
+
+            logger.debug(f"Extracted description for operation: {description}")
+
+            if root_type is None:
+                raise ValueError(
+                    f"Schema does not have a {op_type.title()} type defined"
+                )
+
+            # Get operation name (may be None for anonymous operations)
+            op_name = raw_op.name.value if raw_op.name else ""
+
+            # Build variables
+            variables = self._build_variables(raw_op)
+
+            # Build children
+            children = self._build_selections(
+                raw_op.selection_set, root_type, fragments
+            )
+
+            operations.append(
+                QueryDocumentOperation(
+                    ast_node=raw_op,
+                    name=op_name,
+                    operation_type=op_type,
+                    root_type=root_type,
+                    variables=variables,
+                    children=children,
+                    description=description,
+                )
+            )
+
+        return operations
+
+    def _build_variables(
+        self, operation: OperationDefinitionNode
+    ) -> t.List[QueryDocumentVariable]:
+        """Build enriched variable definitions."""
+        if not operation.variable_definitions:
+            return []
+
+        variables = []
+        for var_def in operation.variable_definitions:
+            var_name = var_def.variable.name.value
+            var_type = type_from_ast(self._schema, var_def.type)
+            is_required, is_list, graphql_type = self._unwrap_type(var_type)
+
+            default_value = None
+            if var_def.default_value:
+                default_value = var_def.default_value
+
+            assert graphql_type is not None, (
+                f"Unable to resolve type for variable '${var_name}'"
+            )
+            logger.debug(
+                f"GraphQL Type for variable '${var_name}': {graphql_type} {type(graphql_type)}"
+            )
+            assert isinstance(graphql_type, GraphQLNamedType), (
+                f"Variable '${var_name}' type is not a named type"
+            )
+
+            variables.append(
+                QueryDocumentVariable(
+                    ast_node=var_def,
+                    name=var_name,
+                    graphql_type=graphql_type,
+                    is_required=is_required,
+                    is_list=is_list,
+                    default_value=default_value,
+                )
+            )
+
+        return variables
+
+    def _build_selections(
+        self,
+        selection_set: SelectionSetNode,
+        parent_type: GraphQLObjectType,
+        fragments: t.Dict[str, QueryDocumentFragment],
+    ) -> t.List[QueryDocumentSelection]:
+        """Build enriched selections from AST selection set."""
+        selections: t.List[QueryDocumentSelection] = []
+
+        for selection in selection_set.selections:
+            if isinstance(selection, FieldNode):
+                selections.append(self._build_field(selection, parent_type, fragments))
+            elif isinstance(selection, FragmentSpreadNode):
+                selections.append(self._build_fragment_spread(selection, fragments))
+            elif isinstance(selection, InlineFragmentNode):
+                selections.append(
+                    self._build_inline_fragment(selection, parent_type, fragments)
+                )
+        return selections
+
+    def _build_field(
+        self,
+        node: FieldNode,
+        parent_type: GraphQLObjectType,
+        fragments: t.Dict[str, QueryDocumentFragment],
+    ) -> QueryDocumentField:
+        """Build enriched field with schema type resolution."""
+        field_name = node.name.value
+
+        # Handle __typename special field
+        if field_name == "__typename":
+            from graphql import GraphQLString
+
+            return QueryDocumentField(
+                ast_node=node,
+                field_name=field_name,
+                alias=node.alias.value if node.alias else None,
+                schema_type=GraphQLString,
+                is_required=True,
+                is_list=False,
+                children=[],
+            )
+
+        # Get field definition from parent type
+        if field_name not in parent_type.fields:
+            raise ValueError(
+                f"Field '{field_name}' not found on type '{parent_type.name}'"
+            )
+
+        field_def = parent_type.fields[field_name]
+        is_required, is_list, base_type = self._unwrap_type(field_def.type)
+
+        # Build children if field has selection set and is object type
+        children: t.List[QueryDocumentSelection] = []
+        if node.selection_set:
+            if isinstance(base_type, GraphQLObjectType):
+                children = self._build_selections(
+                    node.selection_set, base_type, fragments
+                )
+
+        return QueryDocumentField(
+            ast_node=node,
+            field_name=field_name,
+            alias=node.alias.value if node.alias else None,
+            schema_type=base_type,
+            is_required=is_required,
+            is_list=is_list,
+            children=children,
+        )
+
+    def _build_fragment_spread(
+        self,
+        node: FragmentSpreadNode,
+        fragments: t.Dict[str, QueryDocumentFragment],
+    ) -> QueryDocumentFragmentSpread:
+        """Build enriched fragment spread with resolved reference."""
+        fragment_name = node.name.value
+
+        if fragment_name not in fragments:
+            raise ValueError(f"Fragment '{fragment_name}' not found")
+
+        return QueryDocumentFragmentSpread(
+            ast_node=node,
+            fragment_name=fragment_name,
+            fragment=fragments[fragment_name],
+        )
+
+    def _build_inline_fragment(
+        self,
+        node: InlineFragmentNode,
+        parent_type: GraphQLObjectType,
+        fragments: t.Dict[str, QueryDocumentFragment],
+    ) -> QueryDocumentInlineFragment:
+        """Build enriched inline fragment with resolved type condition."""
+        type_condition: t.Optional[GraphQLObjectType] = None
+        if node.type_condition:
+            type_name = node.type_condition.name.value
+            resolved_type = self._schema.type_map.get(type_name)
+            if isinstance(resolved_type, GraphQLObjectType):
+                type_condition = resolved_type
+
+        child_parent = type_condition if type_condition else parent_type
+
+        children: t.List[QueryDocumentSelection] = []
+        if node.selection_set:
+            children = self._build_selections(
+                node.selection_set, child_parent, fragments
+            )
+
+        return QueryDocumentInlineFragment(
+            ast_node=node,
+            type_condition=type_condition,
+            children=children,
+        )
+
+    def _unwrap_type(self, gql_type: t.Any) -> t.Tuple[bool, bool, SchemaType]:
+        """Unwrap GraphQL type to get base type and flags."""
+        is_required = False
+        is_list = False
+
+        if isinstance(gql_type, GraphQLNonNull):
+            is_required = True
+            gql_type = gql_type.of_type
+
+        if isinstance(gql_type, GraphQLList):
+            is_list = True
+            inner_type = gql_type.of_type
+            if isinstance(inner_type, GraphQLNonNull):
+                inner_type = inner_type.of_type
+            gql_type = inner_type
+
+        return is_required, is_list, gql_type
+
+
+class QueryDocumentTraverser(TraverserProtocol):
+    """Traverses QueryDocument and calls GraphQLSchemaTypeVisitor methods.
+
+    This traverser enables reusing PydanticModelVisitor (or any other
+    GraphQLSchemaTypeVisitor implementation) for both:
+    - GraphQLSchemaTypeTraverser (schema introspection, all fields)
+    - QueryDocumentTraverser (query document, only selected fields)
+
+    Example:
+        visitor = PydanticModelVisitor(
+            model_name="",  # Unused - create context manually for custom names
+            parent_type=query_type,
+            max_depth=100,
+            use_context_prefix=True,
+        )
+        # For custom model names, create initial context before traversal
+        ctx = PydanticModelBuildContext(
+            model_name="GetUserResponse",
+            parent_type=query_type,
+            depth=0,
+            context_prefix="GetUserResponse",
+        )
+        visitor._context_stack.append(ctx)
+        traverser = QueryDocumentTraverser(visitor)
+        traverser.traverse_operation(operation)
+        model = visitor._type_registry["GetUserResponse"]
+    """
+
+    def __init__(
+        self,
+        visitor: QueryDocumentVisitor,
+        schema: GraphQLSchema,
+        expand_fragments: bool = True,
+    ):
+        """Initialize the traverser.
+
+        Args:
+            visitor: Visitor that will receive callbacks during traversal
+            expand_fragments: If True, traverse into fragment spreads.
+        """
+        self._visitor = visitor
+        self._expand_fragments = expand_fragments
+        self._schema = schema
+        self._visited_fragments: t.Set[str] = set()
+
+    def walk(self, graphql_type: QueryDocument | SchemaType) -> None:
+        """Traverse all operations and fragments in the document.
+
+        Args:
+            document: QueryDocument to traverse
+        """
+        assert isinstance(graphql_type, QueryDocument), (
+            "QueryDocumentTraverser requires QueryDocument to walk"
+        )
+        document = graphql_type
+
+        fragments_definitions: t.Dict[str, FragmentDefinitionNode] = {
+            name: fragment.ast_node for name, fragment in document.fragments.items()
+        }
+
+        # Traverse fragments first in topographical order
+        for fragment_name, fragment in document.fragments.items():
+            control = self._traverse_fragment(fragment, fragments_definitions)
+            if control == VisitorControl.STOP:
+                return None
+
+        for operation in document.operations:
+            control = self._traverse_operation(operation, fragments_definitions)
+            if control == VisitorControl.STOP:
+                return None
+        return None
+
+    def _traverse_operation(
+        self,
+        operation: QueryDocumentOperation,
+        fragments: t.Dict[str, FragmentDefinitionNode],
+    ) -> VisitorControl:
+        """Traverse a single operation."""
+        logger.debug(f"Traversing operation: {operation.name}")
+        self._visited_fragments = set()
+
+        # Enter the root object type
+        control = self._visitor.handle_enter_operation(
+            operation=operation,
+        )
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
+        if control == VisitorControl.SKIP:
+            return VisitorControl.CONTINUE
+
+        # Traverse the variables
+        control = self._traverse_variables(operation)
+
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
+
+        # Delegate to the GraphQLSchemaTypeTraverser for field traversal
+        # Skip root hooks so the Query/Mutation type fields are added directly
+        # to the operation context instead of creating a nested Query/Mutation object
+        traverser = GraphQLSchemaTypeTraverser(
+            self._visitor,
+            schema=self._schema,
+            selection_set=operation.ast_node.selection_set,
+            fragments=fragments,
+        )
+        logger.debug(
+            f"Delegating to GraphQLSchemaTypeTraverser for operation: {operation.name}"
+        )
+        schema_start = self._schema.query_type
+        if operation.operation_type == "mutation":
+            schema_start = self._schema.mutation_type
+        assert schema_start is not None, (
+            f"Schema does not have a {operation.operation_type.title()} type defined"
+        )
+        control = traverser.visit(schema_start, field_name="", skip_root_hooks=True)
+
+        # Leave the root object type
+        return self._visitor.handle_leave_operation(
+            operation=operation,
+        )
+
+    def _traverse_variables(self, operation: QueryDocumentOperation) -> VisitorControl:
+        """Traverse variable definitions."""
+        logger.debug(f"Traversing variables for operation: {operation.name}")
+        control = self._visitor.handle_enter_variables(operation)
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
+        if control == VisitorControl.SKIP:
+            return VisitorControl.CONTINUE
+        control = self._traverse_variable_definitions(operation)
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
+        return self._visitor.handle_leave_variables(operation)
+
+    def _traverse_variable_definitions(
+        self, operation: QueryDocumentOperation
+    ) -> VisitorControl:
+        """Traverse variable definitions."""
+        for variable in operation.variables:
+            control = self._visitor.handle_enter_variable_definition(
+                operation, variable
+            )
+            if control == VisitorControl.STOP:
+                return VisitorControl.STOP
+            if control == VisitorControl.SKIP:
+                continue
+            control = self._visitor.handle_leave_variable_definition(
+                operation, variable
+            )
+            if control == VisitorControl.STOP:
+                return VisitorControl.STOP
+        return VisitorControl.CONTINUE
+
+    def _traverse_fragment(
+        self,
+        fragment: QueryDocumentFragment,
+        fragments: t.Dict[str, FragmentDefinitionNode],
+    ) -> VisitorControl:
+        """Traverse a fragment definition."""
+        self._visited_fragments = set()
+
+        control = self._visitor.handle_enter_fragment(
+            fragment=fragment,
+        )
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
+        if control == VisitorControl.SKIP:
+            return VisitorControl.CONTINUE
+
+        traverser = GraphQLSchemaTypeTraverser(
+            self._visitor,
+            schema=self._schema,
+            selection_set=fragment.ast_node.selection_set,
+            fragments=fragments,
+        )
+        logger.debug(
+            f"Delegating to GraphQLSchemaTypeTraverser for fragment: {fragment.name} on type {fragment.type_condition_name}"
+        )
+        schema_start = fragment.type_condition
+        assert schema_start is not None, (
+            f"Schema does not have a {schema_start} type defined"
+        )
+        control = traverser.visit(schema_start, field_name="", skip_root_hooks=True)
+
+        return self._visitor.handle_leave_fragment(
+            fragment=fragment,
+        )
+
+    def _visit_field(self, field: QueryDocumentField) -> VisitorControl:
+        """Visit a field - dispatches to appropriate visitor method based on type."""
+        schema_type = field.schema_type
+        field.ast_node.selection_set
+
+        logger.debug(
+            f"Delegating field visit to GraphQLSchemaTypeTraverser for field: {field.field_name} of type {schema_type}"
+        )
+        traverser = GraphQLSchemaTypeTraverser(
+            self._visitor,
+            schema=self._schema,
+            selection_set=field.ast_node.selection_set,
+        )
+        return traverser.visit(schema_type, field.field_name)
+
+
+class QueryCollectorVisitor(PydanticModelVisitor):
+    """Collects QueryInfo from parsed GraphQL query documents.
+
+    This class inherits from PydanticModelVisitor to leverage inherited
+    hooks for building Pydantic models during QueryDocument traversal.
+    Similar pattern to MutationCollectorVisitor.
+
+    Example:
+        parser = QueryDocumentParser(schema)
+        query_docs = parser.parse_directory(client_schema_path)
+
+        visitor = QueryCollectorVisitor(schema)
+        traverser = QueryDocumentTraverser(visitor)
+        traverser.walk(query_doc)
+        queries = visitor.queries
+    """
+
+    def __init__(
+        self,
+        schema: GraphQLSchema,
+        document: QueryDocument,
+        ignore_unknown_types: bool = False,
+    ):
+        """Initialize the query collector visitor.
+
+        Args:
+            schema: GraphQL schema for type resolution
+            ignore_unknown_types: If True, map unknown types to Any instead of raising error
+        """
+        query_type = schema.query_type
+        if not query_type:
+            raise ValueError("Schema does not have a Query type defined")
+
+        # Initialize parent visitor with query-specific settings
+        super().__init__(
+            max_depth=100,  # Queries need deeper traversal than mutations
+            use_context_prefix=True,  # Prefix nested types with operation name
+            ignore_unknown_types=ignore_unknown_types,
+        )
+        self._schema = schema
+        self._queries: t.List[QueryInfo] = []
+        self._document = document
+
+    @property
+    def queries(self) -> t.List[QueryInfo]:
+        """Get the collected queries."""
+        return self._queries
+
+    def handle_enter_operation(
+        self, operation: QueryDocumentOperation
+    ) -> VisitorControl:
+        """Handle entering an operation definition."""
+
+        logger.debug(f"Starting operation: {operation.name}")
+        self.start_model_context(operation.name)
+        return VisitorControl.CONTINUE
+
+    def handle_leave_operation(
+        self, operation: QueryDocumentOperation
+    ) -> VisitorControl:
+        """Handle leaving an operation definition."""
+        # Pop the root context and materialize the model
+        logger.debug(f"Finishing operation: {operation.name}")
+        operation_name = self.finish_context()
+        payload_model = self.get_type(operation_name)
+
+        # Build query string with inlined fragments
+        query_string = self._build_query_string(operation, self._document)
+
+        assert is_pydantic_model_class(payload_model), (
+            "Payload model must be a Pydantic model class"
+        )
+
+        input_model = self.get_type(f"{operation.name}Variables")
+        assert is_pydantic_model_class(input_model), (
+            "Input model must be a Pydantic model class"
+        )
+
+        # Create and collect QueryInfo
+        query_info = QueryInfo(
+            name=operation.name,
+            description=operation.description,
+            query_string=query_string,
+            input_model=input_model,
+            payload_model=payload_model,
+            selection_set=operation.ast_node.selection_set,
+        )
+        self._queries.append(query_info)
+
+        return VisitorControl.CONTINUE
+
+    def handle_enter_variables(
+        self,
+        operation: QueryDocumentOperation,
+    ) -> VisitorControl:
+        """Handle entering a variable definition."""
+        # Generate variable model (uses static method, not traversal)
+
+        self.start_model_context(f"{operation.name}Variables", no_prefix=True)
+        logger.debug(f"Starting variable model context: {operation.name}Variables")
+
+        return VisitorControl.CONTINUE
+
+    def handle_leave_variables(
+        self,
+        operation: QueryDocumentOperation,
+    ) -> VisitorControl:
+        finished_model = self.finish_context()
+        logger.debug(f"Finished variable model: {finished_model}")
+        return VisitorControl.CONTINUE
+
+    def handle_enter_variable_definition(
+        self,
+        operation: QueryDocumentOperation,
+        variable: QueryDocumentVariable,
+    ) -> VisitorControl:
+        """Handle entering a variable definition."""
+        logger.debug(
+            f"Processing variable definition: {variable.name} of type {variable.graphql_type} (required={variable.is_required}, list={variable.is_list})"
+        )
+
+        # Add field to current context for this variable
+        var_name = variable.name
+        var_type = variable.graphql_type
+        is_required = variable.is_required
+        is_list = variable.is_list
+        current_context = self.require_model_context("add variable definition")
+
+        logger.debug(f"Context name {current_context.type_name}")
+
+        self.add_field_to_context(
+            field_name=var_name,
+            graphql_type_name=var_type.name,
+            is_required=is_required,
+            is_list=is_list,
+            python_type=self.map_scalar_graphql_type_name_to_python(var_type.name),
+            description="",
+        )
+
+        return VisitorControl.CONTINUE
+
+    def handle_leave_variable_definition(
+        self,
+        operation: QueryDocumentOperation,
+        variable: QueryDocumentVariable,
+    ) -> VisitorControl:
+        """Handle leaving a variable definition."""
+        return VisitorControl.CONTINUE
+
+    def handle_enter_fragment(self, fragment: QueryDocumentFragment) -> VisitorControl:
+        """Handle entering a fragment definition."""
+        model_name = f"{fragment.name}Response"
+        ctx = PydanticModelBuildContext(
+            type_name=model_name,
+            depth=0,
+        )
+        self._context_stack.append(ctx)
+        return VisitorControl.CONTINUE
+
+    def handle_leave_fragment(self, fragment: QueryDocumentFragment) -> VisitorControl:
+        """Handle leaving a fragment definition."""
+        return VisitorControl.CONTINUE
+
+    def _build_query_string(
+        self, operation: QueryDocumentOperation, doc: QueryDocument
+    ) -> str:
+        """Build complete query string with inlined fragments."""
+        raw_fragments = {name: frag.ast_node for name, frag in doc.fragments.items()}
+
+        inlined_selection_set = self._inline_fragments_in_selection_set(
+            operation.ast_node.selection_set, raw_fragments
+        )
+
+        inlined_operation = OperationDefinitionNode(
+            operation=operation.ast_node.operation,
+            name=operation.ast_node.name,
+            variable_definitions=operation.ast_node.variable_definitions,
+            directives=operation.ast_node.directives,
+            selection_set=inlined_selection_set,
+        )
+
+        return print_ast(inlined_operation)
+
     def _inline_fragments_in_selection_set(
         self,
         selection_set: SelectionSetNode,
-        fragments: t.Dict[str, FragmentDefinitionNode],
+        fragments: t.Dict[str, t.Any],
     ) -> SelectionSetNode:
-        """Inline fragment spreads in a selection set.
-
-        Recursively replaces fragment spreads (...FragmentName) with the actual
-        field selections from the fragment definition.
-
-        Args:
-            selection_set: Selection set that may contain fragment spreads
-            fragments: Dictionary mapping fragment names to their definitions
-
-        Returns:
-            New selection set with all fragment spreads replaced by inlined fields
-        """
+        """Inline fragment spreads in a selection set."""
         inlined_selections = []
 
         for selection in selection_set.selections:
             if isinstance(selection, FragmentSpreadNode):
-                # Look up the fragment definition
                 fragment_name = selection.name.value
                 if fragment_name in fragments:
                     fragment = fragments[fragment_name]
-                    # Recursively inline fragments in the fragment's selection set
                     inlined_fragment_selections = (
                         self._inline_fragments_in_selection_set(
                             fragment.selection_set,
                             fragments,
                         )
                     )
-                    # Add all selections from the fragment
                     inlined_selections.extend(inlined_fragment_selections.selections)
                 else:
-                    # If fragment not found, error
                     raise ValueError(
                         f"Fragment '{fragment_name}' not found for inlining."
                     )
 
             elif isinstance(selection, FieldNode):
-                # If the field has a nested selection set, recursively inline it
                 if selection.selection_set:
                     inlined_nested = self._inline_fragments_in_selection_set(
                         selection.selection_set,
                         fragments,
                     )
-                    # Create a new FieldNode with the inlined selection set
                     inlined_field = FieldNode(
                         name=selection.name,
                         alias=selection.alias,
@@ -382,17 +926,14 @@ class QueryExtractor:
                     )
                     inlined_selections.append(inlined_field)
                 else:
-                    # No selection set, just add the field as-is
                     inlined_selections.append(selection)
 
             elif isinstance(selection, InlineFragmentNode):
-                # Recursively inline fragments in the inline fragment's selection set
                 if selection.selection_set:
                     inlined_nested = self._inline_fragments_in_selection_set(
                         selection.selection_set,
                         fragments,
                     )
-                    # Create a new InlineFragmentNode with the inlined selection set
                     inlined_inline_fragment = InlineFragmentNode(
                         type_condition=selection.type_condition,
                         directives=selection.directives,
@@ -402,15 +943,11 @@ class QueryExtractor:
                 else:
                     inlined_selections.append(selection)
 
-        # Create and return a new SelectionSetNode with the inlined selections
         return SelectionSetNode(selections=tuple(inlined_selections))
 
 
 class QueryExecutor:
-    """Execute GraphQL queries via HTTP.
-
-    Each executor instance is specific to a single query.
-    """
+    """Execute GraphQL queries via HTTP."""
 
     def __init__(
         self,
@@ -418,13 +955,7 @@ class QueryExecutor:
         query_info: QueryInfo,
         graphql_client: AsyncGraphQLClient,
     ):
-        """Initialize the query executor.
-
-        Args:
-            endpoint: GraphQL endpoint URL
-            query_info: Query information
-            graphql_client: Async GraphQL client (caller can configure authentication)
-        """
+        """Initialize the query executor."""
         self.endpoint = endpoint
         self.query_info = query_info
         self.graphql_client = graphql_client
@@ -433,24 +964,11 @@ class QueryExecutor:
         self,
         variables: BaseModel,
     ) -> BaseModel:
-        """Execute query.
-
-        Args:
-            variables: Pydantic model instance with validated variable data
-
-        Returns:
-            Pydantic model instance with response data
-
-        Raises:
-            httpx.HTTPError: If HTTP request fails
-            Exception: If GraphQL returns errors
-        """
+        """Execute query."""
         logger.debug(f"Executing query {self.query_info.name} at {self.endpoint}")
 
-        # Convert Pydantic model to dict for variables
         variables_dict = variables.model_dump(exclude_none=True)
 
-        # Make HTTP request
         logger.debug(
             f"Sending request payload: {self.query_info.query_string} with variables {variables_dict}"
         )
@@ -458,17 +976,19 @@ class QueryExecutor:
             operation_name=self.query_info.name,
             query=self.query_info.query_string,
             variables=variables_dict,
-            # self.endpoint, json=payload, headers=headers
         )
         logger.debug(f"Received response: {result}")
 
-        # Check for GraphQL errors
         if "errors" in result:
             error_messages = [err.get("message", str(err)) for err in result["errors"]]
             raise Exception(f"GraphQL errors: {', '.join(error_messages)}")
 
-        # Get query data
         data = result.get("data", {})
 
-        # Convert to Pydantic model
+        logger.debug(f"Response data: {json.dumps(data, indent=2)}")
+        logger.debug(
+            "Payload model json schema: %s",
+            json.dumps(self.query_info.payload_model.model_json_schema(), indent=2),
+        )
+
         return self.query_info.payload_model.model_validate(data)
