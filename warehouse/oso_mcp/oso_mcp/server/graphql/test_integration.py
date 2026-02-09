@@ -10,6 +10,7 @@ import httpx
 import pytest
 from fastmcp import Client, FastMCP
 from fastmcp.exceptions import ToolError
+from oso_core.pydantictools import is_pydantic_model_class
 from oso_mcp.server.config import MCPConfig
 from pydantic import SecretStr
 
@@ -53,6 +54,7 @@ def mock_http_client():
 
         # Return a mock response
         mock_response = MagicMock()
+        mock_response.status_code = 200
         mock_response.raise_for_status = MagicMock()
         mock_response.json.return_value = {
             "data": {
@@ -127,10 +129,12 @@ async def test_generated_tool_makes_graphql_mutation(
             name="createItem",
             arguments={
                 "input": {
-                    "name": "Test Item",
-                    "description": "A test item",
-                    "count": 42,
-                }
+                    "input": {
+                        "name": "Test Item",
+                        "description": "A test item",
+                        "count": 42,
+                    }
+                },
             },
         )
 
@@ -177,6 +181,7 @@ async def test_tool_handles_graphql_errors(
     # Modify mock to return GraphQL errors
     async def mock_post_with_error(url, json=None, **kwargs):
         mock_response = MagicMock()
+        mock_response.status_code = 400
         mock_response.raise_for_status = MagicMock()
         mock_response.json.return_value = {
             "errors": [
@@ -282,9 +287,11 @@ async def test_ensure_nested_items_are_not_requests(
             name="createItem",
             arguments={
                 "input": {
-                    "name": "Test Item",
-                    "description": "A test item",
-                    "count": 42,
+                    "input": {
+                        "name": "Test Item",
+                        "description": "A test item",
+                        "count": 42,
+                    }
                 }
             },
         )
@@ -319,6 +326,7 @@ async def test_query_tool_generation(
         )
 
         mock_response = MagicMock()
+        mock_response.status_code = 200
         mock_response.raise_for_status = MagicMock()
         mock_response.json.return_value = {
             "data": {
@@ -352,6 +360,11 @@ async def test_query_tool_generation(
                             },
                         ],
                         "totalCount": 2,
+                    },
+                    "source": {
+                        "__typename": "InternalWarehouse",
+                        "id": "warehouse-789",
+                        "stage": "production",
                     },
                 }
             }
@@ -430,3 +443,187 @@ async def test_query_tool_generation(
             node = edge["node"]
             for field in ["id", "name", "foo_description"]:
                 assert field in node
+
+        assert item_data["item"]["source"]["id"] == "warehouse-789"
+        assert item_data["item"]["source"]["stage"] == "production"
+        assert item_data["item"]["source"]["__typename"] == "InternalWarehouse"
+
+
+@pytest.mark.asyncio
+async def test_delete_item_returns_scalar_value(
+    mcp_config: MCPConfig,
+    mock_http_client_factory: GraphQLClientFactory,
+    mock_http_client: t.Any,
+):
+    """Test that deleteItem mutation returns a proper scalar Boolean value."""
+
+    # Update mock to return scalar boolean response
+    async def mock_post_delete(url, json=None, **kwargs):
+        mock_http_client.requests.append(
+            {
+                "url": url,
+                "json": json,
+                "kwargs": kwargs,
+            }
+        )
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {"data": {"deleteItem": True}}
+        return mock_response
+
+    mock_http_client.post = mock_post_delete
+
+    # Create MCP server
+    mcp = FastMCP("Test Server")
+
+    generate_from_schema(
+        schema_path=TEST_SCHEMA_PATH,
+        mcp=mcp,
+        config=mcp_config,
+        filters=[],
+        graphql_client_factory=mock_http_client_factory,
+    )
+
+    # Create client
+    client = Client(mcp)
+
+    async with client:
+        # List available tools to verify deleteItem is registered
+        tools = await client.list_tools()
+        tool_names = [tool.name for tool in tools]
+        assert "deleteItem" in tool_names
+
+        # Call the deleteItem tool
+        result = await client.call_tool(
+            name="deleteItem",
+            arguments={
+                "input": {"id": "item-to-delete-123"},
+            },
+        )
+
+        # Verify the GraphQL request was made
+        assert len(mock_http_client.requests) == 1
+        request = mock_http_client.requests[0]
+
+        # Verify endpoint
+        assert request["url"] == "https://api.example.com/graphql"
+
+        # Verify request structure
+        assert "query" in request["json"]
+        assert "variables" in request["json"]
+
+        # Verify the mutation query contains deleteItem
+        assert "deleteItem" in request["json"]["query"]
+
+        # Verify the variable contains the ID
+        assert request["json"]["variables"]["id"] == "item-to-delete-123"
+
+        # Verify result contains the scalar boolean value
+        assert len(result.content) > 0
+
+        # Parse the result and verify it's a boolean
+        result_data = json.loads(result.content[0].model_dump()["text"])
+        assert result_data["deleteItem"] is True
+
+
+@pytest.mark.asyncio
+async def test_query_description_extracted_from_comments(
+    mcp_config: MCPConfig,
+    mock_http_client_factory: GraphQLClientFactory,
+):
+    """Test that query descriptions are properly extracted from hash-style comments.
+
+    Client GraphQL documents don't support triple-quote descriptions, so we
+    extract descriptions from comments above query definitions.
+    """
+    # Create MCP server
+    mcp = FastMCP("Test Server")
+
+    generate_from_schema(
+        schema_path=TEST_SCHEMA_PATH,
+        mcp=mcp,
+        config=mcp_config,
+        client_schema_path=TEST_QUERIES_PATH,
+        filters=[],
+        graphql_client_factory=mock_http_client_factory,
+    )
+
+    # Create client
+    client = Client(mcp)
+
+    async with client:
+        # List available tools
+        tools = await client.list_tools()
+
+        # Find the ListItems tool - it has a comment description in items.graphql
+        list_items_tool = next(
+            (tool for tool in tools if tool.name == "ListItems"), None
+        )
+        assert list_items_tool is not None, "ListItems tool should be registered"
+
+        # Verify the description was extracted from the comment
+        # The comment in items.graphql is: "# This is a test context that should appear."
+        assert list_items_tool.description is not None
+        assert (
+            "This is a test context that should appear" in list_items_tool.description
+        )
+
+        # Also verify that GetItem (which has no comment) doesn't have
+        # the comment-based description
+        get_item_tool = next((tool for tool in tools if tool.name == "GetItem"), None)
+        assert get_item_tool is not None, "GetItem tool should be registered"
+        # GetItem should not have the ListItems description
+        if get_item_tool.description:
+            assert "test context" not in get_item_tool.description
+
+
+def test_mutation_input_descriptions_on_pydantic_model():
+    """Test that descriptions from UpdateItemInput and its nested NestedItemInput
+    are present on the generated Pydantic model fields."""
+    from .generator import generate_models_intermediate_mutations_and_query_info
+
+    intermediate = generate_models_intermediate_mutations_and_query_info(
+        schema_path=TEST_SCHEMA_PATH,
+        filters=[],
+    )
+
+    # altUpdateItem uses UpdateItemInput and is not filtered by @mcp-ignore
+    mutation = intermediate.get_mutation("altUpdateItem")
+    assert mutation is not None, "altUpdateItem mutation should exist"
+
+    # The input_model is the arguments wrapper (e.g. altUpdateItemArguments)
+    # which has an `input` field of type UpdateItemInput
+    args_model = mutation.input_model
+    assert "input" in args_model.model_fields
+
+    # Get the UpdateItemInput model from the `input` field's annotation
+    update_input_model = args_model.model_fields["input"].annotation
+    assert is_pydantic_model_class(update_input_model), (
+        "UpdateItemInput should be a Pydantic model class"
+    )
+    update_fields = update_input_model.model_fields
+
+    # Verify descriptions on UpdateItemInput fields
+    assert (
+        update_fields["id"].description == "The unique identifier of the item to update"
+    )
+    assert update_fields["name"].description == "The new name for the item"
+    assert (
+        update_fields["description"].description == "The new description for the item"
+    )
+    assert update_fields["nestedItem"].description == "This is a nested input object"
+
+    # Get the NestedItemInput model from the nestedItem field's annotation
+    # It's Optional[NestedItemInput], so extract the inner type
+    nested_input_model = next(
+        arg
+        for arg in t.get_args(update_fields["nestedItem"].annotation)
+        if arg is not type(None)
+    )
+    nested_fields = nested_input_model.model_fields
+
+    assert nested_fields["nestedField"].description == (
+        "This is a nested field that should be included in the generated test tool"
+    )

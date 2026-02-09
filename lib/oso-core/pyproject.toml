@@ -12,6 +12,7 @@ dependencies = [
     "sqlmesh[trino]<1.0.0,>=0.141.1",
     "structlog>=25.4.0",
     "polyfactory",
+    "pydantic>=2.12.3",
 ]
 
 [project.scripts]
