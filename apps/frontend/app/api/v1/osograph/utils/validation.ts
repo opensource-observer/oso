@@ -416,7 +416,6 @@ export const ResolveTablesSchema = z.object({
   metadata: z
     .object({
       orgName: z.string(),
-      orgId: z.string().uuid(),
       datasetName: z.string().optional(),
     })
     .optional(),
