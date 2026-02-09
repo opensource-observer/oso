@@ -486,6 +486,9 @@ export const StepWhereSchema = createWhereSchema("step");
 export const MaterializationWhereSchema = createWhereSchema("materialization");
 export const DataConnectionWhereSchema =
   createWhereSchema("dynamic_connectors");
+export const DataConnectionAsTableWhereSchema = createWhereSchema(
+  "data_connection_as_table",
+);
 
 export function validateInput<T>(
   schema: z.ZodType<T, any, any>,
