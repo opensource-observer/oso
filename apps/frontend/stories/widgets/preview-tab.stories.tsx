@@ -235,6 +235,7 @@ export const Default: Story = {
   args: {
     datasetId: "dataset_abc123",
     tableName: "users",
+    tablePath: "oso.public.users",
   },
   parameters: {
     msw: {
@@ -248,6 +249,7 @@ export const LoadingState: Story = {
   args: {
     datasetId: "dataset_loading",
     tableName: "users",
+    tablePath: "oso.public.users",
   },
   parameters: {
     msw: {
@@ -261,6 +263,7 @@ export const ErrorState: Story = {
   args: {
     datasetId: "dataset_error",
     tableName: "users",
+    tablePath: "oso.public.users",
   },
   parameters: {
     msw: {
@@ -274,6 +277,7 @@ export const EmptyData: Story = {
   args: {
     datasetId: "dataset_empty",
     tableName: "empty",
+    tablePath: "oso.public.empty",
   },
   parameters: {
     msw: {
@@ -287,6 +291,7 @@ export const WideTable: Story = {
   args: {
     datasetId: "dataset_wide",
     tableName: "wide_table",
+    tablePath: "oso.public.wide_table",
   },
   parameters: {
     msw: {
@@ -300,6 +305,7 @@ export const NoPreviewDataAvailable: Story = {
   args: {
     datasetId: "dataset_no_preview",
     tableName: "test_table",
+    tablePath: "oso.public.test_table",
   },
   parameters: {
     msw: {
