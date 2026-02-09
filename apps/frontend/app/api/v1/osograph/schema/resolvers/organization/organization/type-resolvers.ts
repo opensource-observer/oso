@@ -21,7 +21,6 @@ import {
   UserProfilesRow,
   UsersByOrganizationRow,
 } from "@/lib/types/schema-types";
-import { getUserOrganizationIds } from "@/app/api/v1/osograph/utils/resolver-helpers";
 
 /**
  * Type resolvers for Organization and OrganizationMember.
@@ -74,12 +73,11 @@ export const organizationTypeResolvers: GraphQLResolverModule<GraphQLContext> =
         args: FilterableConnectionArgs,
         context: GraphQLContext,
       ) => {
-        const { client, userId } = await getOrgScopedClient(context, parent.id);
-        const orgIds = await getUserOrganizationIds(userId, client);
+        const { client } = await getOrgScopedClient(context, parent.id);
 
         const options: ExplicitClientQueryOptions<"notebooks"> = {
           client,
-          orgIds,
+          orgIds: [parent.id],
           tableName: "notebooks",
           whereSchema: NotebookWhereSchema,
           basePredicate: {
@@ -95,12 +93,11 @@ export const organizationTypeResolvers: GraphQLResolverModule<GraphQLContext> =
         args: FilterableConnectionArgs,
         context: GraphQLContext,
       ) => {
-        const { client, userId } = await getOrgScopedClient(context, parent.id);
-        const orgIds = await getUserOrganizationIds(userId, client);
+        const { client } = await getOrgScopedClient(context, parent.id);
 
         const options: ExplicitClientQueryOptions<"datasets"> = {
           client,
-          orgIds,
+          orgIds: [parent.id],
           tableName: "datasets",
           whereSchema: DatasetWhereSchema,
           basePredicate: {
@@ -116,12 +113,11 @@ export const organizationTypeResolvers: GraphQLResolverModule<GraphQLContext> =
         args: FilterableConnectionArgs,
         context: GraphQLContext,
       ) => {
-        const { client, userId } = await getOrgScopedClient(context, parent.id);
-        const orgIds = await getUserOrganizationIds(userId, client);
+        const { client } = await getOrgScopedClient(context, parent.id);
 
         const options: ExplicitClientQueryOptions<"dynamic_connectors"> = {
           client,
-          orgIds,
+          orgIds: [parent.id],
           tableName: "dynamic_connectors",
           whereSchema: DataConnectionWhereSchema,
           basePredicate: {
