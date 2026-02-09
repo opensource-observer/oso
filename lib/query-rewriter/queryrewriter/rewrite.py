@@ -208,7 +208,9 @@ async def rewrite_query(
     # Each resolver gets to transform the set of resolved tables in order. This
     # allows earlier resolvers to act as middleware.
     for resolver in table_resolvers:
-        resolved_tables_dict = await resolver.resolve_tables(resolved_tables_dict)
+        resolved_tables_dict = await resolver.resolve_tables(
+            resolved_tables_dict, metadata=metadata
+        )
 
     # Rewrite the query with resolved table names
     logger.debug("Rewriting query with resolved table names.")
