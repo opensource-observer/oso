@@ -1,5 +1,5 @@
 import { SupabaseAdminClient } from "@/lib/supabase/admin";
-import { LegacyTableMappingRule } from "@/lib/query/resolvers/db-table-resolver";
+import { LegacyTableMappingRule } from "@/lib/query/common";
 import { QueryMetadata } from "@/lib/types/query-metadata";
 
 export type RewriteQueryOptions = {
