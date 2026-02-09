@@ -5700,7 +5700,7 @@ wheels = [
 
 [[package]]
 name = "pyoso"
-version = "0.8.0"
+version = "0.8.1"
 source = { editable = "warehouse/pyoso" }
 dependencies = [
     { name = "pandas" },
