@@ -416,7 +416,7 @@ export const ResolveTablesSchema = z.object({
   references: z.array(z.string()).min(1, "At least one reference is required"),
   metadata: z
     .object({
-      orgName: z.string().optional(),
+      orgName: z.string(),
       datasetName: z.string().optional(),
     })
     .optional(),

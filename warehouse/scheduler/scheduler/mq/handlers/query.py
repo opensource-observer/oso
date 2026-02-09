@@ -94,7 +94,15 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
         )
 
         try:
-            query = await rewrite_query(message.query, table_resolvers)
+            query = await rewrite_query(
+                message.query,
+                table_resolvers,
+                metadata={
+                    "resolutionType": "query_run",
+                    "orgName": context.organization.name,
+                    "runId": context.run_id,
+                },
+            )
         except TableResolutionError as e:
             logger.error(f"Table resolution error: {e}")
 
