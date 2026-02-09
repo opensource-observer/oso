@@ -7,6 +7,7 @@ import {
   DYNAMIC_CONNECTOR_NAME_REGEX,
   DYNAMIC_CONNECTOR_VALUES_REGEX,
 } from "@/lib/types/dynamic-connector";
+import { logger } from "@/lib/logger";
 
 const NAME_REGEX = /^[a-z][a-z0-9_]*$/;
 const MAX_PREVIEW_SIZE_MB = 1 * 1024 * 1024;
@@ -501,6 +502,8 @@ export function validateInput<T>(
 
     const flattened = result.error.flatten();
     const rawErrorMessage = JSON.stringify(flattened, null, 2);
+
+    logger.error("Input validation failed: ", rawErrorMessage);
 
     throw ValidationErrors.validationFailed(validationErrors, rawErrorMessage);
   }
