@@ -2,8 +2,7 @@ import { SupabaseAdminClient } from "@/lib/supabase/admin";
 import { Table } from "@/lib/types/table";
 import { TableResolver, TableResolutionMap } from "@/lib/query/resolver";
 import { logger } from "@/lib/logger";
-
-export type LegacyTableMappingRule = (table: Table) => Table | null;
+import { LegacyTableMappingRule } from "@/lib/query/common";
 
 export class DBTableResolver implements TableResolver {
   private supabaseClient: SupabaseAdminClient;
