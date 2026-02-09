@@ -11,10 +11,7 @@ import {
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import { getTrinoAdminClient } from "@/lib/clients/trino";
-import {
-  createTrinoCatalog,
-  validateDynamicConnector,
-} from "@/lib/dynamic-connectors";
+import { createTrinoCatalog } from "@/lib/dynamic-connectors";
 import { DynamicConnectorsRow } from "@/lib/types/schema-types";
 import { createQueueService } from "@/lib/services/queue";
 import { SyncConnectionRunRequest } from "@opensource-observer/osoprotobufs/sync-connection";
@@ -97,7 +94,6 @@ export const dataConnectionMutations: GraphQLResolverModule<GraphQLContext>["Mut
       if (orgError || !org) {
         throw OrganizationErrors.notFound();
       }
-      validateDynamicConnector(name, type, org.org_name);
 
       const { data, error } = await client
         .from("dynamic_connectors")

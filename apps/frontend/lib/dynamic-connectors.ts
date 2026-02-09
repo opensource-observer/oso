@@ -1,38 +1,12 @@
-import { ValidationErrors } from "@/app/api/v1/osograph/utils/errors";
 import { TrinoClient } from "@/lib/clients/trino";
-import {
-  ALLOWED_CONNECTORS,
-  ConnectorType,
-} from "@/lib/types/dynamic-connector";
 import { DynamicConnectorsRow } from "@/lib/types/schema-types";
 
 // TODO(icaro): change this to use orgId
 export function getCatalogName(connector: DynamicConnectorsRow) {
-  return `${connector.connector_name.trim().toLocaleLowerCase()}`;
-}
-
-export function validateDynamicConnector(
-  name: string,
-  connectorType: ConnectorType,
-  orgName: string,
-) {
-  const type = ALLOWED_CONNECTORS.find((c) => c === connectorType);
-  if (!type) {
-    throw ValidationErrors.validationFailed(
-      [],
-      `Invalid connector type: ${connectorType}. Allowed types are: ${ALLOWED_CONNECTORS.join(
-        ", ",
-      )}`,
-    );
-  }
-  if (
-    !name.trim().toLowerCase().startsWith(`${orgName.trim().toLowerCase()}__`)
-  ) {
-    throw ValidationErrors.validationFailed(
-      [],
-      `Invalid connector name: ${name}. Connector name must start with the organization name: ${orgName}`,
-    );
-  }
+  return `org_${connector.org_id
+    .trim()
+    .replace(/-/g, "")
+    .toLowerCase()}_${connector.connector_name.trim().toLocaleLowerCase()}`;
 }
 
 export async function createTrinoCatalog(

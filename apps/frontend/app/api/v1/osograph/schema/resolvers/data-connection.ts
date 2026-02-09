@@ -21,7 +21,6 @@ import { getTrinoAdminClient } from "@/lib/clients/trino";
 import {
   createTrinoCatalog,
   deleteTrinoCatalog,
-  validateDynamicConnector,
 } from "@/lib/dynamic-connectors";
 import {
   DataConnectionAliasRow,
@@ -132,7 +131,6 @@ export const dataConnectionResolvers = {
       if (orgError || !org) {
         throw OrganizationErrors.notFound();
       }
-      validateDynamicConnector(name, type, org.org_name);
 
       const { data, error } = await supabase
         .from("dynamic_connectors")
