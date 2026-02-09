@@ -15,6 +15,7 @@ import { gql } from "@/lib/graphql/generated";
 
 import { executeGraphQL } from "@/lib/graphql/query";
 import { GetPreviewDataQuery } from "@/lib/graphql/generated/graphql";
+import { assertNever } from "@opensource-observer/utils";
 
 export interface PreviewData {
   isAvailable: boolean;
@@ -41,6 +42,7 @@ const PREVIEW_QUERY = gql(`
         node {
           id
           typeDefinition {
+            __typename
             ... on DataModelDefinition {
               dataModels(where: { name: { eq: $tableName } }, single: true) {
                 edges {
@@ -103,17 +105,18 @@ function extractPreviewData(
 
   const typeDef = dataset.typeDefinition;
 
-  if ("dataModels" in typeDef) {
-    return typeDef?.dataModels?.edges?.[0]?.node?.previewData || undefined;
-  } else if ("staticModels" in typeDef) {
-    return typeDef?.staticModels?.edges?.[0]?.node?.previewData || undefined;
-  } else if ("dataIngestion" in typeDef) {
-    return typeDef?.dataIngestion?.previewData || undefined;
-  } else if ("dataConnectionAlias" in typeDef) {
-    return typeDef?.dataConnectionAlias?.previewData || undefined;
+  switch (typeDef?.__typename) {
+    case "DataModelDefinition":
+      return typeDef?.dataModels?.edges?.[0]?.node?.previewData || undefined;
+    case "StaticModelDefinition":
+      return typeDef?.staticModels?.edges?.[0]?.node?.previewData || undefined;
+    case "DataIngestionDefinition":
+      return typeDef?.dataIngestion?.previewData || undefined;
+    case "DataConnectionDefinition":
+      return typeDef?.dataConnectionAlias?.previewData || undefined;
+    default:
+      assertNever(typeDef, "Unknown type definition");
   }
-
-  throw new Error(`Unknown type definition`);
 }
 
 // Generate columns dynamically from data

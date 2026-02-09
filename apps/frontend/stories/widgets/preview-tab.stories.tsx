@@ -155,6 +155,7 @@ function createPreviewDataResponse(
             node: {
               id: datasetId,
               typeDefinition: {
+                __typename: "DataModelDefinition",
                 dataModels: {
                   edges: [
                     {

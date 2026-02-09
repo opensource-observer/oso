@@ -9265,7 +9265,7 @@ export type GetPreviewDataQuery = {
         id: string;
         typeDefinition:
           | {
-              __typename?: "DataConnectionDefinition";
+              __typename: "DataConnectionDefinition";
               dataConnectionAlias: {
                 __typename?: "DataConnectionAlias";
                 id: string;
@@ -9278,7 +9278,7 @@ export type GetPreviewDataQuery = {
               };
             }
           | {
-              __typename?: "DataIngestionDefinition";
+              __typename: "DataIngestionDefinition";
               dataIngestion?: {
                 __typename?: "DataIngestion";
                 id: string;
@@ -9290,7 +9290,7 @@ export type GetPreviewDataQuery = {
               } | null;
             }
           | {
-              __typename?: "DataModelDefinition";
+              __typename: "DataModelDefinition";
               dataModels: {
                 __typename?: "DataModelConnection";
                 edges: Array<{
@@ -9309,7 +9309,7 @@ export type GetPreviewDataQuery = {
               };
             }
           | {
-              __typename?: "StaticModelDefinition";
+              __typename: "StaticModelDefinition";
               staticModels: {
                 __typename?: "StaticModelConnection";
                 edges: Array<{
@@ -9967,6 +9967,10 @@ export const GetPreviewDataDocument = {
                               selectionSet: {
                                 kind: "SelectionSet",
                                 selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "__typename" },
+                                  },
                                   {
                                     kind: "InlineFragment",
                                     typeCondition: {
