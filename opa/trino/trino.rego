@@ -58,6 +58,12 @@ is_org_catalog if {
 		[parsed_user.org_name, "__"],
 	))
 }
+is_org_catalog if {
+	startswith(current_catalog_name, concat(
+		"_",
+		["org", parsed_user.org_id],
+	))
+}
 
 default is_user_shared_access := false
 

@@ -1,5 +1,10 @@
-import { PostHog } from "posthog-node";
-import { POSTHOG_HOST_DIRECT, POSTHOG_KEY } from "@/lib/config";
+import { PostHog, PostHogOptions } from "posthog-node";
+import {
+  POSTHOG_HOST_DIRECT,
+  POSTHOG_KEY,
+  ENABLE_POSTHOG_LOCAL_EVALUATION,
+  POSTHOG_FEATURE_FLAGS_SECURE_KEY,
+} from "@/lib/config";
 import { NextRequest } from "next/server";
 
 let posthogInstance: PostHog | null = null;
@@ -17,13 +22,25 @@ function PostHogClient() {
   if (posthogInstance) {
     return posthogInstance;
   }
-  posthogInstance = new PostHog(POSTHOG_KEY, {
+
+  const featureFlagsConfig =
+    ENABLE_POSTHOG_LOCAL_EVALUATION && POSTHOG_FEATURE_FLAGS_SECURE_KEY
+      ? {
+          personalApiKey: POSTHOG_FEATURE_FLAGS_SECURE_KEY,
+          featureFlagsPollingInterval: 30_000,
+        }
+      : {};
+
+  const options: PostHogOptions = {
     // You must send server-side events directly to PostHog.
     // The redirect URL doesn't seem to work for server-side events
     host: POSTHOG_HOST_DIRECT,
     flushAt: 1,
     flushInterval: 0,
-  });
+    ...featureFlagsConfig,
+  };
+
+  posthogInstance = new PostHog(POSTHOG_KEY, options);
   return posthogInstance;
 }
 

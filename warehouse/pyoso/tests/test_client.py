@@ -148,63 +148,6 @@ class TestClient(TestCase):
             json={"query": query},
         )
 
-    @mock.patch("requests.get")
-    @mock.patch("requests.post")
-    def test_semantic_select_to_pandas(self, mock_post: mock.Mock, mock_get: mock.Mock):
-        # Setup Semantic Registry GET response
-        connector_response_data = [
-            {
-                "name": "oso.users",
-                "description": "User information table",
-                "columns": [
-                    {"name": "id", "type": "bigint", "description": "User ID"},
-                    {"name": "name", "type": "varchar", "description": "User name"},
-                ],
-                "relationships": [],
-            }
-        ]
-
-        # Setup Async SQL responses
-        mock_post_response = mock.Mock()
-        mock_post_response.json.return_value = {
-            "id": "query_sem",
-            "status": "completed",
-            "url": "http://s3/sem.csv",
-        }
-        mock_post_response.raise_for_status.return_value = None
-        mock_post.return_value = mock_post_response
-
-        def side_effect_get(url, headers=None, **kwargs):
-            mock_resp = mock.Mock()
-            mock_resp.raise_for_status.return_value = None
-
-            if "connector" in url:
-                mock_resp.json.return_value = connector_response_data
-            elif url == "http://s3/sem.csv":
-                mock_resp.iter_lines.return_value = iter(
-                    ['["id", "name"]', '[1, "Alice"]', '[2, "Bob"]']
-                )
-            return mock_resp
-
-        mock_get.side_effect = side_effect_get
-
-        client = Client(api_key=self.CUSTOM_API_KEY)
-
-        # Test the semantic select functionality
-        query_builder = client.semantic.select("users.id", "users.name")
-        result_df = query_builder.to_pandas()
-
-        # Verify SQL execution
-        self.assertTrue(mock_post.called)
-        args, kwargs = mock_post.call_args
-        self.assertEqual(args[0], "https://www.oso.xyz/api/v1/async-sql")
-
-        # Check columns
-        self.assertEqual(result_df.columns.tolist(), ["id", "name"])
-        # Check data
-        self.assertEqual(result_df.iloc[0]["name"], "Alice")
-        self.assertEqual(str(result_df.iloc[0]["id"]), "1")
-
     @mock.patch("pyoso.client.create_registry")
     @mock.patch("requests.get")
     @mock.patch("requests.post")

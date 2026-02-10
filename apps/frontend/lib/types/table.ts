@@ -48,4 +48,13 @@ export class Table {
     }
     return `${this._catalog}.${this._dataset}.${this._table}`;
   }
+
+  toString(): string {
+    if (this._catalog && this._dataset) {
+      return `${this._catalog}.${this._dataset}.${this._table}`;
+    } else if (this._dataset) {
+      return `${this._dataset}.${this._table}`;
+    }
+    return this._table;
+  }
 }

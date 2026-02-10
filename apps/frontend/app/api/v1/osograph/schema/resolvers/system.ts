@@ -10,6 +10,7 @@ import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { Table } from "@/lib/types/table";
 import { LegacyInferredTableResolver } from "@/lib/query/resolvers/legacy-table-resolver";
 import { DBTableResolver } from "@/lib/query/resolvers/db-table-resolver";
+import { LegacyTableMappingRule } from "@/lib/query/common";
 import { TableResolutionMap } from "@/lib/query/resolver";
 import { MetadataInferredTableResolver } from "@/lib/query/resolvers/metadata-table-resolver";
 import {
@@ -36,6 +37,7 @@ import {
 } from "@/app/api/v1/osograph/utils/model";
 import { getCatalogName } from "@/lib/dynamic-connectors";
 import { MaterializationRow } from "@/lib/types/schema-types";
+import { PermissionsResolver } from "@/lib/query/resolvers/permissions-resolver";
 
 type SystemMutationOptions<T extends z.ZodTypeAny, O> = {
   inputSchema: T;
@@ -729,11 +731,21 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
     },
   },
   System: {
+    /**
+     * Resolve a list of table references to their fully qualified names. This
+     * is used by async workers to resolve table references in queries. It is
+     * _IMPERATIVE_ that the responses to this are not cached without also
+     * ensuring that the same orgName metadata is cached and checked alongside
+     * the cache. The resolution map does may not contain the context required
+     * to make permissions decisions on it's own. In the future, the caching
+     * here may get more complex so it is best, at this time, to not cache at
+     * all.
+     */
     resolveTables: async (
       _: unknown,
       input: {
         references: string[];
-        metadata?: { orgName?: string; datasetName?: string };
+        metadata?: { orgName: string; datasetName?: string };
       },
       context: GraphQLContext,
     ) => {
@@ -748,26 +760,45 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
 
       const supabase = createAdminClient();
 
+      let inferredTableResolver = new LegacyInferredTableResolver();
+
+      // If we know both the dataset name and the org name we don't need to use
+      // the legacy resolver because it the context is different when we have
+      // org/data names. Once the `oso` dataset is added to all orgs as a data
+      // marketplace dataset we can remove the legacy resolver entirely and rely
+      // on the metadata inferred org/data names. Once the `oso` dataset
+      // is added to all orgs as a data marketplace dataset we can remove the
+      // legacy resolver entirely and rely on the metadata inferred resolver for
+      // all cases
+      if (metadata?.orgName && metadata?.datasetName) {
+        logger.info(
+          `Using orgName ${metadata.orgName} and datasetName ${metadata.datasetName} from metadata to resolve tables`,
+        );
+        inferredTableResolver = new MetadataInferredTableResolver();
+      }
+
+      const legacyMappingRules: LegacyTableMappingRule[] = [
+        (table) => {
+          // If the catalog is iceberg return the table as is
+          if (table.catalog === "iceberg") {
+            return table;
+          }
+          return null;
+        },
+        (table) => {
+          // If the catalog has a double underscore in the name we assume it's a
+          // legacy private connector catalog and return the table as is
+          if (table.catalog.includes("__")) {
+            return table;
+          }
+          return null;
+        },
+      ];
+
       const tableResolvers = [
-        new LegacyInferredTableResolver(),
-        new MetadataInferredTableResolver(),
-        new DBTableResolver(supabase, [
-          (table) => {
-            // If the catalog is iceberg return the table as is
-            if (table.catalog === "iceberg") {
-              return table;
-            }
-            return null;
-          },
-          (table) => {
-            // If the catalog has a double underscore in the name we assume it's a
-            // legacy private connector catalog and return the table as is
-            if (table.catalog.includes("__")) {
-              return table;
-            }
-            return null;
-          },
-        ]),
+        inferredTableResolver,
+        new PermissionsResolver(legacyMappingRules),
+        new DBTableResolver(supabase, legacyMappingRules),
       ];
 
       let tableResolutionMap: TableResolutionMap = {};

@@ -20,7 +20,7 @@ type DataIngestion {
     single: Boolean
     where: JSON
   ): MaterializationConnection!
-  previewData(tableName: String!): [JSON!]!
+  previewData(tableName: String!): PreviewData!
 }
 
 type DataIngestionEdge {

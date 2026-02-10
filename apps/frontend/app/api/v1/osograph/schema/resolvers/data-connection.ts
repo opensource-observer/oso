@@ -21,7 +21,6 @@ import { getTrinoAdminClient } from "@/lib/clients/trino";
 import {
   createTrinoCatalog,
   deleteTrinoCatalog,
-  validateDynamicConnector,
 } from "@/lib/dynamic-connectors";
 import {
   DataConnectionAliasRow,
@@ -32,8 +31,12 @@ import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { SyncConnectionRunRequest } from "@opensource-observer/osoprotobufs/sync-connection";
 import { getMaterializations } from "@/app/api/v1/osograph/utils/resolver-helpers";
-import { generateTableId } from "@/app/api/v1/osograph/utils/model";
 import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
+import {
+  executePreviewQuery,
+  generateTableId,
+} from "@/app/api/v1/osograph/utils/model";
+import { PreviewData } from "@/lib/graphql/generated/graphql";
 
 async function syncDataConnection(
   supabase: SupabaseAdminClient,
@@ -128,7 +131,6 @@ export const dataConnectionResolvers = {
       if (orgError || !org) {
         throw OrganizationErrors.notFound();
       }
-      validateDynamicConnector(name, type, org.org_name);
 
       const { data, error } = await supabase
         .from("dynamic_connectors")
@@ -334,6 +336,23 @@ export const dataConnectionResolvers = {
         parent.org_id,
         parent.dataset_id,
         generateTableId("DATA_CONNECTION", tableName),
+      );
+    },
+    previewData: async (
+      parent: DataConnectionAliasRow,
+      args: { tableName: string },
+      context: GraphQLContext,
+    ): Promise<PreviewData> => {
+      const authenticatedUser = requireAuthentication(context.user);
+
+      const tableId = generateTableId("DATA_CONNECTION", args.tableName);
+
+      return executePreviewQuery(
+        parent.org_id,
+        parent.dataset_id,
+        tableId,
+        authenticatedUser,
+        args.tableName,
       );
     },
   },

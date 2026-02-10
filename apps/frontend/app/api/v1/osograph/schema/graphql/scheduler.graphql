@@ -44,7 +44,13 @@ type Run {
   startedAt: DateTime
   finishedAt: DateTime
   status: RunStatus!
+
+  """
+  The logs urls is returned as a presigned url to a cloud storage location. Use
+  a GET request on this URL to retrieve the logs for the run.
+  """
   logsUrl: String
+
   steps: StepConnection!
   metadata: JSON
 }
@@ -84,6 +90,12 @@ type StepConnection {
   totalCount: Int
 }
 
+"""
+The materialization type represents the output of a run step that has
+materialized data. For example, for a data model run, each materialization would
+represent the output of a model execution. Each materialization is directly
+associated with a table in the OSO data catalog.
+"""
 type Materialization {
   id: ID!
   runId: ID!
@@ -165,7 +177,16 @@ extend type Mutation {
 }
 
 input CreateUserModelRunRequestInput {
+  """
+  The ID of the dataset to run. This must be a USER_MODEL dataset.
+  """
   datasetId: ID!
+
+  """
+  For user model runs, users can optionally specify a list of data model release
+  IDs to run. If not provided, all models will be run in topological order based
+  on dependencies.
+  """
   selectedModels: [String!]
 }
 
@@ -178,13 +199,32 @@ input CreateDataConnectionRunRequestInput {
 }
 
 input CreateStaticModelRunRequestInput {
+  """
+  The ID of the static model dataset to run.
+  """
   datasetId: ID!
+
+  """
+  For static model runs, users can optionally specify a list of model IDs to
+  run. If not provided, all models will be run.
+  """
   selectedModels: [String!]
 }
 
 type CreateRunRequestPayload {
   success: Boolean!
+
   message: String
+  
+  """
+  The run that was created as a result of the run request. The response from the
+  `*RunRequest` mutations kick off asynchronous processes. It is possible for
+  the run creation to succeed but for the run to ultimately fail due to errors
+  encountered during the asynchronous execution. Therefore, the `success` field
+  in the payload only indicates whether the run request was successfully
+  created, not whether the run itself was successful. Retrieve the run by
+  querying for runs within a dataset to check the status and results of the run.
+  """
   run: Run!
 }
 

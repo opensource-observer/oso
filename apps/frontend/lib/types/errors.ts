@@ -36,3 +36,8 @@ export class MissingDataError extends Error {}
  * Authentication error
  */
 export class AuthError extends Error {}
+
+/**
+ * Permission error
+ */
+export class PermissionError extends Error {}

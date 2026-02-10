@@ -7,6 +7,7 @@ import {
   DYNAMIC_CONNECTOR_NAME_REGEX,
   DYNAMIC_CONNECTOR_VALUES_REGEX,
 } from "@/lib/types/dynamic-connector";
+import { logger } from "@/lib/logger";
 
 const NAME_REGEX = /^[a-z][a-z0-9_]*$/;
 const MAX_PREVIEW_SIZE_MB = 1 * 1024 * 1024;
@@ -67,6 +68,7 @@ export const AcceptInvitationSchema = z.object({
 
 export const RevokeInvitationSchema = z.object({
   invitationId: z.string().uuid("Invalid invitation ID"),
+  orgId: z.string().uuid("Invalid organization ID"),
 });
 
 export const RemoveMemberSchema = z.object({
@@ -415,7 +417,7 @@ export const ResolveTablesSchema = z.object({
   references: z.array(z.string()).min(1, "At least one reference is required"),
   metadata: z
     .object({
-      orgName: z.string().optional(),
+      orgName: z.string(),
       datasetName: z.string().optional(),
     })
     .optional(),
@@ -500,6 +502,8 @@ export function validateInput<T>(
 
     const flattened = result.error.flatten();
     const rawErrorMessage = JSON.stringify(flattened, null, 2);
+
+    logger.error("Input validation failed: ", rawErrorMessage);
 
     throw ValidationErrors.validationFailed(validationErrors, rawErrorMessage);
   }

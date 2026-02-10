@@ -181,11 +181,40 @@ extend type Mutation {
 }
 
 input CreateDatasetInput {
+  """
+  The organization ID the dataset belongs to
+  """
   orgId: ID!
+  """
+  The name of the dataset. This must be unique within the organization.
+  """
   name: String!
+  """
+  The display name of the dataset.
+  """
   displayName: String
+  """
+  The description of the dataset.
+  """
   description: String
+
+  """
+  The type of the dataset.
+
+  Types:
+    * USER_MODEL: Sometimes called a UDM, this dataset type contains
+      user-defined data models.
+    * DATA_INGESTION: This dataset type is used for datasets that are ingested
+      from external sources using strategies like REST/GraphQL APIs, file
+      uploads, etc.
+    * STATIC_MODEL: This is used for datasets composed of statically uploaded
+      models. Currently only CSV files are supported for static models.
+  """
   type: DatasetType = USER_MODEL
+
+  """
+  Whether the dataset is public or private.
+  """
   isPublic: Boolean = false
 }
 
@@ -207,4 +236,9 @@ type UpdateDatasetPayload {
   success: Boolean!
   dataset: Dataset
   message: String
+}
+
+type PreviewData {
+  isAvailable: Boolean!
+  rows: [JSON!]!
 }

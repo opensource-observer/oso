@@ -24,6 +24,16 @@ fragment ItemFields on Item {
     }
     totalCount
   }
+  source {
+    ... on InternalWarehouse {
+      id
+      stage
+    }
+    ... on ExternalWarehouse {
+      id
+      location
+    }
+  }
 }
 
 fragment NestedItemFields on NestedItem {
@@ -37,6 +47,7 @@ query GetItem($id: ID!) {
   }
 }
 
+# This is a test context that should appear. 
 query ListItems($limit: Int, $offset: Int) {
   items(limit: $limit, offset: $offset) {
     ...ItemFields

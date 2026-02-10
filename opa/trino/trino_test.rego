@@ -2,7 +2,7 @@ package trino_test
 
 import data.trino
 
-test_admin_user_allowed if {
+test_admin_users_have_full_access if {
 	trino.allow with input as {"context": {
 		"identity": {"user": "admin"},
 		"softwareStack": {"trinoVersion": "434"},
@@ -17,7 +17,7 @@ test_admin_user_allowed if {
 	}}
 }
 
-test_allow_execute_query_allowed if {
+test_read_only_user_can_execute_query if {
 	trino.allow with input as {
 		"context": {
 			"identity": {"user": "ro-orgname-orgid"},
@@ -27,7 +27,7 @@ test_allow_execute_query_allowed if {
 	}
 }
 
-test_allow_public_catalog_allowed if {
+test_read_only_user_can_access_public_catalog if {
 	trino.allow with input as {
 		"context": {
 			"identity": {"user": "ro-orgname-orgid"},
@@ -54,7 +54,7 @@ test_allow_public_catalog_allowed if {
 	}
 }
 
-test_allow_private_catalog_allowed if {
+test_users_can_access_their_org_catalogs if {
 	trino.allow with input as {
 		"context": {
 			"identity": {"user": "ro-orgname-orgid"},
@@ -64,6 +64,20 @@ test_allow_private_catalog_allowed if {
 			"operation": "SelectFromColumns",
 			"resource": {"table": {
 				"catalogName": "orgname__catalog",
+				"schemaName": "example_schema",
+				"tableName": "example_table",
+			}},
+		},
+	}
+	trino.allow with input as {
+		"context": {
+			"identity": {"user": "ro-orgname-orgid"},
+			"softwareStack": {"trinoVersion": "434"},
+		},
+		"action": {
+			"operation": "SelectFromColumns",
+			"resource": {"table": {
+				"catalogName": "org_orgid_catalog",
 				"schemaName": "example_schema",
 				"tableName": "example_table",
 			}},
@@ -95,7 +109,7 @@ test_allow_private_catalog_allowed if {
 	}
 }
 
-test_allow_private_catalog_denied if {
+test_user_denied_access_to_other_org_catalog if {
 	not trino.allow with input as {
 		"context": {
 			"identity": {"user": "ro-orgname-orgid"},
@@ -112,14 +126,14 @@ test_allow_private_catalog_denied if {
 	}
 }
 
-test_allow_anonymous_denied if {
+test_anonymous_user_denied_access if {
 	not trino.allow with input as {"context": {
 		"identity": {"user": ""},
 		"softwareStack": {"trinoVersion": "434"},
 	}}
 }
 
-test_allow_dynamic_catalog_denied_wrong_catalog if {
+test_user_denied_access_to_wrong_catalog if {
 	not trino.allow with input as {
 		"context": {
 			"identity": {"user": "ro-orgname-orgid"},
@@ -136,7 +150,7 @@ test_allow_dynamic_catalog_denied_wrong_catalog if {
 	}
 }
 
-test_allow_reading_user_shared_catalog_allowed if {
+test_users_can_read_from_user_shared_catalog if {
 	trino.allow with input as {
 		"context": {
 			"identity": {"user": "ro-orgname-orgid"},

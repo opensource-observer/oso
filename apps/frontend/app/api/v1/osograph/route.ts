@@ -6,8 +6,10 @@ import path from "path";
 import { gql } from "graphql-tag";
 import { getSystemCredentials, getUser } from "@/lib/auth/auth";
 import { buildSubgraphSchema } from "@apollo/subgraph";
-import { resolvers } from "@/app/api/v1/osograph/schema/resolvers";
 import { GraphQLContext } from "@/app/api/v1/osograph/types/context";
+import { shouldUseNewResolvers } from "@/lib/feature-flags/posthog-features";
+import { resolvers as newResolvers } from "@/app/api/v1/osograph/schema/resolvers";
+import { resolvers as oldResolvers } from "@/app/api/v1/osograph/schema/resolvers/legacy";
 
 function loadSchemas(): string {
   const schemaDir = path.join(
@@ -35,29 +37,64 @@ function loadSchemas(): string {
 const schemaString = loadSchemas();
 const typeDefs = gql(schemaString);
 
-const server = new ApolloServer({
-  schema: buildSubgraphSchema([{ typeDefs, resolvers }]),
+const newResolverServer = new ApolloServer({
+  schema: buildSubgraphSchema([{ typeDefs, resolvers: newResolvers }]),
   introspection: true,
   includeStacktraceInErrorResponses: process.env.NODE_ENV === "development",
 });
 
-const apolloHandler = startServerAndCreateNextHandler<NextRequest>(server, {
-  context: async (req) => {
-    const user = await getUser(req);
-    const systemCredentials = await getSystemCredentials(req);
-    return {
-      req,
-      user,
-      systemCredentials,
-      authCache: {
-        orgMemberships: new Map(),
-        resourcePermissions: new Map(),
-      },
-    } satisfies GraphQLContext;
-  },
+const oldResolverServer = new ApolloServer({
+  schema: buildSubgraphSchema([{ typeDefs, resolvers: oldResolvers }]),
+  introspection: true,
+  includeStacktraceInErrorResponses: process.env.NODE_ENV === "development",
 });
 
+const newResolverHandler = startServerAndCreateNextHandler<NextRequest>(
+  newResolverServer,
+  {
+    context: async (req) => {
+      const user = await getUser(req);
+      const systemCredentials = await getSystemCredentials(req);
+      return {
+        req,
+        user,
+        systemCredentials,
+        authCache: {
+          orgMemberships: new Map(),
+          resourcePermissions: new Map(),
+        },
+      } satisfies GraphQLContext;
+    },
+  },
+);
+
+const oldResolverHandler = startServerAndCreateNextHandler<NextRequest>(
+  oldResolverServer,
+  {
+    context: async (req) => {
+      const user = await getUser(req);
+      const systemCredentials = await getSystemCredentials(req);
+      return {
+        req,
+        user,
+        systemCredentials,
+        authCache: {
+          orgMemberships: new Map(),
+          resourcePermissions: new Map(),
+        },
+      } satisfies GraphQLContext;
+    },
+  },
+);
+
 const handler = async (req: NextRequest) => {
+  const user = await getUser(req);
+  const useNewResolvers = await shouldUseNewResolvers(user);
+
+  const apolloHandler = useNewResolvers
+    ? newResolverHandler
+    : oldResolverHandler;
+
   return apolloHandler(req);
 };
 

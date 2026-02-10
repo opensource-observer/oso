@@ -124,8 +124,8 @@ class SyncConnectionRunRequestHandler(RunHandler[SyncConnectionRunRequest]):
                 )
 
             data_connection = edges[0].node
-            catalog_name = data_connection.name.lower()
             organization = data_connection.organization
+            catalog_name = f"org_{organization.id.replace('-', '').lower()}_{data_connection.name.lower()}"
         except Exception as e:
             context.log.error("Failed to get data connection", extra={"error": str(e)})
             return FailedResponse(
