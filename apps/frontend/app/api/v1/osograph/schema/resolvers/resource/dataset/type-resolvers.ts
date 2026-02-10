@@ -100,9 +100,11 @@ export const datasetTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
           };
         }
         case "DATA_CONNECTION":
-          throw new Error(
-            `Dataset type "${parent.dataset_type}" is not supported yet.`,
-          );
+          return {
+            __typename: "DataConnectionDefinition",
+            org_id: parent.org_id,
+            dataset_id: parent.id,
+          };
         default:
           assertNever(
             parent.dataset_type,
