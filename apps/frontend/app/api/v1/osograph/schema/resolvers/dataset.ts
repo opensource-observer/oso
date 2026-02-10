@@ -18,7 +18,7 @@ import {
   UpdateDatasetSchema,
   MaterializationWhereSchema,
   validateInput,
-  DataConnectionWhereSchema,
+  DataConnectionAsTableWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import {
   DatasetErrors,
@@ -305,7 +305,7 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         case "DATA_CONNECTION": {
           const result = (await queryWithPagination(args, context, {
             tableName: "data_connection_as_table",
-            whereSchema: DataConnectionWhereSchema,
+            whereSchema: DataConnectionAsTableWhereSchema,
             requireAuth: false,
             filterByUserOrgs: false,
             parentOrgIds: parent.org_id,

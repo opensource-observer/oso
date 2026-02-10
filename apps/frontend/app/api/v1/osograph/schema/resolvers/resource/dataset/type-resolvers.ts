@@ -10,12 +10,17 @@ import {
   RunWhereSchema,
   StaticModelWhereSchema,
   MaterializationWhereSchema,
+  DataConnectionAsTableWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { assertNever } from "@opensource-observer/utils";
-import { DataIngestionAsTableRow, DatasetsRow } from "@/lib/types/schema-types";
+import {
+  DataConnectionAsTableRow,
+  DataIngestionAsTableRow,
+  DatasetsRow,
+} from "@/lib/types/schema-types";
 import { Connection } from "@/app/api/v1/osograph/utils/connection";
 import { getMaterializations } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { generateTableId } from "@/app/api/v1/osograph/utils/model";
@@ -180,19 +185,36 @@ export const datasetTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
             })),
           };
         }
-        case "DATA_CONNECTION":
-          // Table metadata is not available until after the ingestion job completes
-          // Tables are created dynamically during ingestion
-          return {
-            edges: [],
-            pageInfo: {
-              hasNextPage: false,
-              hasPreviousPage: false,
-              startCursor: null,
-              endCursor: null,
+        case "DATA_CONNECTION": {
+          const { client } = await getOrgResourceClient(
+            context,
+            "dataset",
+            parent.id,
+            "read",
+          );
+
+          const result = (await queryWithPagination(args, context, {
+            client,
+            orgIds: parent.org_id,
+            tableName: "data_connection_as_table",
+            whereSchema: DataConnectionAsTableWhereSchema,
+            basePredicate: {
+              eq: [{ key: "dataset_id", value: parent.id }],
             },
-            totalCount: 0,
+          })) as Connection<DataConnectionAsTableRow>;
+
+          return {
+            ...result,
+            edges: result.edges.map((edge) => ({
+              node: {
+                id: edge.node.table_id,
+                name: edge.node.table_name,
+                datasetId: edge.node.dataset_id,
+              },
+              cursor: edge.cursor,
+            })),
           };
+        }
         default:
           assertNever(
             parent.dataset_type,
