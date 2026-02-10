@@ -7,7 +7,7 @@ import {
   RunTriggerType,
   RunType,
 } from "@/lib/graphql/generated/graphql";
-import { getSystemClient } from "@/app/api/v1/osograph/utils/access-control";
+import { getOrgScopedClient } from "@/app/api/v1/osograph/utils/access-control";
 import { logger } from "@/lib/logger";
 import { ServerErrors } from "@/app/api/v1/osograph/utils/errors";
 import { getSignedUrl, parseGcsUrl } from "@/lib/clients/gcs";
@@ -35,8 +35,8 @@ function mapRunStatus(status: RunRow["status"]): RunStatus {
 
 /**
  * Type resolvers for Run.
- * These field resolvers don't require auth checks as they operate on
- * already-fetched run data.
+ * These resolvers use organization-scoped authentication - users must be
+ * members of the organization that owns the run to access these fields.
  */
 export const runTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
   Run: {
@@ -49,7 +49,7 @@ export const runTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       if (!parent.dataset_id) {
         return null;
       }
-      const client = getSystemClient(context);
+      const { client } = await getOrgScopedClient(context, parent.org_id);
       const { data, error } = await client
         .from("datasets")
         .select("*")
@@ -71,7 +71,7 @@ export const runTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       _args: unknown,
       context: GraphQLContext,
     ) => {
-      const client = getSystemClient(context);
+      const { client } = await getOrgScopedClient(context, parent.org_id);
       const { data, error } = await client
         .from("organizations")
         .select("*")
@@ -117,12 +117,12 @@ export const runTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
         return parent.logs_url;
       }
     },
-    steps: (
+    steps: async (
       parent: RunRow,
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const client = getSystemClient(context);
+      const { client } = await getOrgScopedClient(context, parent.org_id);
 
       return queryWithPagination(args, context, {
         client,
@@ -142,7 +142,7 @@ export const runTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       if (!parent.requested_by) {
         return null;
       }
-      const client = getSystemClient(context);
+      const { client } = await getOrgScopedClient(context, parent.org_id);
       return getUserProfile(parent.requested_by, client);
     },
     metadata: (parent: RunRow) => parent.metadata,
