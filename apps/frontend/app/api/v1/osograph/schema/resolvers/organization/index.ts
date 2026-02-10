@@ -7,7 +7,7 @@ import { staticModelMutations } from "@/app/api/v1/osograph/schema/resolvers/org
 import { dataConnectionMutations } from "@/app/api/v1/osograph/schema/resolvers/organization/data-connection/mutations";
 import { organizationOrganizationResolvers } from "@/app/api/v1/osograph/schema/resolvers/organization/organization/index";
 import { invitationResolvers } from "@/app/api/v1/osograph/schema/resolvers/organization/invitation/index";
-import { runTypeResolvers } from "@/app/api/v1/osograph/schema/resolvers/organization/run-type-resolvers";
+import { runTypeResolvers } from "@/app/api/v1/osograph/schema/resolvers/organization/run/type-resolvers";
 import { organizationTypeResolvers } from "@/app/api/v1/osograph/schema/resolvers/organization/type-resolvers";
 
 /**
