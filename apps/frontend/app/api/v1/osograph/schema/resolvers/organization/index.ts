@@ -7,6 +7,8 @@ import { staticModelMutations } from "@/app/api/v1/osograph/schema/resolvers/org
 import { dataConnectionMutations } from "@/app/api/v1/osograph/schema/resolvers/organization/data-connection/mutations";
 import { organizationOrganizationResolvers } from "@/app/api/v1/osograph/schema/resolvers/organization/organization/index";
 import { invitationResolvers } from "@/app/api/v1/osograph/schema/resolvers/organization/invitation/index";
+import { runTypeResolvers } from "@/app/api/v1/osograph/schema/resolvers/organization/run/type-resolvers";
+import { organizationTypeResolvers } from "@/app/api/v1/osograph/schema/resolvers/organization/type-resolvers";
 
 /**
  * Organization-scoped resolvers.
@@ -29,4 +31,7 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
   },
   Organization: organizationOrganizationResolvers.Organization,
   OrganizationMember: organizationOrganizationResolvers.OrganizationMember,
+  Run: runTypeResolvers.Run,
+  Step: organizationTypeResolvers.Step,
+  Materialization: organizationTypeResolvers.Materialization,
 };

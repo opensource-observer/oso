@@ -46,8 +46,8 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   DataConnectionAlias: resourceResolvers.DataConnectionAlias,
   ModelContext: resourceResolvers.ModelContext,
 
-  Run: systemResolvers.Run,
-  Step: systemResolvers.Step,
-  Materialization: systemResolvers.Materialization,
+  Run: organizationResolvers.Run,
+  Step: organizationResolvers.Step,
+  Materialization: organizationResolvers.Materialization,
   System: systemResolvers.System,
 };

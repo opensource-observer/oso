@@ -6,7 +6,6 @@ import { stepMutationResolvers } from "@/app/api/v1/osograph/schema/resolvers/sy
 import { materializationMutationResolvers } from "@/app/api/v1/osograph/schema/resolvers/system/materialization-mutations";
 import { notebookPublishingResolvers } from "@/app/api/v1/osograph/schema/resolvers/system/notebook-mutations";
 import { systemTypeResolvers } from "@/app/api/v1/osograph/schema/resolvers/system/type-resolvers";
-import { runTypeResolvers } from "@/app/api/v1/osograph/schema/resolvers/system/run-type-resolvers";
 
 /**
  * Merged system resolvers with proper access control.
@@ -25,6 +24,4 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
   System: {
     ...systemTypeResolvers.System,
   },
-  ...systemTypeResolvers,
-  ...runTypeResolvers,
 };
