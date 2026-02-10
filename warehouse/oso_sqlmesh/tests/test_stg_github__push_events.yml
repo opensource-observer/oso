@@ -8,14 +8,14 @@ test_stg_github__push_events_basic:
       columns:
         id: text
         type: text
-        created_at: timestamp
+        created_at: timestamp(6)
         repo: STRUCT(id BIGINT, name VARCHAR, url VARCHAR)
         actor: STRUCT(id BIGINT, login VARCHAR, avatar_url VARCHAR, url VARCHAR)
         payload: text
       rows:
       - id: "event_1"
         type: "PushEvent"
-        created_at: "2024-01-01 10:00:00"
+        created_at: "2024-01-01 10:00:00.000000"
         repo:
           id: 101
           name: "owner/repo"
@@ -35,7 +35,7 @@ test_stg_github__push_events_basic:
   outputs:
     query:
       rows:
-      - created_at: "2024-01-01 10:00:00"
+      - created_at: "2024-01-01 10:00:00.000000"
         repository_id: 101
         repository_name: "owner/repo"
         actor_id: 555

@@ -7,18 +7,34 @@ def _generate_oso_id(evaluator: MacroEvaluator, *args: exp.Expression):
     """Creates a deterministic ID by concatenating the arguments and hashing them."""
     if evaluator.runtime_stage == "loading":
         return exp.Literal(this="someid", is_string=True)
-    concatenated = exp.Concat(expressions=args, safe=True, coalesce=False)
     if evaluator.engine_adapter.dialect == "trino":
+        # Trino's CONCAT returns NULL if any arg is NULL, unlike DuckDB which
+        # treats NULLs as empty strings. Cast to VARCHAR first (handles non-string
+        # types like bigint), then COALESCE with empty string for NULL safety.
+        safe_args = tuple(
+            exp.Coalesce(
+                this=exp.Cast(this=arg, to=exp.DataType.build("VARCHAR")),
+                expressions=[exp.Literal(this="", is_string=True)],
+            )
+            for arg in args
+        )
+        concatenated = exp.Concat(expressions=safe_args, safe=False, coalesce=False)
         # Trino's SHA256 function only accepts type `varbinary`. So we convert
         # the varchar to varbinary with trino's to_utf8.
         concatenated = exp.Anonymous(this="to_utf8", expressions=[concatenated])
-    sha = exp.SHA2(
+        sha = exp.SHA2(
+            this=concatenated,
+            length=exp.Literal(this=256, is_string=False),
+        )
+        # Trino SHA256 returns varbinary, use lower(to_hex(...)) for consistent
+        # lowercase hex output matching DuckDB behavior
+        return exp.Lower(this=exp.Anonymous(this="to_hex", expressions=[sha]))
+    # DuckDB: CONCAT is NULL-safe and SHA2 returns a hex string directly
+    concatenated = exp.Concat(expressions=args, safe=True, coalesce=False)
+    return exp.SHA2(
         this=concatenated,
         length=exp.Literal(this=256, is_string=False),
     )
-    if evaluator.engine_adapter.dialect == "duckdb":
-        return sha
-    return exp.ToBase64(this=sha)
 
 
 @macro()

@@ -5,8 +5,10 @@ test_int_events_daily__github:
     end_dt: 2024-01-05
   inputs:
     oso.int_events__github:
+      columns:
+        time: timestamp(6)
       rows:
-        - time: "2024-01-01 10:00:00"
+        - time: "2024-01-01 10:00:00.000000"
           from_artifact_id: user_1
           to_artifact_id: repo_1
           event_source: GITHUB
@@ -19,7 +21,7 @@ test_int_events_daily__github:
           from_artifact_namespace: user_1
           from_artifact_source_id: github_user_123
           amount: 1
-        - time: "2024-01-01 14:30:00"
+        - time: "2024-01-01 14:30:00.000000"
           from_artifact_id: user_1
           to_artifact_id: repo_1
           event_source: GITHUB
@@ -32,7 +34,7 @@ test_int_events_daily__github:
           from_artifact_namespace: user_1
           from_artifact_source_id: github_user_123
           amount: 1
-        - time: "2024-01-02 09:15:00"
+        - time: "2024-01-02 09:15:00.000000"
           from_artifact_id: user_2
           to_artifact_id: repo_1
           event_source: GITHUB
@@ -45,7 +47,7 @@ test_int_events_daily__github:
           from_artifact_namespace: user_2
           from_artifact_source_id: github_user_456
           amount: 1
-        - time: "2024-01-03 16:45:00"
+        - time: "2024-01-03 16:45:00.000000"
           from_artifact_id: user_1
           to_artifact_id: repo_2
           event_source: GITHUB

@@ -5,49 +5,54 @@ test_int_issue_event_time_deltas_since_20251007_basic:
     end_dt: 2025-10-10
   inputs:
     oso.int_events_aux_issues_since_20251007:
+      columns:
+        created_at: timestamp(6)
+        time: timestamp(6)
+        closed_at: timestamp(6)
+        merged_at: timestamp(6)
       rows:
-      - time: "2025-10-07 10:00:00"
+      - time: "2025-10-07 10:00:00.000000"
         to_artifact_id: "0e90ac08293acd5f3f20c0811165396068c0af98f14976c7ac6c20f117dfa248"
         from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
         issue_id: "1f8691e043d32a5bd31a58a510bc38a5ac0ea5381fa75fdd9cab8d952fa03848"
         issue_number: 1
-        created_at: "2025-10-07 10:00:00"
+        created_at: "2025-10-07 10:00:00.000000"
         merged_at: null
         closed_at: null
         comments: 0
         event_type: "ISSUE_OPENED"
         event_source_id: "issue_event_1"
         event_source: "GITHUB"
-      - time: "2025-10-07 12:30:00"
+      - time: "2025-10-07 12:30:00.000000"
         to_artifact_id: "0e90ac08293acd5f3f20c0811165396068c0af98f14976c7ac6c20f117dfa248"
         from_artifact_id: "b899924d11f826736da0953c0f031f6fe240310ac50ac3e7965498a4a8402345"
         issue_id: "1f8691e043d32a5bd31a58a510bc38a5ac0ea5381fa75fdd9cab8d952fa03848"
         issue_number: 1
-        created_at: "2025-10-07 10:00:00"
+        created_at: "2025-10-07 10:00:00.000000"
         merged_at: null
         closed_at: null
         comments: 1
         event_type: "ISSUE_COMMENT"
         event_source_id: "comment_event_1"
         event_source: "GITHUB"
-      - time: "2025-10-08 16:00:00"
+      - time: "2025-10-08 16:00:00.000000"
         to_artifact_id: "0e90ac08293acd5f3f20c0811165396068c0af98f14976c7ac6c20f117dfa248"
         from_artifact_id: "6bbaca2f0003f87e64ab336abcf15e30f29056940874c782e96ec61c744ef768"
         issue_id: "90dbe855eb6cabc56f5df78de418054456d3fd159b1b4cbf87a3763d7040c08a"
         issue_number: 2
-        created_at: "2025-10-08 16:00:00"
+        created_at: "2025-10-08 16:00:00.000000"
         merged_at: null
         closed_at: null
         comments: 0
         event_type: "PULL_REQUEST_OPENED"
         event_source_id: "pr_event_1"
         event_source: "GITHUB"
-      - time: "2025-10-09 14:00:00"
+      - time: "2025-10-09 14:00:00.000000"
         to_artifact_id: "0e90ac08293acd5f3f20c0811165396068c0af98f14976c7ac6c20f117dfa248"
         from_artifact_id: null
         issue_id: "90dbe855eb6cabc56f5df78de418054456d3fd159b1b4cbf87a3763d7040c08a"
         issue_number: 2
-        created_at: "2025-10-08 16:00:00"
+        created_at: "2025-10-08 16:00:00.000000"
         merged_at: null
         closed_at: null
         comments: 1
@@ -57,56 +62,56 @@ test_int_issue_event_time_deltas_since_20251007_basic:
   outputs:
     query:
       rows:
-      - time: "2025-10-07 10:00:00"
+      - time: "2025-10-07 10:00:00.000000"
         event_type: "ISSUE_OPENED"
         event_source: "GITHUB"
         issue_id: "1f8691e043d32a5bd31a58a510bc38a5ac0ea5381fa75fdd9cab8d952fa03848"
         issue_number: 1
         to_artifact_id: "0e90ac08293acd5f3f20c0811165396068c0af98f14976c7ac6c20f117dfa248"
         from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
-        created_at: "2025-10-07 10:00:00"
+        created_at: "2025-10-07 10:00:00.000000"
         merged_at: null
         closed_at: null
         created_delta: 0.0
         merged_delta: null
         closed_delta: null
         comments: 0.0
-      - time: "2025-10-07 12:30:00"
+      - time: "2025-10-07 12:30:00.000000"
         event_type: "ISSUE_COMMENT"
         event_source: "GITHUB"
         issue_id: "1f8691e043d32a5bd31a58a510bc38a5ac0ea5381fa75fdd9cab8d952fa03848"
         issue_number: 1
         to_artifact_id: "0e90ac08293acd5f3f20c0811165396068c0af98f14976c7ac6c20f117dfa248"
         from_artifact_id: "b899924d11f826736da0953c0f031f6fe240310ac50ac3e7965498a4a8402345"
-        created_at: "2025-10-07 10:00:00"
+        created_at: "2025-10-07 10:00:00.000000"
         merged_at: null
         closed_at: null
         created_delta: 9000.0
         merged_delta: null
         closed_delta: null
         comments: 1.0
-      - time: "2025-10-08 16:00:00"
+      - time: "2025-10-08 16:00:00.000000"
         event_type: "PULL_REQUEST_OPENED"
         event_source: "GITHUB"
         issue_id: "90dbe855eb6cabc56f5df78de418054456d3fd159b1b4cbf87a3763d7040c08a"
         issue_number: 2
         to_artifact_id: "0e90ac08293acd5f3f20c0811165396068c0af98f14976c7ac6c20f117dfa248"
         from_artifact_id: "6bbaca2f0003f87e64ab336abcf15e30f29056940874c782e96ec61c744ef768"
-        created_at: "2025-10-08 16:00:00"
+        created_at: "2025-10-08 16:00:00.000000"
         merged_at: null
         closed_at: null
         created_delta: 0.0
         merged_delta: null
         closed_delta: null
         comments: 0.0
-      - time: "2025-10-09 14:00:00"
+      - time: "2025-10-09 14:00:00.000000"
         event_type: "PULL_REQUEST_MERGED"
         event_source: "GITHUB"
         issue_id: "90dbe855eb6cabc56f5df78de418054456d3fd159b1b4cbf87a3763d7040c08a"
         issue_number: 2
         to_artifact_id: "0e90ac08293acd5f3f20c0811165396068c0af98f14976c7ac6c20f117dfa248"
         from_artifact_id: null
-        created_at: "2025-10-08 16:00:00"
+        created_at: "2025-10-08 16:00:00.000000"
         merged_at: null
         closed_at: null
         created_delta: 79200.0

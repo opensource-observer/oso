@@ -2,11 +2,15 @@ test_int_opendevdata__developers_single_entry:
   model: oso.int_opendevdata__developers
   inputs:
     oso.stg_opendevdata__commits:
+      columns:
+        created_at: timestamp(6)
+        authored_at: timestamp(6)
+        committed_at: timestamp(6)
       rows:
         - canonical_developer_id: 101
           commit_author_name: "Open Dev"
           commit_author_email: "dev@open.com"
-          committed_at: "2024-01-01 10:00:00"
+          committed_at: "2024-01-01 10:00:00.000000"
     oso.stg_opendevdata__canonical_developers:
       rows:
         - id: 101
@@ -32,11 +36,15 @@ test_int_opendevdata__developers_nextgen_nodeid:
   model: oso.int_opendevdata__developers
   inputs:
     oso.stg_opendevdata__commits:
+      columns:
+        created_at: timestamp(6)
+        authored_at: timestamp(6)
+        committed_at: timestamp(6)
       rows:
         - canonical_developer_id: 102
           commit_author_name: "NextGen Dev"
           commit_author_email: "nextgen@open.com"
-          committed_at: "2024-01-01 10:00:00"
+          committed_at: "2024-01-01 10:00:00.000000"
     oso.stg_opendevdata__canonical_developers:
       rows:
         - id: 102
@@ -62,11 +70,15 @@ test_int_opendevdata__developers_null_github_user_id:
   model: oso.int_opendevdata__developers
   inputs:
     oso.stg_opendevdata__commits:
+      columns:
+        created_at: timestamp(6)
+        authored_at: timestamp(6)
+        committed_at: timestamp(6)
       rows:
         - canonical_developer_id: 103
           commit_author_name: "No GitHub Dev"
           commit_author_email: "nogithub@open.com"
-          committed_at: "2024-01-01 10:00:00"
+          committed_at: "2024-01-01 10:00:00.000000"
     oso.stg_opendevdata__canonical_developers:
       rows:
         - id: 103
@@ -90,19 +102,23 @@ test_int_opendevdata__developers_takes_latest:
   model: oso.int_opendevdata__developers
   inputs:
     oso.stg_opendevdata__commits:
+      columns:
+        created_at: timestamp(6)
+        authored_at: timestamp(6)
+        committed_at: timestamp(6)
       rows:
         - canonical_developer_id: 202
           commit_author_name: "Original Name"
           commit_author_email: "original@test.com"
-          committed_at: "2024-01-01 10:00:00"
+          committed_at: "2024-01-01 10:00:00.000000"
         - canonical_developer_id: 202
           commit_author_name: "New Name"
           commit_author_email: "original@test.com"
-          committed_at: "2024-02-01 12:00:00"
+          committed_at: "2024-02-01 12:00:00.000000"
         - canonical_developer_id: 202
           commit_author_name: "Original Name"
           commit_author_email: "original@test.com"
-          committed_at: "2024-01-15 10:00:00"
+          committed_at: "2024-01-15 10:00:00.000000"
     oso.stg_opendevdata__canonical_developers:
       rows:
         - id: 202
@@ -128,11 +144,15 @@ test_int_opendevdata__developers_filter_nulls:
   model: oso.int_opendevdata__developers
   inputs:
     oso.stg_opendevdata__commits:
+      columns:
+        created_at: timestamp(6)
+        authored_at: timestamp(6)
+        committed_at: timestamp(6)
       rows:
         - canonical_developer_id: null
           commit_author_name: "Ghost"
           commit_author_email: "ghost@test.com"
-          committed_at: "2024-01-01 10:00:00"
+          committed_at: "2024-01-01 10:00:00.000000"
     oso.stg_opendevdata__canonical_developers:
       rows: []
     oso.int_github__node_id_map:

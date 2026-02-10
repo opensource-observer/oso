@@ -5,6 +5,8 @@ test_closed_issues_to_project_daily_basic:
     end: 2024-01-05
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
       - to_artifact_id: repo_1
         from_artifact_id: user_1
@@ -71,6 +73,8 @@ test_closed_issues_to_project_daily_no_closed_issues:
     end: 2024-01-02
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
       - to_artifact_id: repo_1
         from_artifact_id: user_1
@@ -99,6 +103,8 @@ test_closed_issues_to_project_daily_multiple_closures_same_day:
     end: 2024-01-01
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
       - to_artifact_id: repo_1
         from_artifact_id: user_1

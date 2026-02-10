@@ -2,16 +2,22 @@ test_int_gharchive__developers_single_entry:
   model: oso.int_gharchive__developers
   inputs:
     oso.stg_github__commits:
+      columns:
+        created_at: timestamp(6)
       rows:
         - actor_id: 123
           actor_login: "dev1"
           author_name: "Developer One"
           author_email: "dev1@example.com"
-          created_at: "2024-01-01 10:00:00"
+          created_at: "2024-01-01 10:00:00.000000"
     oso.stg_github__commits_since_20251007:
+      columns:
+        created_at: timestamp(6)
       rows: []
   outputs:
     query:
+      columns:
+        created_at: timestamp(6)
       rows:
         - actor_id: 123
           actor_login: "dev1"
@@ -23,26 +29,32 @@ test_int_gharchive__developers_takes_latest:
   model: oso.int_gharchive__developers
   inputs:
     oso.stg_github__commits:
+      columns:
+        created_at: timestamp(6)
       rows:
         - actor_id: 456
           actor_login: "old_login"
           author_name: "Dave"
           author_email: "dave@old.com"
-          created_at: "2024-01-01 10:00:00"
+          created_at: "2024-01-01 10:00:00.000000"
         - actor_id: 456
           actor_login: "new_login"
           author_name: "Dave"
           author_email: "dave@new.com"
-          created_at: "2024-02-01 12:00:00"
+          created_at: "2024-02-01 12:00:00.000000"
         - actor_id: 456
           actor_login: "old_login"
           author_name: "Dave"
           author_email: "dave@old.com"
-          created_at: "2024-01-15 10:00:00"
+          created_at: "2024-01-15 10:00:00.000000"
     oso.stg_github__commits_since_20251007:
+      columns:
+        created_at: timestamp(6)
       rows: []
   outputs:
     query:
+      columns:
+        created_at: timestamp(6)
       rows:
         - actor_id: 456
           actor_login: "new_login"
@@ -54,19 +66,23 @@ test_int_gharchive__developers_merge_sources:
   model: oso.int_gharchive__developers
   inputs:
     oso.stg_github__commits:
+      columns:
+        created_at: timestamp(6)
       rows:
         - actor_id: 789
           actor_login: "legacy_dev"
           author_name: "Legacy"
           author_email: "legacy@example.com"
-          created_at: "2024-01-01 10:00:00"
+          created_at: "2024-01-01 10:00:00.000000"
     oso.stg_github__commits_since_20251007:
+      columns:
+        created_at: timestamp(6)
       rows:
         - actor_id: 789
           actor_login: "modern_dev"
           author_name: null
           author_email: null
-          created_at: "2026-01-01 10:00:00"
+          created_at: "2026-01-01 10:00:00.000000"
   outputs:
     query:
       rows:
