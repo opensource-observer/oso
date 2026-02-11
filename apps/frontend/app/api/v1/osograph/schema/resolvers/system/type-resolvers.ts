@@ -5,13 +5,11 @@ import { Table } from "@/lib/types/table";
 import { LegacyInferredTableResolver } from "@/lib/query/resolvers/legacy-table-resolver";
 import { DBTableResolver } from "@/lib/query/resolvers/db-table-resolver";
 import { TableResolutionMap } from "@/lib/query/resolver";
-import { MetadataInferredTableResolver } from "@/lib/query/resolvers/metadata-table-resolver";
 import {
   ResolveTablesSchema,
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import { SystemResolveTablesArgs } from "@/lib/graphql/generated/graphql";
-import { logger } from "@/lib/logger";
 import { LegacyTableMappingRule } from "@/lib/query/common";
 import { PermissionsResolver } from "@/lib/query/resolvers/permissions-resolver";
 
@@ -33,22 +31,7 @@ export const systemTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
         input,
       );
 
-      let inferredTableResolver = new LegacyInferredTableResolver();
-
-      // If we know both the dataset name and the org name we don't need to use
-      // the legacy resolver because it the context is different when we have
-      // org/data names. Once the `oso` dataset is added to all orgs as a data
-      // marketplace dataset we can remove the legacy resolver entirely and rely
-      // on the metadata inferred org/data names. Once the `oso` dataset
-      // is added to all orgs as a data marketplace dataset we can remove the
-      // legacy resolver entirely and rely on the metadata inferred resolver for
-      // all cases
-      if (metadata?.orgName && metadata?.datasetName) {
-        logger.info(
-          `Using orgName ${metadata.orgName} and datasetName ${metadata.datasetName} from metadata to resolve tables`,
-        );
-        inferredTableResolver = new MetadataInferredTableResolver();
-      }
+      const inferredTableResolver = new LegacyInferredTableResolver();
 
       const legacyMappingRules: LegacyTableMappingRule[] = [
         (table) => {
