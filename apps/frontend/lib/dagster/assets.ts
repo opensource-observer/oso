@@ -41,26 +41,28 @@ function mapAssetIdToAssetKey(key: AssetId): AssetKey {
 }
 
 async function buildAssetGraph(
-  client: ApolloClient<any>,
+  client: ApolloClient,
 ): Promise<Record<string, string[]>> {
   const { data } = await client.query({
     query: GET_ASSETS_GRAPH,
   });
-  return data.assetNodes.reduce(
-    (acc, node) => {
-      const key = mapAssetKeyToAssetId(node.assetKey);
-      const dependencies = node.dependencyKeys.map((key) =>
-        mapAssetKeyToAssetId(key),
-      );
-      acc[key] = dependencies;
-      return acc;
-    },
-    {} as Record<string, string[]>,
+  return (
+    data?.assetNodes.reduce(
+      (acc, node) => {
+        const key = mapAssetKeyToAssetId(node.assetKey);
+        const dependencies = node.dependencyKeys.map((key) =>
+          mapAssetKeyToAssetId(key),
+        );
+        acc[key] = dependencies;
+        return acc;
+      },
+      {} as Record<string, string[]>,
+    ) ?? {}
   );
 }
 
 async function getAssetsMaterializedData(
-  client: ApolloClient<any>,
+  client: ApolloClient,
   assetKeys: string[],
 ): Promise<Record<AssetId, AssetMaterializationStatus>> {
   const { data } = await client.query({
@@ -69,41 +71,43 @@ async function getAssetsMaterializedData(
       assetKeys: assetKeys.map((key) => mapAssetIdToAssetKey(key)),
     },
   });
-  return data.assetNodes.reduce(
-    (acc, node) => {
-      const key = mapAssetKeyToAssetId(node.assetKey);
-      const ranges =
-        node.assetPartitionStatuses &&
-        node.assetPartitionStatuses.__typename === "TimePartitionStatuses"
-          ? node.assetPartitionStatuses.ranges
-          : [];
-      const partitionStatus = node.partitionStats
-        ? {
-            numFailed: node.partitionStats.numFailed,
-            numMaterialized: node.partitionStats.numMaterialized,
-            numMaterializing: node.partitionStats.numMaterializing,
-            numPartitions: node.partitionStats.numPartitions,
-            ranges: ranges.map((range) => ({
-              endKey: range.endKey,
-              startKey: range.startKey,
-              status: range.status,
-            })),
-          }
-        : undefined;
-      const latestRun = node.assetMaterializations.length
-        ? node.assetMaterializations[0].runOrError
-        : undefined;
-      const latestMaterialization =
-        latestRun?.__typename === "Run"
-          ? (latestRun.endTime ?? undefined)
+  return (
+    data?.assetNodes.reduce(
+      (acc, node) => {
+        const key = mapAssetKeyToAssetId(node.assetKey);
+        const ranges =
+          node.assetPartitionStatuses &&
+          node.assetPartitionStatuses.__typename === "TimePartitionStatuses"
+            ? node.assetPartitionStatuses.ranges
+            : [];
+        const partitionStatus = node.partitionStats
+          ? {
+              numFailed: node.partitionStats.numFailed,
+              numMaterialized: node.partitionStats.numMaterialized,
+              numMaterializing: node.partitionStats.numMaterializing,
+              numPartitions: node.partitionStats.numPartitions,
+              ranges: ranges.map((range) => ({
+                endKey: range.endKey,
+                startKey: range.startKey,
+                status: range.status,
+              })),
+            }
           : undefined;
-      acc[key] = {
-        partitionStatus,
-        latestMaterialization,
-      };
-      return acc;
-    },
-    {} as Record<AssetId, AssetMaterializationStatus>,
+        const latestRun = node.assetMaterializations.length
+          ? node.assetMaterializations[0].runOrError
+          : undefined;
+        const latestMaterialization =
+          latestRun?.__typename === "Run"
+            ? (latestRun.endTime ?? undefined)
+            : undefined;
+        acc[key] = {
+          partitionStatus,
+          latestMaterialization,
+        };
+        return acc;
+      },
+      {} as Record<AssetId, AssetMaterializationStatus>,
+    ) ?? {}
   );
 }
 
