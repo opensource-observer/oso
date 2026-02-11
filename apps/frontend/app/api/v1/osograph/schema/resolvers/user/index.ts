@@ -32,5 +32,4 @@ export const userResolvers: GraphQLResolverModule<GraphQLContext> = {
   },
   Viewer: viewerResolvers.Viewer,
   User: userUserResolvers.User,
-  Invitation: invitationResolvers.Invitation,
 };

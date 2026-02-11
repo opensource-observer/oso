@@ -11,7 +11,7 @@ from oso_dagster.resources.udm_engine_adapter import (
 from osoprotobufs.data_model_pb2 import DataModelRunRequest
 from queryrewriter.types import TableResolver
 from scheduler.graphql_client.client import Client
-from scheduler.graphql_client.fragments import DataModelsEdgesNode
+from scheduler.graphql_client.fragments import DataModelsEdgesNode, DatasetCommon
 from scheduler.graphql_client.get_data_models import (
     GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinition,
 )
@@ -178,6 +178,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
             logger.info("Starting evaluation of selected data models")
             await self.evaluate_models(
                 context=context,
+                dataset=dataset.node,
                 udm_engine_adapter=udm_engine_adapter,
                 oso_client=oso_client,
                 user=user,
@@ -194,6 +195,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         self,
         *,
         context: RunContext,
+        dataset: DatasetCommon,
         udm_engine_adapter: UserDefinedModelEngineAdapterResource,
         oso_client: Client,
         user: str,
@@ -209,8 +211,15 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         # strategy for INCREMENTAL models in the future but this will satisfy
         # versioning in the future for FULL models.
         logger.debug("Resolving previously materialized warehouse tables...")
+
         previous_warehouse_tables = await oso_table_resolver.resolve_tables(
-            {model.user_fqn(): model.user_table() for model in converted_models}
+            {model.user_fqn(): model.user_table() for model in converted_models},
+            metadata={
+                "resolutionType": "data_model_run_previous_warehouse_tables_lookup",
+                "runId": context.run_id,
+                "orgName": context.organization.name,
+                "datasetName": dataset.name,
+            },
         )
 
         table_resolvers: list[TableResolver] = [oso_table_resolver]

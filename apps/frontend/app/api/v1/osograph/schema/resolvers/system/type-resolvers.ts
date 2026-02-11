@@ -9,20 +9,16 @@ import { MetadataInferredTableResolver } from "@/lib/query/resolvers/metadata-ta
 import {
   ResolveTablesSchema,
   validateInput,
-  MaterializationWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
-import { MaterializationRow, StepRow } from "@/lib/types/schema-types";
+import { SystemResolveTablesArgs } from "@/lib/graphql/generated/graphql";
 import { logger } from "@/lib/logger";
-import { ServerErrors } from "@/app/api/v1/osograph/utils/errors";
-import {
-  StepStatus,
-  SystemResolveTablesArgs,
-} from "@/lib/graphql/generated/graphql";
-import { assertNever } from "@opensource-observer/utils";
-import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
-import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
-import { getSignedUrl, parseGcsUrl } from "@/lib/clients/gcs";
+import { LegacyTableMappingRule } from "@/lib/query/common";
+import { PermissionsResolver } from "@/lib/query/resolvers/permissions-resolver";
 
+/**
+ * Type resolvers for System.
+ * These resolvers require system credentials and are used for internal operations.
+ */
 export const systemTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
   System: {
     resolveTables: async (
@@ -37,26 +33,45 @@ export const systemTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
         input,
       );
 
+      let inferredTableResolver = new LegacyInferredTableResolver();
+
+      // If we know both the dataset name and the org name we don't need to use
+      // the legacy resolver because it the context is different when we have
+      // org/data names. Once the `oso` dataset is added to all orgs as a data
+      // marketplace dataset we can remove the legacy resolver entirely and rely
+      // on the metadata inferred org/data names. Once the `oso` dataset
+      // is added to all orgs as a data marketplace dataset we can remove the
+      // legacy resolver entirely and rely on the metadata inferred resolver for
+      // all cases
+      if (metadata?.orgName && metadata?.datasetName) {
+        logger.info(
+          `Using orgName ${metadata.orgName} and datasetName ${metadata.datasetName} from metadata to resolve tables`,
+        );
+        inferredTableResolver = new MetadataInferredTableResolver();
+      }
+
+      const legacyMappingRules: LegacyTableMappingRule[] = [
+        (table) => {
+          // If the catalog is iceberg return the table as is
+          if (table.catalog === "iceberg") {
+            return table;
+          }
+          return null;
+        },
+        (table) => {
+          // If the catalog has a double underscore in the name we assume it's a
+          // legacy private connector catalog and return the table as is
+          if (table.catalog.includes("__")) {
+            return table;
+          }
+          return null;
+        },
+      ];
+
       const tableResolvers = [
-        new LegacyInferredTableResolver(),
-        new MetadataInferredTableResolver(),
-        new DBTableResolver(client, [
-          (table) => {
-            // If the catalog is iceberg return the table as is
-            if (table.catalog === "iceberg") {
-              return table;
-            }
-            return null;
-          },
-          (table) => {
-            // If the catalog has a double underscore in the name we assume it's a
-            // legacy private connector catalog and return the table as is
-            if (table.catalog.includes("__")) {
-              return table;
-            }
-            return null;
-          },
-        ]),
+        inferredTableResolver,
+        new PermissionsResolver(legacyMappingRules),
+        new DBTableResolver(client, legacyMappingRules),
       ];
 
       let tableResolutionMap: TableResolutionMap = {};
@@ -79,110 +94,6 @@ export const systemTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       );
 
       return results;
-    },
-  },
-
-  Materialization: {
-    runId: (parent: MaterializationRow) => parent.run_id,
-    run: async (
-      parent: MaterializationRow,
-      _args: unknown,
-      context: GraphQLContext,
-    ) => {
-      const client = getSystemClient(context);
-      const { data, error } = await client
-        .from("run")
-        .select("*")
-        .eq("id", parent.run_id)
-        .single();
-      if (error) {
-        logger.error(
-          `Error fetching run with id ${parent.run_id}: ${error.message}`,
-        );
-        throw ServerErrors.database(
-          `Failed to fetch run with id ${parent.run_id}`,
-        );
-      }
-      return data;
-    },
-    datasetId: (parent: MaterializationRow) => parent.dataset_id,
-    createdAt: (parent: MaterializationRow) => parent.created_at,
-    schema: (parent: MaterializationRow) => parent.schema,
-  },
-
-  Step: {
-    runId: (parent: StepRow) => parent.run_id,
-    run: async (parent: StepRow, _args: unknown, context: GraphQLContext) => {
-      const client = getSystemClient(context);
-      const { data, error } = await client
-        .from("run")
-        .select("*")
-        .eq("id", parent.run_id)
-        .single();
-      if (error) {
-        logger.error(
-          `Error fetching run with id ${parent.run_id}: ${error.message}`,
-        );
-        throw ServerErrors.database(
-          `Failed to fetch run with id ${parent.run_id}`,
-        );
-      }
-      return data;
-    },
-    name: (parent: StepRow) => parent.name,
-    displayName: (parent: StepRow) => parent.display_name,
-    logsUrl: async (parent: StepRow) => {
-      if (!parent.logs_url) return "";
-
-      try {
-        const parsed = parseGcsUrl(parent.logs_url);
-        if (!parsed) {
-          logger.warn(
-            `Invalid GCS URL format for step ${parent.id}: ${parent.logs_url}`,
-          );
-          return parent.logs_url;
-        }
-
-        return await getSignedUrl(parsed.bucketName, parsed.fileName, 5);
-      } catch (error) {
-        logger.error(
-          `Failed to generate signed URL for step ${parent.id}: ${error}`,
-        );
-        return parent.logs_url;
-      }
-    },
-    startedAt: (parent: StepRow) => parent.started_at,
-    finishedAt: (parent: StepRow) => parent.completed_at,
-    status: (parent: StepRow) => {
-      switch (parent.status) {
-        case "running":
-          return StepStatus.Running;
-        case "failed":
-          return StepStatus.Failed;
-        case "canceled":
-          return StepStatus.Canceled;
-        case "success":
-          return StepStatus.Success;
-        default:
-          assertNever(parent.status, `Unknown step status: ${parent.status}`);
-      }
-    },
-    materializations: (
-      parent: StepRow,
-      args: FilterableConnectionArgs,
-      context: GraphQLContext,
-    ) => {
-      const client = getSystemClient(context);
-
-      return queryWithPagination(args, context, {
-        client,
-        orgIds: parent.org_id,
-        tableName: "materialization",
-        whereSchema: MaterializationWhereSchema,
-        basePredicate: {
-          eq: [{ key: "step_id", value: parent.id }],
-        },
-      });
     },
   },
 };

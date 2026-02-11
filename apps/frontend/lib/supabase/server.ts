@@ -2,6 +2,7 @@ import { createServerClient as createSSRServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { Database } from "@/lib/types/supabase";
 import { logger } from "@/lib/logger";
+import { NextRequest } from "next/server";
 
 type CookieStore = {
   getAll(): { name: string; value: string }[];
@@ -18,22 +19,22 @@ const createTestCookieStore = (): CookieStore => ({
   },
 });
 
-const getCookieStore = (): CookieStore => {
+const getCookieStore = (request?: NextRequest): CookieStore => {
   if (process.env.NODE_ENV === "test") {
     logger.info("Test environment detected, using test cookie store");
     return createTestCookieStore();
   }
 
   try {
-    return cookies();
+    return request ? (request.cookies as CookieStore) : cookies();
   } catch {
     logger.warn("Failed to get cookies, using test cookie store instead");
     return createTestCookieStore();
   }
 };
 
-export async function createServerClient() {
-  const cookieStore = getCookieStore();
+export async function createServerClient(request?: NextRequest) {
+  const cookieStore = getCookieStore(request);
 
   return createSSRServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -29,7 +29,7 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   User: userResolvers.User,
   Organization: organizationResolvers.Organization,
   OrganizationMember: organizationResolvers.OrganizationMember,
-  Invitation: userResolvers.Invitation,
+  Invitation: organizationResolvers.Invitation,
 
   Notebook: resourceResolvers.Notebook,
   Dataset: resourceResolvers.Dataset,
@@ -46,8 +46,8 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   DataConnectionAlias: resourceResolvers.DataConnectionAlias,
   ModelContext: resourceResolvers.ModelContext,
 
-  Run: systemResolvers.Run,
-  Step: systemResolvers.Step,
-  Materialization: systemResolvers.Materialization,
+  Run: organizationResolvers.Run,
+  Step: organizationResolvers.Step,
+  Materialization: organizationResolvers.Materialization,
   System: systemResolvers.System,
 };
