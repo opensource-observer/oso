@@ -88,7 +88,7 @@ class OSOStepContext(StepContext):
     async def create_materialization(
         self, table_id: str, warehouse_fqn: str, schema: list[DataModelColumnInput]
     ) -> CreateMaterialization:
-        self._logger.info("Creating materialization")
+        self._logger.debug("Creating materialization")
         # Placeholder for actual materialization creation logic
 
         return await self._oso_client.create_materialization(
@@ -189,13 +189,17 @@ class OSORunContext(RunContext):
 
         try:
             async with async_time(self._metrics.histogram("step_duration_ms")):
-                yield OSOStepContext.create(
+                step_context = OSOStepContext.create(
                     self.as_view,
                     step.id,
                     self._oso_client,
                     self._materialization_strategy,
-                    self._logger.bind(step=name, step_display_name=display_name),
+                    self._logger.bind(
+                        step_id=step.id, step=name, step_display_name=display_name
+                    ),
                 )
+                step_context.log.debug(f"Started step {name} with ID: {step.id}")
+                yield step_context
         except Exception as e:
             self._logger.error(f"Error in step context {name}: {e}")
             await self._oso_client.finish_step(
@@ -239,6 +243,9 @@ class OSORunContext(RunContext):
         metadata: UpdateMetadataInput | None = None,
     ) -> FinishRun:
         """Finish the run with the given status."""
+        self.log.info(
+            f"Finishing run with status: {status}, status_code: {status_code}"
+        )
 
         try:
             logs_url = await self._log_buffer.flush(status=status)

@@ -19,7 +19,7 @@ from queryrewriter import rewrite_query
 from queryrewriter.errors import TableResolutionError
 from queryrewriter.types import TableResolver
 from scheduler.graphql_client.client import Client
-from scheduler.mq.common import RunHandler, convert_uuid_bytes_to_str
+from scheduler.mq.common import RunHandler
 from scheduler.types import FailedResponse, HandlerResponse, RunContext, SuccessResponse
 from scheduler.utils import OSOClientTableResolver, aiotrino_query_error_to_json
 
@@ -65,7 +65,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
         metrics: MetricsContainer,
     ) -> HandlerResponse:
         # Process the QueryRunRequest message
-        context.log.info(f"Handling QueryRunRequest with ID: {message.run_id}")
+        context.log.info(f"Handling QueryRunRequest with ID: {context.run_id}")
 
         table_resolvers: list[TableResolver] = [
             OSOClientTableResolver(oso_client=oso_client)
@@ -115,7 +115,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                 )
             )
             return FailedResponse(
-                message=f"Table resolution error for QueryRunRequest ID: {message.run_id}",
+                message=f"Table resolution error for QueryRunRequest ID: {context.run_id}",
                 status_code=404,
                 details={
                     "message": str(e),
@@ -160,7 +160,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                     )
                 )
                 return FailedResponse(
-                    message=f"Failed to execute query for QueryRunRequest ID: {message.run_id}",
+                    message=f"Failed to execute query for QueryRunRequest ID: {context.run_id}",
                     status_code=400,
                     details=aiotrino_query_error_to_json(e),
                 )
@@ -176,7 +176,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                     )
                 )
                 return FailedResponse(
-                    message=f"Server error for QueryRunRequest ID: {message.run_id}",
+                    message=f"Server error for QueryRunRequest ID: {context.run_id}",
                     status_code=500,
                     details=aiotrino_query_error_to_json(e),
                 )
@@ -193,7 +193,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                     )
                 )
                 return FailedResponse(
-                    message=f"Programming error for QueryRunRequest ID: {message.run_id}",
+                    message=f"Programming error for QueryRunRequest ID: {context.run_id}",
                     status_code=400,
                     details={
                         "message": f"Programming error in query execution. {e}",
@@ -212,7 +212,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                     )
                 )
                 return FailedResponse(
-                    message=f"Unexpected error for QueryRunRequest ID: {message.run_id}",
+                    message=f"Unexpected error for QueryRunRequest ID: {context.run_id}",
                     status_code=500,
                     details={
                         "message": str(e),
@@ -222,7 +222,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                 )
 
             columns = [column.name for column in await cursor.get_description()]
-            file_path = f"gs://{common_settings.query_bucket}/{convert_uuid_bytes_to_str(message.run_id)}"
+            file_path = f"gs://{common_settings.query_bucket}/{context.run_id}"
             logger.info(f"Writing query results to: {file_path}")
 
             row_count = 0

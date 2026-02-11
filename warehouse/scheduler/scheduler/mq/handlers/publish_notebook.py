@@ -110,7 +110,7 @@ class PublishNotebookRunRequestHandler(RunHandler[PublishNotebookRunRequest]):
         oso_client: Client,
     ) -> HandlerResponse:
         context.log.info(
-            f"Handling PublishNotebookRunRequest with ID: {message.run_id}"
+            f"Handling PublishNotebookRunRequest with ID: {context.run_id}"
         )
 
         notebooks = (await oso_client.get_notebook(message.notebook_id)).notebooks.edges
@@ -177,5 +177,5 @@ class PublishNotebookRunRequestHandler(RunHandler[PublishNotebookRunRequest]):
 
         logger.info("Notebook published successfully.")
         return SuccessResponse(
-            message=f"Processed PublishNotebookRunRequest with ID: {message.run_id}"
+            message=f"Processed PublishNotebookRunRequest with ID: {context.run_id}"
         )
