@@ -88,7 +88,7 @@ class OSOStepContext(StepContext):
     async def create_materialization(
         self, table_id: str, warehouse_fqn: str, schema: list[DataModelColumnInput]
     ) -> CreateMaterialization:
-        self._logger.info("Creating materialization")
+        self._logger.debug("Creating materialization")
         # Placeholder for actual materialization creation logic
 
         return await self._oso_client.create_materialization(
