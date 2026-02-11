@@ -21,8 +21,8 @@ type Documents = {
   "\n      mutation DeleteDataConnection($id: ID!) {\n        deleteDataConnection(id: $id) {\n          success\n          message\n        }\n      }\n    ": typeof types.DeleteDataConnectionDocument;
   "\n      mutation SyncDataConnection($id: ID!) {\n        syncDataConnection(id: $id) {\n          success\n          message\n          run {\n            id\n          }\n        }\n      }\n    ": typeof types.SyncDataConnectionDocument;
   "\n      mutation SavePreview($input: SaveNotebookPreviewInput!) {\n        saveNotebookPreview(input: $input) {\n          success\n          message\n        }\n      }\n    ": typeof types.SavePreviewDocument;
-  "\n      mutation CreateDataset($input: CreateDatasetInput!) {\n        createDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n            type\n            isPublic\n          }\n        }\n      }\n    ": typeof types.CreateDatasetDocument;
-  "\n      mutation UpdateDataset($input: UpdateDatasetInput!) {\n        updateDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n            isPublic\n          }\n        }\n      }\n    ": typeof types.UpdateDatasetDocument;
+  "\n      mutation CreateDataset($input: CreateDatasetInput!) {\n        createDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n            type\n          }\n        }\n      }\n    ": typeof types.CreateDatasetDocument;
+  "\n      mutation UpdateDataset($input: UpdateDatasetInput!) {\n        updateDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n          }\n        }\n      }\n    ": typeof types.UpdateDatasetDocument;
   "\n      mutation DeleteDataset($id: ID!) {\n        deleteDataset(id: $id) {\n          success\n          message\n        }\n      }\n    ": typeof types.DeleteDatasetDocument;
   "\n      mutation CreateDataModel($input: CreateDataModelInput!) {\n        createDataModel(input: $input) {\n          success\n          message\n          dataModel {\n            id\n            name\n            isEnabled\n          }\n        }\n      }\n    ": typeof types.CreateDataModelDocument;
   "\n      mutation UpdateDataModel($input: UpdateDataModelInput!) {\n        updateDataModel(input: $input) {\n          success\n          message\n          dataModel {\n            id\n            name\n            isEnabled\n          }\n        }\n      }\n    ": typeof types.UpdateDataModelDocument;
@@ -58,9 +58,9 @@ const documents: Documents = {
     types.SyncDataConnectionDocument,
   "\n      mutation SavePreview($input: SaveNotebookPreviewInput!) {\n        saveNotebookPreview(input: $input) {\n          success\n          message\n        }\n      }\n    ":
     types.SavePreviewDocument,
-  "\n      mutation CreateDataset($input: CreateDatasetInput!) {\n        createDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n            type\n            isPublic\n          }\n        }\n      }\n    ":
+  "\n      mutation CreateDataset($input: CreateDatasetInput!) {\n        createDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n            type\n          }\n        }\n      }\n    ":
     types.CreateDatasetDocument,
-  "\n      mutation UpdateDataset($input: UpdateDatasetInput!) {\n        updateDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n            isPublic\n          }\n        }\n      }\n    ":
+  "\n      mutation UpdateDataset($input: UpdateDatasetInput!) {\n        updateDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n          }\n        }\n      }\n    ":
     types.UpdateDatasetDocument,
   "\n      mutation DeleteDataset($id: ID!) {\n        deleteDataset(id: $id) {\n          success\n          message\n        }\n      }\n    ":
     types.DeleteDatasetDocument,
@@ -162,14 +162,14 @@ export function gql(
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function gql(
-  source: "\n      mutation CreateDataset($input: CreateDatasetInput!) {\n        createDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n            type\n            isPublic\n          }\n        }\n      }\n    ",
-): (typeof documents)["\n      mutation CreateDataset($input: CreateDatasetInput!) {\n        createDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n            type\n            isPublic\n          }\n        }\n      }\n    "];
+  source: "\n      mutation CreateDataset($input: CreateDatasetInput!) {\n        createDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n            type\n          }\n        }\n      }\n    ",
+): (typeof documents)["\n      mutation CreateDataset($input: CreateDatasetInput!) {\n        createDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n            type\n          }\n        }\n      }\n    "];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function gql(
-  source: "\n      mutation UpdateDataset($input: UpdateDatasetInput!) {\n        updateDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n            isPublic\n          }\n        }\n      }\n    ",
-): (typeof documents)["\n      mutation UpdateDataset($input: UpdateDatasetInput!) {\n        updateDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n            isPublic\n          }\n        }\n      }\n    "];
+  source: "\n      mutation UpdateDataset($input: UpdateDatasetInput!) {\n        updateDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n          }\n        }\n      }\n    ",
+): (typeof documents)["\n      mutation UpdateDataset($input: UpdateDatasetInput!) {\n        updateDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n          }\n        }\n      }\n    "];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
