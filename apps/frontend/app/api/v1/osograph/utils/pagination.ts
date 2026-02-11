@@ -21,12 +21,12 @@ export function decodeCursor(cursor: string): number {
 }
 
 export interface ConnectionArgs {
-  first?: number;
-  after?: string;
+  first: number;
+  after?: string | null;
 }
 
 export interface FilterableConnectionArgs extends ConnectionArgs {
-  single?: boolean;
+  single?: boolean | null;
   where?: unknown;
 }
 

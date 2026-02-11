@@ -7,6 +7,7 @@ const config: CodegenConfig = {
       plugins: ["typescript", "typescript-resolvers"],
       config: {
         enumsAsConst: true,
+        contextType: "@/app/api/v1/osograph/types/context#GraphQLContext",
         scalars: {
           JSON: "object",
           DateTime: "string",
@@ -25,7 +26,7 @@ const config: CodegenConfig = {
           Run: "@/lib/types/schema-types#RunRow",
           Step: "@/lib/types/schema-types#StepRow",
           Materialization: "@/lib/types/schema-types#MaterializationRow",
-          StaticModel: "@/lib/types/schema-types#StaticModelsRow",
+          StaticModel: "@/lib/types/schema-types#StaticModelRow",
           User: "@/lib/types/schema-types#UserProfilesRow",
         },
       },
