@@ -81,6 +81,10 @@ spec:
           # Set the metrics port
           - name: OSO_ENABLE_JSON_LOGS
             value: "{{- if .Values.app.enableJsonLogs -}}1{{- else -}}0{{- end -}}"
+          - name: SCHEDULER_POSTHOG_API_KEY
+            value: "{{ $.Values.app.posthogApiKey }}"
+          - name: SCHEDULER_POSTHOG_HOST
+            value: "{{ $.Values.app.posthogHost }}"
           - name: SCHEDULER_RUN__PORT
             value: "{{ $.Values.app.metricsPort }}"
           {{- range $key, $value := $.Values.app.envVars }}
