@@ -101,7 +101,8 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         metrics: MetricsContainer,
     ) -> HandlerResponse:
         # Process the DataModelRunRequest message
-        context.log.info(f"Handling DataModelRunRequest with ID: {message.run_id}")
+
+        context.log.info(f"Handling DataModelRunRequest with ID: {context.run_id}")
 
         # Pull the model using the OSO client
         dataset_and_models = await oso_client.get_data_models(message.dataset_id)
@@ -169,26 +170,30 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         if len(converted_models) == 0:
             context.log.info("No models to run, skipping evaluation.")
             return SuccessResponse(
-                message=f"No models to run for DataModelRunRequest with ID: {message.run_id}"
+                message=f"No models to run for DataModelRunRequest with ID: {context.run_id}"
             )
 
         async with async_time(
             metrics.histogram("data_model_total_evaluation_duration_ms"), labeler
         ):
-            logger.info("Starting evaluation of selected data models")
-            await self.evaluate_models(
-                context=context,
-                dataset=dataset.node,
-                udm_engine_adapter=udm_engine_adapter,
-                oso_client=oso_client,
-                user=user,
-                converted_models=converted_models,
-                labeler=labeler,
-                metrics=metrics,
-            )
+            context.log.info("Starting evaluation of selected data models")
+            try:
+                await self.evaluate_models(
+                    context=context,
+                    dataset=dataset.node,
+                    udm_engine_adapter=udm_engine_adapter,
+                    oso_client=oso_client,
+                    user=user,
+                    converted_models=converted_models,
+                    labeler=labeler,
+                    metrics=metrics,
+                )
+            except Exception as e:
+                context.log.error(f"Error during dataset evaluation: {e}")
+                raise e
 
         return SuccessResponse(
-            message=f"Processed DataModelRunRequest with ID: {message.run_id}"
+            message=f"Processed DataModelRunRequest with ID: {context.run_id}"
         )
 
     async def evaluate_models(
@@ -247,15 +252,21 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                             logger.debug(
                                 f"Found previous warehouse table for model {model.name}: {previous_warehouse_table}"
                             )
-                        await self.evaluate_single_model(
-                            model=model,
-                            step_context=step_context,
-                            adapter=adapter,
-                            table_resolvers=table_resolvers,
-                            metrics=metrics,
-                            labeler=labeler,
-                            previous_warehouse_table=previous_warehouse_table,
-                        )
+                        try:
+                            await self.evaluate_single_model(
+                                model=model,
+                                step_context=step_context,
+                                adapter=adapter,
+                                table_resolvers=table_resolvers,
+                                metrics=metrics,
+                                labeler=labeler,
+                                previous_warehouse_table=previous_warehouse_table,
+                            )
+                        except Exception as e:
+                            step_context.log.error(
+                                f"Error during model evaluation: {e}"
+                            )
+                            raise e
 
     async def evaluate_single_model(
         self,
@@ -282,6 +293,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         target_table = step_context.generate_destination_table_exp(table_ref)
 
         logger.info("Writing to target table: %s", target_table)
+        step_context.log.info("Writing model results to the warehouse.")
         adapter.create_schema(
             f"{target_table.catalog}.{target_table.db}",
             ignore_if_exists=True,
@@ -324,24 +336,32 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
         # Create the schema for the materialization
         schema: list[DataModelColumnInput] = []
+        columns_logging: list[str] = []
         for name, data_type in columns.items():
             data_type_name = data_type.sql(dialect=adapter.dialect)
-            step_context.log.info(f"Column: {name}, Type: {data_type_name}")
+            columns_logging.append(f"Column: {name}, Type: {data_type_name}")
             schema.append(
                 DataModelColumnInput(
                     name=name,
                     type=data_type_name,
                 )
             )
+        step_context.log.info(
+            f"Resolved columns for model {model.name}: {columns_logging}"
+        )
 
         step_context.log.info(
             f"Creating materialization record for run: {step_context.run.id} and step: {step_context.step_id}"
         )
-        await step_context.create_materialization(
-            table_id=model.table_id,
-            warehouse_fqn=f"{target_table.catalog}.{target_table.db}.{target_table.name}",
-            schema=schema,
-        )
+        try:
+            await step_context.create_materialization(
+                table_id=model.table_id,
+                warehouse_fqn=f"{target_table.catalog}.{target_table.db}.{target_table.name}",
+                schema=schema,
+            )
+        except Exception as e:
+            step_context.log.error(f"Error creating materialization: {e}")
+            raise e
 
         # If we've reached this point everything has been successfully
         # materialized. We can now drop the previous table if it exists.
@@ -353,7 +373,8 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                     exists=True,
                 )
             except Exception as e:
-                step_context.log.warning(
+                # This is a system level log not one for the users
+                logger.warning(
                     f"Failed to drop previous warehouse table "
                     f"{previous_warehouse_table}: {e}"
                 )
