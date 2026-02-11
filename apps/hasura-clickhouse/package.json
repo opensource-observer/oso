@@ -40,7 +40,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "glob": "^13.0.1",
+    "glob": "^13.0.2",
     "lodash": "^4.17.23",
     "yaml": "^2.5.0"
   }
