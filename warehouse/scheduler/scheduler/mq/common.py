@@ -194,7 +194,9 @@ class OSORunContext(RunContext):
                     step.id,
                     self._oso_client,
                     self._materialization_strategy,
-                    self._logger.bind(step=name, step_display_name=display_name),
+                    self._logger.bind(
+                        step_id=step.id, step=name, step_display_name=display_name
+                    ),
                 )
         except Exception as e:
             self._logger.error(f"Error in step context {name}: {e}")
