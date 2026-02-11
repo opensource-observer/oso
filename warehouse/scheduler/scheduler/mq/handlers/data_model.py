@@ -321,6 +321,10 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         ]
         resolved_query.add_comments(resolved_query_comments, prepend=True)
 
+        step_context.log.info(
+            f"Executing query for model {model.name} on the warehouse"
+        )
+
         await asyncio.to_thread(
             self.make_synchronous_trino_requests,
             adapter,
