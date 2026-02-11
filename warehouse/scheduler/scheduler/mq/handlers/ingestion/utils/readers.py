@@ -1,8 +1,6 @@
-import csv
-import json
 from typing import AsyncIterator, Callable, Literal
 
-import aiofiles
+import pandas as pd
 import pyarrow.parquet as pq
 
 FileFormat = Literal["parquet", "csv", "json"]
@@ -16,27 +14,18 @@ async def read_parquet_batches(path: str, batch_size: int) -> AsyncIterator[dict
             yield record
 
 
-async def read_csv_batches(path: str, _batch_size: int) -> AsyncIterator[dict]:
+async def read_csv_batches(path: str, batch_size: int) -> AsyncIterator[dict]:
     """Stream CSV from disk."""
-    async with aiofiles.open(path, "r") as f:
-        content = await f.read()
-
-    reader = csv.DictReader(content.splitlines())
-    for row in reader:
-        yield row
+    for chunk in pd.read_csv(path, chunksize=batch_size):
+        for record in chunk.to_dict(orient="records"):
+            yield record
 
 
 async def read_json_batches(path: str, _batch_size: int) -> AsyncIterator[dict]:
-    """Stream JSON from disk."""
-    async with aiofiles.open(path, "r") as f:
-        content = await f.read()
-
-    data = json.loads(content)
-    if isinstance(data, list):
-        for record in data:
-            yield record
-    else:
-        yield data
+    """Read JSON from disk."""
+    df = pd.read_json(path)
+    for record in df.to_dict(orient="records"):
+        yield record
 
 
 FORMAT_READERS: dict[FileFormat, Callable[[str, int], AsyncIterator[dict]]] = {
