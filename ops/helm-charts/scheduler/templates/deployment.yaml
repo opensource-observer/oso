@@ -79,6 +79,8 @@ spec:
         {{- end }}
         env:
           # Set the metrics port
+          - name: OSO_ENABLE_JSON_LOGS
+            value: "{{- if .Values.app.enableJsonLogs -}}1{{- else -}}0{{- end -}}"
           - name: SCHEDULER_RUN__PORT
             value: "{{ $.Values.app.metricsPort }}"
           {{- range $key, $value := $.Values.app.envVars }}
