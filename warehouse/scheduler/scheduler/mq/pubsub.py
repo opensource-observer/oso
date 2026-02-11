@@ -393,7 +393,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         except Exception as e:
             logger.error(f"Error processing queued message #{message_number}: {e}")
             response_storage.store_response(
-                queued_message.handle_id, FailedResponse(message=str(e))
+                queued_message.handle_id, FailedResponse(exception=e, message=str(e))
             )
             queued_message.ready.set()
         finally:

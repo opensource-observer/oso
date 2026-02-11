@@ -8,7 +8,7 @@ import structlog
 from google.protobuf.json_format import Parse
 from google.protobuf.message import Message
 from oso_core.resources import ResourcesContext
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from queryrewriter.rewrite import rewrite_query
 from queryrewriter.types import RewriteResponse, TableResolver
 from scheduler.graphql_client.create_materialization import CreateMaterialization
@@ -540,6 +540,8 @@ class SkipResponse(HandlerResponse):
 
 
 class FailedResponse(HandlerResponse):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     message: str = Field(default="Failed to process the message.")
     exception: Exception | None = Field(
         default=None, description="The exception that caused the failure, if any."

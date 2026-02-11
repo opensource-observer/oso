@@ -129,7 +129,9 @@ class SyncConnectionRunRequestHandler(RunHandler[SyncConnectionRunRequest]):
         except Exception as e:
             context.log.error("Failed to get data connection", extra={"error": str(e)})
             return FailedResponse(
-                message="Failed to get data connection", details={"error": str(e)}
+                exception=e,
+                message="Failed to get data connection",
+                details={"error": str(e)},
             )
 
         context.log.info(
@@ -152,6 +154,7 @@ class SyncConnectionRunRequestHandler(RunHandler[SyncConnectionRunRequest]):
             except Exception as e:
                 context.log.error("Failed to get schemas", extra={"error": str(e)})
                 return FailedResponse(
+                    exception=e,
                     message="Failed to get schemas from catalog",
                     details={"error": str(e)},
                 )
@@ -234,6 +237,7 @@ class SyncConnectionRunRequestHandler(RunHandler[SyncConnectionRunRequest]):
                     extra={"error": str(e)},
                 )
                 return FailedResponse(
+                    exception=e,
                     message="Failed to create datasets and materializations",
                     details={"error": str(e)},
                 )

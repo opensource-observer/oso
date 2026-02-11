@@ -115,6 +115,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                 )
             )
             return FailedResponse(
+                exception=e,
                 message=f"Table resolution error for QueryRunRequest ID: {context.run_id}",
                 status_code=404,
                 details={
@@ -160,6 +161,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                     )
                 )
                 return FailedResponse(
+                    exception=e,
                     message=f"Failed to execute query for QueryRunRequest ID: {context.run_id}",
                     status_code=400,
                     details=aiotrino_query_error_to_json(e),
@@ -176,6 +178,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                     )
                 )
                 return FailedResponse(
+                    exception=e,
                     message=f"Server error for QueryRunRequest ID: {context.run_id}",
                     status_code=500,
                     details=aiotrino_query_error_to_json(e),
@@ -193,6 +196,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                     )
                 )
                 return FailedResponse(
+                    exception=e,
                     message=f"Programming error for QueryRunRequest ID: {context.run_id}",
                     status_code=400,
                     details={
@@ -212,6 +216,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                     )
                 )
                 return FailedResponse(
+                    exception=e,
                     message=f"Unexpected error for QueryRunRequest ID: {context.run_id}",
                     status_code=500,
                     details={

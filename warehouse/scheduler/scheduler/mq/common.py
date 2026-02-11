@@ -390,7 +390,8 @@ class RunHandler(MessageHandler[T]):
                 f"Error handling run message for run_id {run_id_str}: {e}"
             )
             response = FailedResponse(
-                message=f"Failed to process the message for run_id {run_id_str}."
+                exception=e,
+                message=f"Failed to process the message for run_id {run_id_str}.",
             )
 
         try:
@@ -408,7 +409,8 @@ class RunHandler(MessageHandler[T]):
             )
 
             return FailedResponse(
-                message=f"Failed to report the response for run_id {run_id_str}."
+                exception=e,
+                message=f"Failed to report the response for run_id {run_id_str}.",
             )
 
     async def report_response(
