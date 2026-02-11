@@ -48,7 +48,8 @@ export const datasetTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
     updatedAt: (parent: DatasetsRow) => parent.updated_at,
     creatorId: (parent: DatasetsRow) => parent.created_by,
     orgId: (parent: DatasetsRow) => parent.org_id,
-    isPublic: (parent: DatasetsRow) => parent.is_public,
+    // TODO(icaro): use resource permission table to find if the dataset is public or not
+    isPublic: (_: DatasetsRow) => false,
     type: (parent: DatasetsRow) => parent.dataset_type,
 
     creator: async (
