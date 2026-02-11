@@ -5,6 +5,7 @@ import { runMutationResolvers } from "@/app/api/v1/osograph/schema/resolvers/sys
 import { stepMutationResolvers } from "@/app/api/v1/osograph/schema/resolvers/system/step-mutations";
 import { materializationMutationResolvers } from "@/app/api/v1/osograph/schema/resolvers/system/materialization-mutations";
 import { notebookPublishingResolvers } from "@/app/api/v1/osograph/schema/resolvers/system/notebook-mutations";
+import { dataConnectionMutationResolvers } from "@/app/api/v1/osograph/schema/resolvers/system/data-connection-mutations";
 import { systemTypeResolvers } from "@/app/api/v1/osograph/schema/resolvers/system/type-resolvers";
 
 /**
@@ -20,6 +21,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
     ...stepMutationResolvers.Mutation,
     ...materializationMutationResolvers.Mutation,
     ...notebookPublishingResolvers.Mutation,
+    ...dataConnectionMutationResolvers.Mutation,
   },
   System: {
     ...systemTypeResolvers.System,
