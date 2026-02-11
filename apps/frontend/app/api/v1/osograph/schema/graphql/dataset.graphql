@@ -6,7 +6,6 @@ type Dataset {
   description: String
   type: DatasetType!
   creatorId: ID!
-  isPublic: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
   creator: User!
@@ -211,11 +210,6 @@ input CreateDatasetInput {
       models. Currently only CSV files are supported for static models.
   """
   type: DatasetType = USER_MODEL
-
-  """
-  Whether the dataset is public or private.
-  """
-  isPublic: Boolean = false
 }
 
 type CreateDatasetPayload {
@@ -229,7 +223,6 @@ input UpdateDatasetInput {
   name: String
   displayName: String
   description: String
-  isPublic: Boolean
 }
 
 type UpdateDatasetPayload {
