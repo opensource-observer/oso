@@ -13,6 +13,7 @@ from oso_core.instrumentation.common import MetricsLabeler
 from oso_core.instrumentation.timing import async_time
 from oso_core.resources import ResourcesContext
 from oso_dagster.resources.gcs import GCSFileResource
+from posthog import Posthog
 from scheduler.config import CommonSettings
 from scheduler.graphql_client.client import UNSET
 from scheduler.graphql_client.client import Client as OSOClient
@@ -299,6 +300,10 @@ class RunHandler(MessageHandler[T]):
         resources: ResourcesContext,
         materialization_strategy: MaterializationStrategy,
         metrics: MetricsContainer,
+        posthog_client: Posthog,
+        oso_client: OSOClient,
+        common_settings: CommonSettings,
+        gcs: GCSFileResource,
     ) -> HandlerResponse:
         run_id = getattr(message, "run_id", None)
         if not run_id:
@@ -314,10 +319,6 @@ class RunHandler(MessageHandler[T]):
 
         run_id_str = convert_uuid_bytes_to_str(run_id)
 
-        oso_client: OSOClient = resources.resolve("oso_client")
-        common_settings: CommonSettings = resources.resolve("common_settings")
-        gcs: GCSFileResource = resources.resolve("gcs")
-
         async with async_time(
             metrics.histogram("run_context_load_duration_ms")
         ) as labeler_ctx:
@@ -330,6 +331,18 @@ class RunHandler(MessageHandler[T]):
                 gcs_bucket=common_settings.run_logs_gcs_bucket,
             )
             labeler_ctx.add_labels({"org_id": run_context.organization.name})
+
+        posthog_client.capture(
+            "run_message_received",
+            properties={
+                "run_id": run_id_str,
+                "org_name": run_context.organization.name,
+                "trigger_type": run_context.trigger_type,
+                "requested_by": run_context.requested_by.email
+                if run_context.requested_by
+                else "unknown",
+            },
+        )
 
         labeler = MetricsLabeler()
         # Try to set the run to running in the database for user's visibility
@@ -352,6 +365,7 @@ class RunHandler(MessageHandler[T]):
                 response=FailedResponse(message=f"Failed to start run {run_id_str}."),
                 metrics=metrics,
                 labeler=labeler,
+                posthog_client=posthog_client,
             )
 
         labeler.set_labels(
@@ -386,6 +400,7 @@ class RunHandler(MessageHandler[T]):
                 run_context=run_context,
                 metrics=metrics,
                 labeler=labeler,
+                posthog_client=posthog_client,
             )
         except Exception as e:
             system_logger.error(
@@ -403,6 +418,7 @@ class RunHandler(MessageHandler[T]):
         response: HandlerResponse,
         metrics: MetricsContainer,
         labeler: MetricsLabeler,
+        posthog_client: Posthog,
     ) -> HandlerResponse:
         """Handle the response from processing a run message.
 
@@ -410,11 +426,25 @@ class RunHandler(MessageHandler[T]):
             response: The response from processing the run message.
         """
         # Write the response to the database
+
+        posthog_properties = {
+            "run_id": run_id_str,
+            "org_name": run_context.organization.name,
+            "trigger_type": run_context.trigger_type,
+            "response_type": type(response).__name__,
+            "requested_by": run_context.requested_by.email
+            if run_context.requested_by
+            else "unknown",
+            "status_code": getattr(response, "status_code", "unknown"),
+        }
         match response:
             case AlreadyLockedMessageResponse():
                 # No need to do anything here as another worker is processing it
                 metrics.counter("run_count_total").inc(
                     labeler.get_labels({"response_type": "already_locked"}),
+                )
+                posthog_client.capture(
+                    "run_message_already_locked", properties=posthog_properties
                 )
                 return response
             case SkipResponse(status_code=status_code):
@@ -425,12 +455,26 @@ class RunHandler(MessageHandler[T]):
                 metrics.counter("run_count_total").inc(
                     labeler.get_labels({"response_type": "skipped"}),
                 )
+                posthog_client.capture(
+                    "run_message_skipped", properties=posthog_properties
+                )
                 return response
-            case FailedResponse(status_code=status_code, details=details):
+
+            case FailedResponse(
+                exception=exception, status_code=status_code, details=details
+            ):
                 system_logger.error(f"Failed to process run_id {run_id_str}.")
                 metrics.counter("run_count_total").inc(
                     labeler.get_labels({"response_type": "failed"}),
                 )
+                if exception:
+                    posthog_client.capture_exception(
+                        exception, properties=posthog_properties
+                    )
+                else:
+                    posthog_client.capture(
+                        "run_message_failed", properties=posthog_properties
+                    )
                 await run_context.finish_run(
                     status=RunStatus.FAILED,
                     status_code=status_code,
@@ -456,6 +500,9 @@ class RunHandler(MessageHandler[T]):
                 )
                 metrics.counter("run_count_total").inc(
                     labeler.get_labels({"response_type": "unknown"}),
+                )
+                posthog_client.capture(
+                    "run_message_unhandled_response", properties=posthog_properties
                 )
                 await run_context.finish_run(
                     status=RunStatus.FAILED,

@@ -541,6 +541,9 @@ class SkipResponse(HandlerResponse):
 
 class FailedResponse(HandlerResponse):
     message: str = Field(default="Failed to process the message.")
+    exception: Exception | None = Field(
+        default=None, description="The exception that caused the failure, if any."
+    )
     status_code: int = Field(default=500)
     details: dict[str, t.Any] = Field(default_factory=dict)
 
