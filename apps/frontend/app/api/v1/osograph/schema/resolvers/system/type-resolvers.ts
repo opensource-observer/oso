@@ -11,6 +11,9 @@ import {
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import { SystemResolveTablesArgs } from "@/lib/graphql/generated/graphql";
+import { logger } from "@/lib/logger";
+import { LegacyTableMappingRule } from "@/lib/query/common";
+import { PermissionsResolver } from "@/lib/query/resolvers/permissions-resolver";
 
 /**
  * Type resolvers for System.
@@ -30,26 +33,45 @@ export const systemTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
         input,
       );
 
+      let inferredTableResolver = new LegacyInferredTableResolver();
+
+      // If we know both the dataset name and the org name we don't need to use
+      // the legacy resolver because it the context is different when we have
+      // org/data names. Once the `oso` dataset is added to all orgs as a data
+      // marketplace dataset we can remove the legacy resolver entirely and rely
+      // on the metadata inferred org/data names. Once the `oso` dataset
+      // is added to all orgs as a data marketplace dataset we can remove the
+      // legacy resolver entirely and rely on the metadata inferred resolver for
+      // all cases
+      if (metadata?.orgName && metadata?.datasetName) {
+        logger.info(
+          `Using orgName ${metadata.orgName} and datasetName ${metadata.datasetName} from metadata to resolve tables`,
+        );
+        inferredTableResolver = new MetadataInferredTableResolver();
+      }
+
+      const legacyMappingRules: LegacyTableMappingRule[] = [
+        (table) => {
+          // If the catalog is iceberg return the table as is
+          if (table.catalog === "iceberg") {
+            return table;
+          }
+          return null;
+        },
+        (table) => {
+          // If the catalog has a double underscore in the name we assume it's a
+          // legacy private connector catalog and return the table as is
+          if (table.catalog.includes("__")) {
+            return table;
+          }
+          return null;
+        },
+      ];
+
       const tableResolvers = [
-        new LegacyInferredTableResolver(),
-        new MetadataInferredTableResolver(),
-        new DBTableResolver(client, [
-          (table) => {
-            // If the catalog is iceberg return the table as is
-            if (table.catalog === "iceberg") {
-              return table;
-            }
-            return null;
-          },
-          (table) => {
-            // If the catalog has a double underscore in the name we assume it's a
-            // legacy private connector catalog and return the table as is
-            if (table.catalog.includes("__")) {
-              return table;
-            }
-            return null;
-          },
-        ]),
+        inferredTableResolver,
+        new PermissionsResolver(legacyMappingRules),
+        new DBTableResolver(client, legacyMappingRules),
       ];
 
       let tableResolutionMap: TableResolutionMap = {};
