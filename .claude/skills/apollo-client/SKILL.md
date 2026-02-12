@@ -1,12 +1,6 @@
 ---
 name: apollo-client
-description: >
-  Guide for building React applications with Apollo Client 4.x. Use this skill when:
-  (1) setting up Apollo Client in a React project,
-  (2) writing GraphQL queries or mutations with hooks,
-  (3) configuring caching or cache policies,
-  (4) managing local state with reactive variables,
-  (5) troubleshooting Apollo Client errors or performance issues.
+description: Guide for building React applications with Apollo Client 4.x. Use this skill when (1) setting up Apollo Client in a React project, (2) writing GraphQL queries or mutations with hooks, (3) configuring caching or cache policies, (4) managing local state with reactive variables, (5) troubleshooting Apollo Client errors or performance issues.
 license: MIT
 compatibility: React 18+, React 19 (Suspense/RSC). Works with Next.js, Vite, CRA, and other React frameworks.
 metadata:
