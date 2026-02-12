@@ -95,6 +95,13 @@ If you make changes to the GraphQL schema (e.g. on Hasura), make sure to run:
 pnpm graphql:codegen
 ```
 
+We also codegen TypeScript types for all GraphQL queries related to Osograph.
+If you make changes to the Osograph GraphQL schema, make sure to run:
+
+```bash
+pnpm graphql:osograph:codegen
+```
+
 We also codegen TypeScript types for all Supabase queries.
 If you make changes to the Supabase schema, make sure to run:
 
