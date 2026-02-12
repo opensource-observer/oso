@@ -23,7 +23,7 @@
 
 import type { GraphQLResolveInfo } from "graphql";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
-import type { ResolverFn } from "@/app/api/v1/osograph/types/generated/types";
+import type { ResolverFn, ResolversTypes } from "@/app/api/v1/osograph/types/generated/types";
 
 /**
  * Handler function for a resolver after all middleware have been applied.
@@ -171,6 +171,8 @@ class ResolverBuilder<TResult, TParent, TContext, TArgs> {
   }
 }
 
+export type ResolverTypeKeys = keyof ResolversTypes;
+
 /**
  * Create a new resolver builder.
  *
@@ -192,12 +194,12 @@ class ResolverBuilder<TResult, TParent, TContext, TArgs> {
  * ```
  */
 export function createResolver<
-  TResult,
+  TResult extends ResolverTypeKeys,
   TParent = any,
   TArgs = any,
->(): ResolverBuilder<TResult, TParent, GraphQLContext, TArgs> {
+>(): ResolverBuilder<ResolversTypes[TResult], TParent, GraphQLContext, TArgs> {
   // Start with an identity middleware (no-op)
-  return new ResolverBuilder<TResult, TParent, GraphQLContext, TArgs>(
+  return new ResolverBuilder<ResolversTypes[TResult], TParent, GraphQLContext, TArgs>(
     async (context, args) => ({ context, args }),
   );
 }

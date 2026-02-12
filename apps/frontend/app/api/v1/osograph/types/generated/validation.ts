@@ -115,14 +115,14 @@ export function CreateDataModelRevisionInputSchema(): z.ZodObject<Properties<Cre
     dataModelId: z.string(),
     dependsOn: z.array(z.lazy(() => DataModelDependencyInputSchema())).nullish(),
     description: z.string().nullish(),
-    end: z.string().datetime().nullish(),
+    end: z.date().nullish(),
     kind: DataModelKindSchema,
     kindOptions: z.lazy(() => DataModelKindOptionsInputSchema().nullish()),
     language: z.string(),
     name: z.string(),
     partitionedBy: z.array(z.string()).nullish(),
     schema: z.array(z.lazy(() => DataModelColumnInputSchema())),
-    start: z.string().datetime().nullish()
+    start: z.date().nullish()
   })
 }
 
@@ -130,7 +130,6 @@ export function CreateDatasetInputSchema(): z.ZodObject<Properties<CreateDataset
   return z.object({
     description: z.string().nullish(),
     displayName: z.string().nullish(),
-    isPublic: z.boolean().default(false).nullish(),
     name: z.string(),
     orgId: z.string(),
     type: DatasetTypeSchema.default("USER_MODEL").nullish()
@@ -312,7 +311,6 @@ export function UpdateDatasetInputSchema(): z.ZodObject<Properties<UpdateDataset
     description: z.string().nullish(),
     displayName: z.string().nullish(),
     id: z.string(),
-    isPublic: z.boolean().nullish(),
     name: z.string().nullish()
   })
 }

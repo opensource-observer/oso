@@ -17,7 +17,7 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
-  DateTime: { input: string; output: string; }
+  DateTime: { input: Date; output: Date; }
   JSON: { input: object; output: object; }
 };
 
@@ -148,8 +148,6 @@ export type CreateDatasetInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   /** The display name of the dataset. */
   displayName?: InputMaybe<Scalars['String']['input']>;
-  /** Whether the dataset is public or private. */
-  isPublic?: InputMaybe<Scalars['Boolean']['input']>;
   /** The name of the dataset. This must be unique within the organization. */
   name: Scalars['String']['input'];
   /** The organization ID the dataset belongs to */
@@ -655,7 +653,6 @@ export type Dataset = {
   description?: Maybe<Scalars['String']['output']>;
   displayName?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  isPublic: Scalars['Boolean']['output'];
   /**
    * The materializations for this dataset. Returns all materializations regardless of their source
    * (data model, static model, or data ingestion).
@@ -1772,7 +1769,6 @@ export type UpdateDatasetInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   displayName?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
-  isPublic?: InputMaybe<Scalars['Boolean']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -2619,7 +2615,6 @@ export type DatasetResolvers<ContextType = GraphQLContext, ParentType extends Re
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   displayName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  isPublic?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   materializations?: Resolver<ResolversTypes['MaterializationConnection'], ParentType, ContextType, RequireFields<DatasetMaterializationsArgs, 'first'>>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   orgId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;

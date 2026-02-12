@@ -21,6 +21,7 @@ import type {
   OrgRole,
   PermissionLevel,
 } from "@/app/api/v1/osograph/utils/access-control";
+import { requireAuthentication } from "../utils/auth";
 
 // Branded type markers (unique symbols for compile-time tracking)
 declare const AuthenticatedBrand: unique symbol;
@@ -39,8 +40,7 @@ declare const ResourceAccessBrand: unique symbol;
  */
 export type AuthenticatedContext = GraphQLContext & {
   [AuthenticatedBrand]: true;
-  client: SupabaseAdminClient;
-  userId: string;
+  authenticatedUser: ReturnType<typeof requireAuthentication>;
 };
 
 /**
@@ -57,11 +57,9 @@ export type AuthenticatedContext = GraphQLContext & {
  *
  * @template T - Optional type parameter to track args type for type inference
  */
-export type OrgAccessContext<T = unknown> = AuthenticatedContext & {
+export type OrgAccessContext<TContext extends AuthenticatedContext = AuthenticatedContext> = TContext & {
   [OrgAccessBrand]: true;
-  orgRole: OrgRole;
   orgId: string;
-  _orgAccessArgs?: T; // Used for type inference, not runtime value
 };
 
 /**

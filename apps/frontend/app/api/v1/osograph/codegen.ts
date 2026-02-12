@@ -10,7 +10,7 @@ const config: CodegenConfig = {
         contextType: "@/app/api/v1/osograph/types/context#GraphQLContext",
         scalars: {
           JSON: "object",
-          DateTime: "string",
+          DateTime: "Date",
         },
         mappers: {
           DataConnection: "@/lib/types/schema-types#DataConnectionAliasRow",
@@ -42,7 +42,7 @@ const config: CodegenConfig = {
         },
         scalarSchemas: {
           JSON: "z.record(z.string(), z.unknown())",
-          DateTime: "z.string().datetime()",
+          DateTime: "z.date()",
         },
         defaultScalarSchema: "z.unknown()",
         strictScalars: true,

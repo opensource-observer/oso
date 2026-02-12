@@ -14,7 +14,6 @@ import {
   getMaterializations,
   getModelRunConnection,
   getResourceById,
-  validateMutationInput,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import {
   ConnectionArgs,
@@ -23,9 +22,6 @@ import {
 import { createHash } from "crypto";
 import {
   CreateDataModelReleaseSchema,
-  CreateDataModelRevisionSchema,
-  CreateDataModelSchema,
-  UpdateDataModelSchema,
   DataModelReleaseWhereSchema,
   DataModelRevisionWhereSchema,
   DataModelWhereSchema,
@@ -41,9 +37,13 @@ import {
 } from "@/app/api/v1/osograph/utils/model";
 import { PreviewData } from "@/lib/graphql/generated/graphql";
 import { MutationResolvers, QueryResolvers, ResolversTypes } from "../../types/generated/types";
+import { createResolver, ResolverTypeKeys } from "../../utils/resolver-builder";
+import { requireAuth, ensureOrgMembership, withValidation } from "../../utils/resolver-middleware";
+import { CreateDataModelInputSchema, CreateDataModelReleaseInputSchema, CreateDataModelRevisionInputSchema, UpdateDataModelInputSchema } from "../../types/generated/validation";
+import { Context } from "react-codemirror-merge/esm/store.js";
 
 type DataModelQueryResolvers = Pick<QueryResolvers, "dataModels">;
-type DataModelMutationResolvers = Pick<MutationResolvers, "createDataModel">;
+type DataModelMutationResolvers = Pick<Required<MutationResolvers>, "createDataModel" | "updateDataModel" | "createDataModelRevision" | "createDataModelRelease" | "deleteDataModel">;
 type DataModelResolverTypes = Pick<ResolversTypes, "DataModel" | "DataModelRevision" | "DataModelRelease">;
 
 type DataModelResolvers = {
@@ -65,286 +65,249 @@ const queryResolvers: DataModelQueryResolvers = {
   }
 }
 
-const mutations: DataModelMutationResolvers = {
-  createDataModel: async (
-    _,
-    args,
-    context
-  ) => {
-    throw new Error("Not implemented");
-  }
+function existingDataModelResolver<TResult extends ResolverTypeKeys, TSchema extends z.ZodSchema>(schema: TSchema, getExistingModelId: (input: z.infer<TSchema>) => string) {
+  return createResolver<TResult>()
+    .use(requireAuth())
+    .use(withValidation(schema))
+    .use(async (context, args) => {
+      const existingModelId = getExistingModelId(args.input);
+      const supabase = createAdminClient();
+      const { data: dataModel, error: dataModelError } = await supabase
+        .from("model")
+        .select("org_id")
+        .eq("id", existingModelId)
+        .single();
+      if (dataModelError || !dataModel) {
+        throw ResourceErrors.notFound("DataModel", args.input.dataModelId);
+      }
+      return {
+        context: {
+          ...context,
+          dataModel: dataModel,
+          supabase: supabase,
+        },
+        args,
+      }
+    })
+    .use(ensureOrgMembership(({ context }) => context.dataModel.org_id));
 }
 
-const mutationResolvers: DataModelMutationResolvers = {
-  createDataModel: async (
-    _: unknown,
-    {
-      input,
-    }: {
-      input: z.infer<typeof CreateDataModelSchema>;
-    },
-    context: GraphQLContext,
-  ) => {
-    const authenticatedUser = requireAuthentication(context.user);
-    const validatedInput = validateInput(CreateDataModelSchema, input);
-    await requireOrgMembership(
-      authenticatedUser.userId,
-      validatedInput.orgId,
-    );
+/**
+ * NEW STYLE MUTATION RESOLVERS:
+ * 
+ * Strongly typed, with middleware for authentication, validation, and org membership.
+ */
+const mutations: DataModelMutationResolvers = {
+  createDataModel: createResolver<"CreateDataModelPayload">()
+    .use(requireAuth())
+    .use(withValidation(CreateDataModelInputSchema()))
+    .use(ensureOrgMembership(({ args }) => args.input.orgId))
+    .resolve(async (_, { input }) => {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from("model")
+        .insert({
+          org_id: input.orgId,
+          dataset_id: input.datasetId,
+          name: input.name,
+          is_enabled: input.isEnabled ?? true,
+        })
+        .select()
+        .single();
 
-    const supabase = createAdminClient();
-    const { data, error } = await supabase
-      .from("model")
-      .insert({
-        org_id: validatedInput.orgId,
-        dataset_id: validatedInput.datasetId,
-        name: validatedInput.name,
-        is_enabled: validatedInput.isEnabled,
-      })
-      .select()
-      .single();
+      if (error) {
+        logger.error("Failed to create dataModel:", error);
+        throw ServerErrors.database("Failed to create dataModel");
+      }
 
-    if (error) {
-      logger.error("Failed to create dataModel:", error);
-      throw ServerErrors.database("Failed to create dataModel");
-    }
-
-    return {
-      success: true,
-      message: "DataModel created successfully",
-      dataModel: data,
-    };
-  },
-  updateDataModel: async (
-    _: unknown,
-    {
-      input,
-    }: {
-      input: z.infer<typeof UpdateDataModelSchema>;
-    },
-    context: GraphQLContext,
-  ) => {
-    const authenticatedUser = requireAuthentication(context.user);
-    const validatedInput = validateInput(UpdateDataModelSchema, input);
-    const supabase = createAdminClient();
-
-    const { data: dataModel, error: dataModelError } = await supabase
-      .from("model")
-      .select("org_id")
-      .eq("id", validatedInput.dataModelId)
-      .single();
-
-    if (dataModelError || !dataModel) {
-      throw ResourceErrors.notFound("DataModel", validatedInput.dataModelId);
-    }
-
-    await requireOrgMembership(authenticatedUser.userId, dataModel.org_id);
-
-    const updateData: ModelUpdate = {};
-    if (validatedInput.name !== undefined) {
-      updateData.name = validatedInput.name;
-    }
-    if (validatedInput.isEnabled !== undefined) {
-      updateData.is_enabled = validatedInput.isEnabled;
-    }
-    if (Object.keys(updateData).length > 0) {
-      updateData.updated_at = new Date().toISOString();
-    }
-
-    const { data, error } = await supabase
-      .from("model")
-      .update(updateData)
-      .eq("id", validatedInput.dataModelId)
-      .select()
-      .single();
-
-    if (error) {
-      logger.error("Failed to update dataModel:", error);
-      throw ServerErrors.database("Failed to update dataModel");
-    }
-
-    return {
-      success: true,
-      message: "DataModel updated successfully",
-      dataModel: data,
-    };
-  },
-  createDataModelRevision: async (
-    _: unknown,
-    { input }: { input: z.infer<typeof CreateDataModelRevisionSchema> },
-    context: GraphQLContext,
-  ) => {
-    const authenticatedUser = requireAuthentication(context.user);
-    const validatedInput = validateInput(
-      CreateDataModelRevisionSchema,
-      input,
-    );
-    const supabase = createAdminClient();
-
-    const { data: dataModel, error: dataModelError } = await supabase
-      .from("model")
-      .select("org_id")
-      .eq("id", validatedInput.dataModelId)
-      .single();
-
-    if (dataModelError || !dataModel) {
-      throw ResourceErrors.notFound("DataModel", validatedInput.dataModelId);
-    }
-
-    await requireOrgMembership(authenticatedUser.userId, dataModel.org_id);
-
-    const { data: latestRevision } = await supabase
-      .from("model_revision")
-      .select("*")
-      .eq("model_id", validatedInput.dataModelId)
-      .order("revision_number", { ascending: false })
-      .limit(1)
-      .single();
-
-    const hash = createHash("sha256")
-      .update(
-        JSON.stringify(
-          Object.entries(validatedInput).sort((a, b) =>
-            a[0].localeCompare(b[0]),
-          ),
-        ),
-      )
-      .digest("hex");
-
-    if (latestRevision?.hash === hash) {
       return {
         success: true,
-        message: "No changes detected, returning existing revision",
-        dataModelRevision: latestRevision,
+        message: "DataModel created successfully",
+        dataModel: data,
       };
-    }
+    }),
+  updateDataModel: existingDataModelResolver<"CreateDataModelPayload", ReturnType<typeof UpdateDataModelInputSchema>>(
+    UpdateDataModelInputSchema(),
+    (input) => input.dataModelId
+  )
+    .resolve(async (_, { input }, context) => {
+      const { supabase } = context;
+      const updateData: ModelUpdate = {};
+      if (input.name) {
+        updateData.name = input.name;
+      }
+      if (input.isEnabled !== undefined && input.isEnabled !== null) {
+        updateData.is_enabled = input.isEnabled;
+      }
+      if (Object.keys(updateData).length > 0) {
+        updateData.updated_at = new Date().toISOString();
+      }
 
-    const revisionNumber = (latestRevision?.revision_number || 0) + 1;
+      const { data, error } = await supabase
+        .from("model")
+        .update(updateData)
+        .eq("id", input.dataModelId)
+        .select()
+        .single();
 
-    const { data, error } = await supabase
-      .from("model_revision")
-      .insert({
-        org_id: dataModel.org_id,
-        model_id: validatedInput.dataModelId,
-        name: validatedInput.name,
-        description: validatedInput.description,
-        revision_number: revisionNumber,
-        hash,
-        language: validatedInput.language,
-        code: validatedInput.code,
-        cron: validatedInput.cron,
-        start: validatedInput.start?.toISOString() ?? null,
-        end: validatedInput.end?.toISOString() ?? null,
-        schema: validatedInput.schema.map((col) => ({
-          name: col.name,
-          type: col.type,
-          description: col.description ?? null,
-        })),
-        depends_on: validatedInput.dependsOn?.map((d) => ({
-          model_id: d.dataModelId,
-          alias: d.alias ?? null,
-        })),
-        partitioned_by: validatedInput.partitionedBy,
-        clustered_by: validatedInput.clusteredBy,
-        kind: validatedInput.kind,
-        kind_options: validatedInput.kindOptions
-          ? {
-              time_column: validatedInput.kindOptions.timeColumn ?? null,
+      if (error) {
+        logger.error("Failed to update dataModel:", error);
+        throw ServerErrors.database("Failed to update dataModel");
+      }
+
+      return {
+        success: true,
+        message: "DataModel updated successfully",
+        dataModel: data,
+      };
+    }),
+  createDataModelRevision: existingDataModelResolver<"CreateDataModelRevisionPayload", ReturnType<typeof CreateDataModelRevisionInputSchema>>(
+    CreateDataModelRevisionInputSchema(),
+    (input) => input.dataModelId
+  )
+    .resolve(async (_, { input }, context) => {
+      const { supabase, dataModel } = context;
+      const { data: latestRevision } = await supabase
+        .from("model_revision")
+        .select("*")
+        .eq("model_id", input.dataModelId)
+        .order("revision_number", { ascending: false })
+        .limit(1)
+        .single();
+
+      const hash = createHash("sha256")
+        .update(
+          JSON.stringify(
+            Object.entries(input).sort((a, b) =>
+              a[0].localeCompare(b[0]),
+            ),
+          ),
+        )
+        .digest("hex");
+
+      if (latestRevision?.hash === hash) {
+        return {
+          success: true,
+          message: "No changes detected, returning existing revision",
+          dataModelRevision: latestRevision,
+        };
+      }
+
+      const revisionNumber = (latestRevision?.revision_number || 0) + 1;
+
+      const { data, error } = await supabase
+        .from("model_revision")
+        .insert({
+          org_id: dataModel.org_id,
+          model_id: input.dataModelId,
+          name: input.name,
+          description: input.description,
+          revision_number: revisionNumber,
+          hash,
+          language: input.language,
+          code: input.code,
+          cron: input.cron,
+          start: input.start?.toISOString() ?? null,
+          end: input.end?.toISOString() ?? null,
+          schema: input.schema.map((col) => ({
+            name: col.name,
+            type: col.type,
+            description: col.description ?? null,
+          })),
+          depends_on: input.dependsOn?.map((d) => ({
+            model_id: d.dataModelId,
+            alias: d.alias ?? null,
+          })),
+          partitioned_by: input.partitionedBy,
+          clustered_by: input.clusteredBy,
+          kind: input.kind,
+          kind_options: input.kindOptions
+            ? {
+              time_column: input.kindOptions.timeColumn ?? null,
               time_column_format:
-                validatedInput.kindOptions.timeColumnFormat ?? null,
-              batch_size: validatedInput.kindOptions.batchSize ?? null,
-              lookback: validatedInput.kindOptions.lookback ?? null,
+                input.kindOptions.timeColumnFormat ?? null,
+              batch_size: input.kindOptions.batchSize ?? null,
+              lookback: input.kindOptions.lookback ?? null,
               unique_key_columns:
-                validatedInput.kindOptions.uniqueKeyColumns ?? null,
+                input.kindOptions.uniqueKeyColumns ?? null,
               when_matched_sql:
-                validatedInput.kindOptions.whenMatchedSql ?? null,
-              merge_filter: validatedInput.kindOptions.mergeFilter ?? null,
+                input.kindOptions.whenMatchedSql ?? null,
+              merge_filter: input.kindOptions.mergeFilter ?? null,
               valid_from_name:
-                validatedInput.kindOptions.validFromName ?? null,
-              valid_to_name: validatedInput.kindOptions.validToName ?? null,
+                input.kindOptions.validFromName ?? null,
+              valid_to_name: input.kindOptions.validToName ?? null,
               invalidate_hard_deletes:
-                validatedInput.kindOptions.invalidateHardDeletes ?? null,
+                input.kindOptions.invalidateHardDeletes ?? null,
               updated_at_column:
-                validatedInput.kindOptions.updatedAtColumn ?? null,
+                input.kindOptions.updatedAtColumn ?? null,
               updated_at_as_valid_from:
-                validatedInput.kindOptions.updatedAtAsValidFrom ?? null,
-              scd_columns: validatedInput.kindOptions.scdColumns ?? null,
+                input.kindOptions.updatedAtAsValidFrom ?? null,
+              scd_columns: input.kindOptions.scdColumns ?? null,
               execution_time_as_valid_from:
-                validatedInput.kindOptions.executionTimeAsValidFrom ?? null,
+                input.kindOptions.executionTimeAsValidFrom ?? null,
             }
-          : null,
-      })
-      .select()
-      .single();
+            : null,
+        })
+        .select()
+        .single();
 
-    if (error) {
-      logger.error("Failed to create dataModel revision:", error);
-      throw ServerErrors.database("Failed to create dataModel revision");
-    }
+      if (error) {
+        logger.error("Failed to create dataModel revision:", error);
+        throw ServerErrors.database("Failed to create dataModel revision");
+      }
 
-    return {
-      success: true,
-      message: "DataModel revision created successfully",
-      dataModelRevision: data,
-    };
-  },
-  createDataModelRelease: async (
-    _: unknown,
-    { input }: { input: z.infer<typeof CreateDataModelReleaseSchema> },
-    context: GraphQLContext,
-  ) => {
-    const authenticatedUser = requireAuthentication(context.user);
-    const validatedInput = validateInput(CreateDataModelReleaseSchema, input);
-    const supabase = createAdminClient();
+      return {
+        success: true,
+        message: "DataModel revision created successfully",
+        dataModelRevision: data,
+      };
+    }),
+  createDataModelRelease: existingDataModelResolver<"CreateDataModelReleasePayload", ReturnType<typeof CreateDataModelReleaseInputSchema>>(
+    CreateDataModelReleaseInputSchema(),
+    (input) => input.dataModelId
+  )
+    .resolve(async (_, { input }, context) => {
+      const { supabase, dataModel } = context;
+      const { error: revisionError } = await supabase
+        .from("model_revision")
+        .select("id")
+        .eq("id", input.dataModelRevisionId)
+        .eq("model_id", input.dataModelId)
+        .single();
 
-    const { data: dataModel, error: dataModelError } = await supabase
-      .from("model")
-      .select("org_id")
-      .eq("id", validatedInput.dataModelId)
-      .single();
+      if (revisionError) {
+        throw ResourceErrors.notFound(
+          "DataModelRevision",
+          input.dataModelRevisionId,
+        );
+      }
 
-    if (dataModelError || !dataModel) {
-      throw ResourceErrors.notFound("DataModel", validatedInput.dataModelId);
-    }
+      const { data, error } = await supabase
+        .from("model_release")
+        .upsert({
+          org_id: dataModel.org_id,
+          model_id: input.dataModelId,
+          model_revision_id: input.dataModelRevisionId,
+          description: input.description,
+        })
+        .select()
+        .single();
 
-    await requireOrgMembership(authenticatedUser.userId, dataModel.org_id);
+      if (error) {
+        logger.error("Failed to create dataModel release:", error);
+        throw ServerErrors.database("Failed to create dataModel release");
+      }
 
-    const { error: revisionError } = await supabase
-      .from("model_revision")
-      .select("id")
-      .eq("id", validatedInput.dataModelRevisionId)
-      .eq("model_id", validatedInput.dataModelId)
-      .single();
+      return {
+        success: true,
+        message: "DataModel release created successfully",
+        dataModelRelease: data,
+      };
+    }),
+}
 
-    if (revisionError) {
-      throw ResourceErrors.notFound(
-        "DataModelRevision",
-        validatedInput.dataModelRevisionId,
-      );
-    }
-
-    const { data, error } = await supabase
-      .from("model_release")
-      .upsert({
-        org_id: dataModel.org_id,
-        model_id: validatedInput.dataModelId,
-        model_revision_id: validatedInput.dataModelRevisionId,
-        description: validatedInput.description,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      logger.error("Failed to create dataModel release:", error);
-      throw ServerErrors.database("Failed to create dataModel release");
-    }
-
-    return {
-      success: true,
-      message: "DataModel release created successfully",
-      dataModelRelease: data,
-    };
-  },
+// OLD STYLE
+const mutationResolvers: DataModelMutationResolvers = {
   deleteDataModel: async (
     _: unknown,
     { id }: { id: string },
@@ -403,7 +366,7 @@ export const dataModelResolvers: DataModelResolvers = {
     },
   },
   Mutation: {
-    
+
   },
   DataModel: {
     orgId: (parent: { org_id: string }) => parent.org_id,

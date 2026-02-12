@@ -22,10 +22,6 @@
  */
 
 import { z } from "zod";
-import {
-  getAuthenticatedClient,
-  getOrgScopedClient,
-} from "@/app/api/v1/osograph/utils/access-control";
 import { validateInput } from "@/app/api/v1/osograph/utils/validation";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import type {
@@ -33,6 +29,7 @@ import type {
   OrgAccessContext,
 } from "@/app/api/v1/osograph/types/enhanced-context";
 import type { Middleware } from "@/app/api/v1/osograph/utils/resolver-builder";
+import { requireAuthentication, requireOrgMembership as legacyRequireOrgMembership } from "./auth";
 
 /**
  * Authentication enhancer - validates that the user is authenticated.
@@ -63,12 +60,11 @@ export function requireAuth<TArgs>(): Middleware<
   TArgs
 > {
   return async (context, args) => {
-    const { client, userId } = getAuthenticatedClient(context);
+    const authenticatedUser = requireAuthentication(context.user);
 
     const enhancedContext: AuthenticatedContext = {
       ...context,
-      client,
-      userId,
+      authenticatedUser,
     } as AuthenticatedContext;
 
     return { context: enhancedContext, args };
@@ -79,8 +75,8 @@ export function requireAuth<TArgs>(): Middleware<
  * Organization access enhancer - validates that the user is a member of the specified organization.
  *
  * Enhances the context with:
- * - `client`: Supabase admin client
- * - `userId`: The authenticated user's ID
+ * - `authenticatedUser`: The authenticated user's information
+ * - `authenticatedUser`: The authenticated user's ID
  * - `orgRole`: The user's role in the organization (owner, admin, or member)
  * - `orgId`: The organization ID being accessed
  *
@@ -94,30 +90,28 @@ export function requireAuth<TArgs>(): Middleware<
  * ```typescript
  * createResolver<CreateDatasetPayload>()
  *   .use(withValidation(CreateDatasetSchema))
- *   .use(requireOrgAccess((args) => args.input.orgId))
+ *   .use(requireOrgMembership((args) => args.input.orgId))
  *   .resolve(async (parent, args, context) => {
  *     // context.client, context.orgRole, context.orgId are now available
  *     const isAdmin = context.orgRole === 'admin' || context.orgRole === 'owner';
  *   });
  * ```
  */
-export function requireOrgAccess<TArgs>(
-  getOrgId: (args: TArgs) => string,
-): Middleware<GraphQLContext, OrgAccessContext<TArgs>, TArgs, TArgs> {
+export function ensureOrgMembership<TArgs, TContext extends AuthenticatedContext>(
+  getOrgId: (options: { context: TContext, args: TArgs }) => string,
+): Middleware<TContext, OrgAccessContext<TContext>, TArgs, TArgs> {
   return async (context, args) => {
-    const orgId = getOrgId(args);
-    const { client, orgRole, userId } = await getOrgScopedClient(
-      context,
+    const orgId = getOrgId({ context, args });
+
+    await legacyRequireOrgMembership(
+      context.authenticatedUser.userId,
       orgId,
     );
 
-    const enhancedContext: OrgAccessContext<TArgs> = {
+    const enhancedContext: OrgAccessContext<TContext> = {
       ...context,
-      client,
-      orgRole,
-      userId,
       orgId,
-    } as OrgAccessContext<TArgs>;
+    } as OrgAccessContext<TContext>;
 
     return { context: enhancedContext, args };
   };
@@ -146,11 +140,11 @@ export function requireOrgAccess<TArgs>(
  *   });
  * ```
  */
-export function withValidation<TSchema extends z.ZodSchema>(
+export function withValidation<TContext extends GraphQLContext, TSchema extends z.ZodSchema>(
   schema: TSchema,
 ): Middleware<
-  GraphQLContext,
-  GraphQLContext,
+  TContext,
+  TContext,
   any,
   { input: z.infer<TSchema> }
 > {
