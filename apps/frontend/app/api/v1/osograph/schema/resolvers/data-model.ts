@@ -36,11 +36,10 @@ import {
   generateTableId,
 } from "@/app/api/v1/osograph/utils/model";
 import { PreviewData } from "@/lib/graphql/generated/graphql";
-import { MutationResolvers, QueryResolvers, ResolversTypes } from "../../types/generated/types";
+import { MutationResolvers, QueryResolvers, ResolversTypes } from "@/app/api/v1/osograph/types/generated/types";
 import { createResolver, ResolverTypeKeys } from "../../utils/resolver-builder";
 import { requireAuth, ensureOrgMembership, withValidation } from "../../utils/resolver-middleware";
-import { CreateDataModelInputSchema, CreateDataModelReleaseInputSchema, CreateDataModelRevisionInputSchema, UpdateDataModelInputSchema } from "../../types/generated/validation";
-import { Context } from "react-codemirror-merge/esm/store.js";
+import { CreateDataModelInputSchema, CreateDataModelReleaseInputSchema, CreateDataModelRevisionInputSchema, UpdateDataModelInputSchema } from "@/app/api/v1/osograph/types/generated/validation";
 
 type DataModelQueryResolvers = Pick<QueryResolvers, "dataModels">;
 type DataModelMutationResolvers = Pick<Required<MutationResolvers>, "createDataModel" | "updateDataModel" | "createDataModelRevision" | "createDataModelRelease" | "deleteDataModel">;
