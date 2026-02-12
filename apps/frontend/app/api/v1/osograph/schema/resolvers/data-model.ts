@@ -37,12 +37,12 @@ import {
   createResolver,
   createResolversCollection,
   ResolverBuilder,
-} from "@/apps/frontend/app/api/v1/osograph/utils/resolver-builder";
+} from "@/app/api/v1/osograph/utils/resolver-builder";
 import {
   requireAuth,
   ensureOrgMembership,
   withValidation,
-} from "@/apps/frontend/app/api/v1/osograph/utils/resolver-middleware";
+} from "@/app/api/v1/osograph/utils/resolver-middleware";
 import {
   CreateDataModelInputSchema,
   CreateDataModelReleaseInputSchema,
