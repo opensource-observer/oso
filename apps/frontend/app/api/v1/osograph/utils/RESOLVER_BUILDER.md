@@ -1,6 +1,12 @@
-# Resolver Builder - Type-Safe GraphQL Resolver Development
+# Resolver Builders - Type-Safe GraphQL Resolver Development
 
-The resolver builder is a fluent API for creating GraphQL resolvers with compile-time type safety, composable middleware, and reduced boilerplate code.
+The resolver builder is a fluent API for creating GraphQL resolvers with
+compile-time type safety, composable middleware, and reduced boilerplate code.
+We use the `typescript-resolvers` generated types as the basis for our resolver
+defintions and the builder interface ensures that our resolvers always conform
+to the expected types while allowing us to easily add common functionality like
+authentication, authorization, validation, and logging through reusable
+middleware.
 
 ## Table of Contents
 

@@ -24,9 +24,14 @@
 import type { GraphQLResolveInfo } from "graphql";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import type {
+  MutationResolvers,
+  QueryResolvers,
+  Resolver,
   ResolverFn,
   ResolversTypes,
 } from "@/app/api/v1/osograph/types/generated/types";
+
+type EmptyObject = object;
 
 /**
  * Handler function for a resolver after all middleware have been applied.
@@ -87,7 +92,7 @@ export type Middleware<TInputContext, TOutputContext, TInputArgs, TOutputArgs> =
  * @template TContext - The current context type (enhanced by previous .use() calls)
  * @template TArgs - The current args type (enhanced by previous .use() calls)
  */
-class ResolverBuilder<TResult, TParent, TContext, TArgs> {
+export class ResolverBuilder<TResult, TParent, TContext, TArgs> {
   /**
    * Constructor stores a function that applies all middleware up to this point.
    *
@@ -174,38 +179,210 @@ class ResolverBuilder<TResult, TParent, TContext, TArgs> {
   }
 }
 
+type IsExactlyUnknown<T> = [T] extends [unknown]
+  ? [unknown] extends [T]
+    ? true
+    : false
+  : false;
+
 export type ResolverTypeKeys = keyof ResolversTypes;
+export type QueryResolverTypeKeys = keyof QueryResolvers;
+export type MutationResolverTypeKeys = keyof MutationResolvers;
+
+type InferParentIfResolver<T> =
+  T extends Resolver<any, infer P, any, any> ? P : unknown;
+type InferArgsIfResolver<T> =
+  T extends Resolver<any, any, any, infer A> ? A : unknown;
+type InferContextIfResolver<T> =
+  T extends Resolver<any, any, infer C, any> ? C : unknown;
+type InferResultIfResolver<T> =
+  T extends Resolver<infer R, any, any, any> ? R : unknown;
+
+type ResolveParent<TFn, TParent> =
+  IsExactlyUnknown<TParent> extends true ? InferParentIfResolver<TFn> : TParent;
+
+type ResolveArgs<TFn, TArgs> =
+  IsExactlyUnknown<TArgs> extends true ? InferArgsIfResolver<TFn> : TArgs;
+
+type ResolveContext<TFn, TContext> =
+  IsExactlyUnknown<TContext> extends true
+    ? InferContextIfResolver<TFn>
+    : TContext;
+
+export type AssertIsResolver<T> =
+  T extends Resolver<any, any, any, any> ? T : never;
 
 /**
- * Create a new resolver builder.
+ * Allows creating a resolver builder with a fluent API for adding middleware
+ * and building a resolver function. This ensures type safety and hopefully
+ * reduces boilerplate when creating GraphQL resolvers.
  *
- * This is the entry point for creating resolvers with the builder pattern.
+ * Type parameters are inferred from the final resolver handler, so should only
+ * need to specify the TResolvers and TResolverKey when creating a builder.
  *
- * @template TResult - The return type of the resolver (should match a GraphQL type)
- * @template TParent - The parent object type (defaults to any for root resolvers)
- * @template TArgs - The args type (defaults to any, will be narrowed by validation)
- * @returns A new ResolverBuilder instance
+ * @template TResolversCollection - The type containing all resolvers (e.g. QueryResolvers)
+ * @template TResolverKey - The specific resolver key to build (e.g. "dataModels")
+ * @template TResolver - The resolver type inferred from TResolvers[TResolverKey]
+ * @template TResult - The return type of the resolver (inferred from TResolver)
+ * @template TParent - The parent object type (for field resolvers, inferred from TResolver)
+ * @template TContext - The context type for the resolver (inferred from TResolver)
+ * @template TArgs - The arguments type for the resolver (inferred from TResolver)
  *
- * Example:
- * ```typescript
- * export const myMutation = createResolver<MyMutationPayload>()
- *   .use(withValidation(MySchema))
- *   .use(requireOrgAccess((args) => args.input.orgId))
- *   .resolve(async (parent, args, context) => {
- *     // Implementation
- *   });
- * ```
+ * @returns A ResolverBuilder instance with the specified type parameters
  */
 export function createResolver<
-  TResult extends ResolverTypeKeys,
-  TParent = any,
-  TArgs = any,
->(): ResolverBuilder<ResolversTypes[TResult], TParent, GraphQLContext, TArgs> {
-  // Start with an identity middleware (no-op)
-  return new ResolverBuilder<
-    ResolversTypes[TResult],
+  TResolversCollection,
+  TResolverKey extends string & keyof TResolversCollection,
+  TResolver extends Resolver<
+    TResult,
     TParent,
-    GraphQLContext,
+    TContext,
     TArgs
-  >(async (context, args) => ({ context, args }));
+  > = AssertIsResolver<TResolversCollection[TResolverKey]>,
+  TResult = InferResultIfResolver<TResolver>,
+  TParent = InferParentIfResolver<TResolver>,
+  TContext = InferContextIfResolver<TResolver>,
+  TArgs = InferArgsIfResolver<TResolver>,
+>(): ResolverBuilder<
+  TResult,
+  ResolveParent<TResolver, TParent>,
+  ResolveContext<TResolver, TContext>,
+  ResolveArgs<TResolver, TArgs>
+> {
+  // Start with an identity middleware (no-op)
+  return new ResolverBuilder(async (context, args) => ({ context, args }));
+}
+
+interface CollectionBuilder<
+  TResolversCollection,
+  TCompletedResolvers = EmptyObject,
+> {
+  define<
+    TKey extends string & keyof TResolversCollection,
+    TNewCompletedResolvers = TCompletedResolvers & {
+      [K in TKey]: TResolversCollection[TKey];
+    },
+  >(
+    key: TKey,
+    resolver: TResolversCollection[TKey],
+  ): CollectionBuilder<TResolversCollection, TNewCompletedResolvers>;
+  defineWithBuilder<
+    TKey extends string & keyof TResolversCollection,
+    TNewCompletedResolvers = TCompletedResolvers & {
+      [K in TKey]: TResolversCollection[TKey];
+    },
+    TResolver extends Resolver<any, any, any, any> = AssertIsResolver<
+      TResolversCollection[TKey]
+    >,
+    TResult = InferResultIfResolver<TResolver>,
+    TParent = InferParentIfResolver<TResolver>,
+    TContext = InferContextIfResolver<TResolver>,
+    TArgs = InferArgsIfResolver<TResolver>,
+  >(
+    key: TKey,
+    builderFn: (
+      builder: ResolverBuilder<
+        TResult,
+        ResolveParent<TResolver, TParent>,
+        ResolveContext<TResolver, TContext>,
+        ResolveArgs<TResolver, TArgs>
+      >,
+    ) => Resolver<TResult, TParent, TContext, TArgs>,
+  ): CollectionBuilder<TResolversCollection, TNewCompletedResolvers>;
+  resolvers(): TCompletedResolvers;
+}
+
+/**
+ * Define a group of resolvers (e.g. all Query resolvers) with a fluent API.
+ *
+ * This allows you to build up a collection of resolvers with type safety and less boilerplate.
+ * Each call to .define() or .defineWithBuilder() adds a resolver to the collection.
+ * The .resolvers() method returns the completed collection, which can be spread into the final resolvers export.
+ *
+ * @template TResolversCollection - The type containing all resolvers (e.g. QueryResolvers)
+ * @template TCompletedResolvers - The type of resolvers that have been defined so far (used for type safety)
+ * @param accumulated - The accumulated resolvers so far (usually not passed in directly, used for recursion)
+ *
+ * @returns A collection builder for defining resolvers
+ */
+export function createResolversCollection<
+  TResolversCollection,
+  TCompletedResolvers = EmptyObject,
+>(
+  accumulated?: TCompletedResolvers,
+): CollectionBuilder<TResolversCollection, TCompletedResolvers> {
+  const add = <
+    TKey extends string & keyof TResolversCollection,
+    TNewCompletedResolvers = TCompletedResolvers & {
+      [K in TKey]: TResolversCollection[TKey];
+    },
+  >(
+    key: TKey,
+    resolver: TResolversCollection[TKey],
+  ): CollectionBuilder<TResolversCollection, TNewCompletedResolvers> => {
+    const newAccumulated = {
+      ...accumulated,
+      [key]: resolver,
+    } as TNewCompletedResolvers;
+    return createResolversCollection<
+      TResolversCollection,
+      TNewCompletedResolvers
+    >(newAccumulated);
+  };
+  return {
+    define<
+      TKey extends string & keyof TResolversCollection,
+      TCompletedResolvers = EmptyObject,
+      TNewCompletedResolvers = TCompletedResolvers & {
+        [K in TKey]: TResolversCollection[K];
+      },
+    >(key: TKey, resolver: TResolversCollection[TKey]) {
+      return add<TKey, TNewCompletedResolvers>(key, resolver);
+    },
+    defineWithBuilder<
+      TKey extends string & keyof TResolversCollection,
+      TNewCompletedResolvers = TCompletedResolvers & {
+        [K in TKey]: TResolversCollection[K];
+      },
+      TResolver extends Resolver<any, any, any, any> = AssertIsResolver<
+        TResolversCollection[TKey]
+      >,
+      TResult = InferResultIfResolver<TResolver>,
+      TParent = InferParentIfResolver<TResolver>,
+      TContext = InferContextIfResolver<TResolver>,
+      TArgs = InferArgsIfResolver<TResolver>,
+    >(
+      key: TKey,
+      builderFn: (
+        builder: ResolverBuilder<
+          TResult,
+          ResolveParent<TResolver, TParent>,
+          ResolveContext<TResolver, TContext>,
+          ResolveArgs<TResolver, TArgs>
+        >,
+      ) => Resolver<TResult, TParent, TContext, TArgs>,
+    ) {
+      const builder = createResolver<
+        TResolversCollection,
+        TKey,
+        TResolver,
+        TResult,
+        TParent,
+        TContext,
+        TArgs
+      >();
+      const builtResolver = builderFn(builder) as TResolversCollection[TKey];
+      return add<TKey, TNewCompletedResolvers>(key, builtResolver);
+    },
+    resolvers() {
+      // This is a bit of a hack - we need to return the accumulated resolvers,
+      // but since we're not storing them in an array, we can't actually accumulate them.
+      // In practice, this means you can only call .add() once per collection, which is a limitation.
+      // To fully implement this with multiple .add() calls, we'd need to change the design to store resolvers in an array or similar structure.
+      if (!accumulated) {
+        throw new Error("No resolvers defined");
+      }
+      return accumulated;
+    },
+  };
 }

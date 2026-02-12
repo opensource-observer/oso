@@ -29,7 +29,10 @@ import type {
   OrgAccessContext,
 } from "@/app/api/v1/osograph/types/enhanced-context";
 import type { Middleware } from "@/app/api/v1/osograph/utils/resolver-builder";
-import { requireAuthentication, requireOrgMembership as legacyRequireOrgMembership } from "./auth";
+import {
+  requireAuthentication,
+  requireOrgMembership as legacyRequireOrgMembership,
+} from "@/apps/frontend/app/api/v1/osograph/utils/auth";
 
 /**
  * Authentication enhancer - validates that the user is authenticated.
@@ -97,16 +100,16 @@ export function requireAuth<TArgs>(): Middleware<
  *   });
  * ```
  */
-export function ensureOrgMembership<TArgs, TContext extends AuthenticatedContext>(
-  getOrgId: (options: { context: TContext, args: TArgs }) => string,
+export function ensureOrgMembership<
+  TArgs,
+  TContext extends AuthenticatedContext,
+>(
+  getOrgId: (options: { context: TContext; args: TArgs }) => string,
 ): Middleware<TContext, OrgAccessContext<TContext>, TArgs, TArgs> {
   return async (context, args) => {
     const orgId = getOrgId({ context, args });
 
-    await legacyRequireOrgMembership(
-      context.authenticatedUser.userId,
-      orgId,
-    );
+    await legacyRequireOrgMembership(context.authenticatedUser.userId, orgId);
 
     const enhancedContext: OrgAccessContext<TContext> = {
       ...context,
@@ -140,16 +143,14 @@ export function ensureOrgMembership<TArgs, TContext extends AuthenticatedContext
  *   });
  * ```
  */
-export function withValidation<TContext extends GraphQLContext, TSchema extends z.ZodSchema>(
+export function withValidation<
+  TContext extends GraphQLContext,
+  TSchema extends z.ZodSchema,
+>(
   schema: TSchema,
-): Middleware<
-  TContext,
-  TContext,
-  any,
-  { input: z.infer<TSchema> }
-> {
+): Middleware<TContext, TContext, any, { input: z.infer<TSchema> }> {
   return async (context, args) => {
-    const validatedInput = validateInput(schema, args.input);
+    const validatedInput = validateInput<z.infer<TSchema>>(schema, args.input);
 
     return {
       context,

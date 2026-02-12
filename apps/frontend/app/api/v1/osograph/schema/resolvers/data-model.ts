@@ -29,13 +29,14 @@ import { z } from "zod";
 import {
   MutationResolvers,
   QueryResolvers,
-  DataModelResolvers as DataModelFieldResolvers,
+  DataModelResolvers,
   DataModelRevisionResolvers as DataModelRevisionFieldResolvers,
   DataModelReleaseResolvers as DataModelReleaseFieldResolvers,
 } from "@/app/api/v1/osograph/types/generated/types";
 import {
   createResolver,
-  ResolverTypeKeys,
+  createResolversCollection,
+  ResolverBuilder,
 } from "@/apps/frontend/app/api/v1/osograph/utils/resolver-builder";
 import {
   requireAuth,
@@ -60,19 +61,28 @@ type DataModelMutationResolvers = Pick<
   | "deleteDataModel"
 >;
 
-type DataModelResolvers = {
+type DataModelRelatedResolvers = {
   Query: DataModelQueryResolvers;
   Mutation: DataModelMutationResolvers;
-  DataModel: DataModelFieldResolvers;
+  DataModel: DataModelResolvers;
   DataModelRevision: DataModelRevisionFieldResolvers;
   DataModelRelease: DataModelReleaseFieldResolvers;
 };
 
-function existingDataModelResolver<
-  TResult extends ResolverTypeKeys,
-  TSchema extends z.ZodSchema,
->(schema: TSchema, getExistingModelId: (input: z.infer<TSchema>) => string) {
-  return createResolver<TResult>()
+/**
+ * Common middleware for mutations that operate on an existing DataModel.
+ *
+ * @param builder
+ * @param schema
+ * @param getExistingModelId
+ * @returns
+ */
+function existingDataModelMiddleware<TSchema extends z.ZodSchema>(
+  builder: ResolverBuilder<any, any, any, any>,
+  schema: TSchema,
+  getExistingModelId: (input: z.infer<TSchema>) => string,
+) {
+  return builder
     .use(requireAuth())
     .use(withValidation(schema))
     .use(async (context, args) => {
@@ -98,45 +108,42 @@ function existingDataModelResolver<
     .use(ensureOrgMembership(({ context }) => context.dataModel.org_id));
 }
 
-/**
- * NEW STYLE MUTATION RESOLVERS:
- *
- * Strongly typed, with middleware for authentication, validation, and org membership.
- */
-const mutations: DataModelMutationResolvers = {
-  createDataModel: createResolver<"CreateDataModelPayload">()
-    .use(requireAuth())
-    .use(withValidation(CreateDataModelInputSchema()))
-    .use(ensureOrgMembership(({ args }) => args.input.orgId))
-    .resolve(async (_, { input }) => {
-      const supabase = createAdminClient();
-      const { data, error } = await supabase
-        .from("model")
-        .insert({
-          org_id: input.orgId,
-          dataset_id: input.datasetId,
-          name: input.name,
-          is_enabled: input.isEnabled ?? true,
-        })
-        .select()
-        .single();
+const mutations = createResolversCollection<DataModelMutationResolvers>()
+  .defineWithBuilder("createDataModel", (builder) => {
+    return builder
+      .use(requireAuth())
+      .use(withValidation(CreateDataModelInputSchema()))
+      .use(ensureOrgMembership(({ args }) => args.input.orgId))
+      .resolve(async (_, { input }, _context) => {
+        const supabase = createAdminClient();
+        const { data, error } = await supabase
+          .from("model")
+          .insert({
+            org_id: input.orgId,
+            dataset_id: input.datasetId,
+            name: input.name,
+            is_enabled: input.isEnabled ?? true,
+          })
+          .select()
+          .single();
 
-      if (error) {
-        logger.error("Failed to create dataModel:", error);
-        throw ServerErrors.database("Failed to create dataModel");
-      }
-
-      return {
-        success: true,
-        message: "DataModel created successfully",
-        dataModel: data,
-      };
-    }),
-  updateDataModel: existingDataModelResolver<
-    "CreateDataModelPayload",
-    ReturnType<typeof UpdateDataModelInputSchema>
-  >(UpdateDataModelInputSchema(), (input) => input.dataModelId).resolve(
-    async (_, { input }, context) => {
+        if (error) {
+          logger.error("Failed to create dataModel:", error);
+          throw ServerErrors.database("Failed to create dataModel");
+        }
+        return {
+          success: true,
+          message: "DataModel created successfully",
+          dataModel: data,
+        };
+      });
+  })
+  .defineWithBuilder("updateDataModel", (builder) => {
+    return existingDataModelMiddleware(
+      builder,
+      UpdateDataModelInputSchema(),
+      (input) => input.dataModelId,
+    ).resolve(async (_, { input }, context) => {
       const { supabase } = context;
       const updateData: ModelUpdate = {};
       if (input.name) {
@@ -166,13 +173,14 @@ const mutations: DataModelMutationResolvers = {
         message: "DataModel updated successfully",
         dataModel: data,
       };
-    },
-  ),
-  createDataModelRevision: existingDataModelResolver<
-    "CreateDataModelRevisionPayload",
-    ReturnType<typeof CreateDataModelRevisionInputSchema>
-  >(CreateDataModelRevisionInputSchema(), (input) => input.dataModelId).resolve(
-    async (_, { input }, context) => {
+    });
+  })
+  .defineWithBuilder("createDataModelRevision", (builder) => {
+    return existingDataModelMiddleware(
+      builder,
+      CreateDataModelRevisionInputSchema(),
+      (input) => input.dataModelId,
+    ).resolve(async (_, { input }, context) => {
       const { supabase, dataModel } = context;
       const { data: latestRevision } = await supabase
         .from("model_revision")
@@ -261,13 +269,14 @@ const mutations: DataModelMutationResolvers = {
         message: "DataModel revision created successfully",
         dataModelRevision: data,
       };
-    },
-  ),
-  createDataModelRelease: existingDataModelResolver<
-    "CreateDataModelReleasePayload",
-    ReturnType<typeof CreateDataModelReleaseInputSchema>
-  >(CreateDataModelReleaseInputSchema(), (input) => input.dataModelId).resolve(
-    async (_, { input }, context) => {
+    });
+  })
+  .defineWithBuilder("createDataModelRelease", (builder) => {
+    return existingDataModelMiddleware(
+      builder,
+      CreateDataModelReleaseInputSchema(),
+      (input) => input.dataModelId,
+    ).resolve(async (_, { input }, context) => {
       const { supabase, dataModel } = context;
       const { error: revisionError } = await supabase
         .from("model_revision")
@@ -304,53 +313,57 @@ const mutations: DataModelMutationResolvers = {
         message: "DataModel release created successfully",
         dataModelRelease: data,
       };
-    },
-  ),
-  deleteDataModel: createResolver<"SimplePayload">()
-    .use(requireAuth())
-    //.use(withValidation(z.object({ id: z.string().uuid() })))
-    .use(async (context, args) => {
-      // Custom middleware: fetch model and validate org access
-      const supabase = createAdminClient();
-      const { data: dataModel, error } = await supabase
-        .from("model")
-        .select("org_id")
-        .eq("id", args.input.id)
-        .single();
+    });
+  })
+  .defineWithBuilder("deleteDataModel", (builder) => {
+    return (
+      builder
+        .use(requireAuth())
+        //.use(withValidation(z.object({ id: z.string().uuid() })))
+        .use(async (context, args) => {
+          // Custom middleware: fetch model and validate org access
+          const supabase = createAdminClient();
+          const { data: dataModel, error } = await supabase
+            .from("model")
+            .select("org_id")
+            .eq("id", args.id)
+            .single();
 
-      if (error || !dataModel) {
-        throw ResourceErrors.notFound("DataModel", args.input.id);
-      }
+          if (error || !dataModel) {
+            throw ResourceErrors.notFound("DataModel", args.id);
+          }
 
-      await requireOrgMembership(
-        context.authenticatedUser.userId,
-        dataModel.org_id,
-      );
+          await requireOrgMembership(
+            context.authenticatedUser.userId,
+            dataModel.org_id,
+          );
 
-      return {
-        context: { ...context, dataModel, supabase },
-        args,
-      };
-    })
-    .resolve(async (_, { input }, context) => {
-      const { supabase } = context;
-      const { error } = await supabase
-        .from("model")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", input.id);
+          return {
+            context: { ...context, dataModel, supabase },
+            args,
+          };
+        })
+        .resolve(async (_, { id }, context) => {
+          const { supabase } = context;
+          const { error } = await supabase
+            .from("model")
+            .update({ deleted_at: new Date().toISOString() })
+            .eq("id", id);
 
-      if (error) {
-        throw ServerErrors.database(
-          `Failed to delete data model: ${error.message}`,
-        );
-      }
+          if (error) {
+            throw ServerErrors.database(
+              `Failed to delete data model: ${error.message}`,
+            );
+          }
 
-      return {
-        success: true,
-        message: "DataModel deleted successfully",
-      };
-    }),
-};
+          return {
+            success: true,
+            message: "DataModel deleted successfully",
+          };
+        })
+    );
+  })
+  .resolvers();
 
 /**
  * QUERY RESOLVERS:
@@ -377,7 +390,7 @@ const queries: DataModelQueryResolvers = {
  * Type resolvers for DataModel, DataModelRevision, and DataModelRelease.
  */
 const dataModelTypeResolvers: Pick<
-  DataModelResolvers,
+  DataModelRelatedResolvers,
   "DataModel" | "DataModelRevision" | "DataModelRelease"
 > = {
   DataModel: {
@@ -472,7 +485,7 @@ const dataModelTypeResolvers: Pick<
         generateTableId("USER_MODEL", parent.id),
       );
     },
-    previewData: createResolver<"PreviewData">()
+    previewData: createResolver<DataModelResolvers, "previewData">()
       .use(requireAuth())
       .resolve(async (parent, _args, context) => {
         const tableId = generateTableId("USER_MODEL", parent.id);
@@ -576,7 +589,7 @@ const dataModelTypeResolvers: Pick<
  *
  * Strongly-typed resolver combining queries, mutations, and field resolvers.
  */
-export const dataModelResolvers: DataModelResolvers = {
+export const dataModelResolvers: DataModelRelatedResolvers = {
   Query: queries,
   Mutation: mutations,
   ...dataModelTypeResolvers,
