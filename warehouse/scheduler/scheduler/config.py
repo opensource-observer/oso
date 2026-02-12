@@ -129,6 +129,16 @@ class CommonSettings(BaseSettings):
         description="GCS bucket for storing run logs",
     )
 
+    posthog_api_key: str = Field(
+        default="",
+        description="API key for PostHog analytics",
+    )
+
+    posthog_host: str = Field(
+        default="https://us.i.posthog.com",
+        description="Host URL for PostHog analytics",
+    )
+
     @model_validator(mode="after")
     def handle_generated_config(self):
         if not self.local_duckdb_dir_path:

@@ -55,3 +55,4 @@ spec:
         SCHEDULER_UPLOAD_FILESYSTEM_SECRET_ACCESS_KEY: "gcp:secretmanager:production-scheduler-upload-filesystem-secret-access-key/versions/latest"
         SCHEDULER_UPLOAD_FILESYSTEM_ENDPOINT_URL: "gcp:secretmanager:production-scheduler-upload-filesystem-endpoint-url/versions/latest"
         SCHEDULER_UPLOAD_FILESYSTEM_BUCKET_URL: "s3://static-model-files"
+        SCHEDULER_POSTHOG_API_KEY: "gcp:secretmanager:production-scheduler-posthog-api-key/versions/latest"

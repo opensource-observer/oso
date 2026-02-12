@@ -63,7 +63,8 @@ class StaticModelRunRequestHandler(RunHandler[StaticModelRunRequest]):
                 },
             )
             return FailedResponse(
-                message=f"Failed to fetch static model dataset and models for dataset ID: {message.dataset_id}"
+                exception=e,
+                message=f"Failed to fetch static model dataset and models for dataset ID: {message.dataset_id}",
             )
 
         edges = dataset_and_models.datasets.edges
