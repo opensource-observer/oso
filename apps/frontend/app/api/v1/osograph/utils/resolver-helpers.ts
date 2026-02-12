@@ -37,8 +37,8 @@ import {
   runRowSchema,
 } from "@/lib/types/schema";
 import type { DatasetsRow } from "@/lib/types/schema-types";
-import { AnyZodObject, z, ZodType } from "zod";
-import { ResolverFn } from "../types/generated/types";
+import { z } from "zod";
+import { ResolverFn } from "@/apps/frontend/app/api/v1/osograph/types/generated/types";
 
 export function buildConnectionOrEmpty<T>(
   data: T[] | null | undefined,
@@ -378,12 +378,12 @@ export async function getMaterializations(
   });
 }
 
-type ZodResolver<T extends z.ZodTypeAny, TResult, TParent, TContext> = ResolverFn<
+type ZodResolver<
+  T extends z.ZodTypeAny,
   TResult,
   TParent,
   TContext,
-  { input: z.infer<T> }
->
+> = ResolverFn<TResult, TParent, TContext, { input: z.infer<T> }>;
 
 /**
  * Method decorator that validates the input of the target function against the given schema.
@@ -393,27 +393,28 @@ type ZodResolver<T extends z.ZodTypeAny, TResult, TParent, TContext> = ResolverF
  * @param {T} arg The zod schema used for the validation.
  * @return {MethodDecorator} A {@link MethodDecorator}.
  */
-export function validateMutationInput<T extends z.ZodTypeAny, TResult, TParent, TContext>(
-  arg: T | (() => T)
-) {
-  return function (_target: any, _propertyKey: string, descriptor: TypedPropertyDescriptor<ZodResolver<T, TResult, TParent, TContext>>) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const originalMethod = descriptor.value!
+export function validateMutationInput<
+  T extends z.ZodTypeAny,
+  TResult,
+  TParent,
+  TContext,
+>(arg: T | (() => T)) {
+  return function (
+    _target: any,
+    _propertyKey: string,
+    descriptor: TypedPropertyDescriptor<
+      ZodResolver<T, TResult, TParent, TContext>
+    >,
+  ) {
+    const originalMethod = descriptor.value!;
     descriptor.value = function (root, args, context, info) {
-      const schema = typeof arg === 'function' ? arg() : arg;
+      const schema = typeof arg === "function" ? arg() : arg;
       const result = schema.safeParse(args.input);
 
-      return originalMethod.call(
-        this,
-        root,
-        result.data,
-        context,
-        info
-      )
-    }
-    return descriptor as TypedPropertyDescriptor<ResolverFn<TResult, TParent, TContext, unknown>>;
-  }
-}
-
-class Subresolver {
+      return originalMethod.call(this, root, result.data, context, info);
+    };
+    return descriptor as TypedPropertyDescriptor<
+      ResolverFn<TResult, TParent, TContext, unknown>
+    >;
+  };
 }
