@@ -23,7 +23,10 @@
 
 import type { GraphQLResolveInfo } from "graphql";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
-import type { ResolverFn, ResolversTypes } from "@/app/api/v1/osograph/types/generated/types";
+import type {
+  ResolverFn,
+  ResolversTypes,
+} from "@/app/api/v1/osograph/types/generated/types";
 
 /**
  * Handler function for a resolver after all middleware have been applied.
@@ -155,7 +158,7 @@ class ResolverBuilder<TResult, TParent, TContext, TArgs> {
    */
   resolve(
     handler: ResolverHandler<TResult, TParent, TContext, TArgs>,
-  ): ResolverFn<TResult, TParent, GraphQLContext, any> {
+  ): ResolverFn<TResult, TParent, GraphQLContext, TArgs> {
     const applyMiddleware = this.applyMiddleware;
 
     return async (parent, originalArgs, originalContext, info) => {
@@ -199,7 +202,10 @@ export function createResolver<
   TArgs = any,
 >(): ResolverBuilder<ResolversTypes[TResult], TParent, GraphQLContext, TArgs> {
   // Start with an identity middleware (no-op)
-  return new ResolverBuilder<ResolversTypes[TResult], TParent, GraphQLContext, TArgs>(
-    async (context, args) => ({ context, args }),
-  );
+  return new ResolverBuilder<
+    ResolversTypes[TResult],
+    TParent,
+    GraphQLContext,
+    TArgs
+  >(async (context, args) => ({ context, args }));
 }

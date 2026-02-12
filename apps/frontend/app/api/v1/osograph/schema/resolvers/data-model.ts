@@ -1,9 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
-import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
   getOrganization,
-  requireAuthentication,
   requireOrgMembership,
 } from "@/app/api/v1/osograph/utils/auth";
 import {
@@ -15,56 +13,65 @@ import {
   getModelRunConnection,
   getResourceById,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
-import {
-  ConnectionArgs,
-  FilterableConnectionArgs,
-} from "@/app/api/v1/osograph/utils/pagination";
-import { createHash } from "crypto";
-import {
-  CreateDataModelReleaseSchema,
-  DataModelReleaseWhereSchema,
-  DataModelRevisionWhereSchema,
-  DataModelWhereSchema,
-  validateInput,
-} from "@/app/api/v1/osograph/utils/validation";
-import { z } from "zod";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
-import { ModelRow, ModelUpdate } from "@/lib/types/schema-types";
+import { ModelUpdate } from "@/lib/types/schema-types";
 import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
 import {
   executePreviewQuery,
   generateTableId,
 } from "@/app/api/v1/osograph/utils/model";
-import { PreviewData } from "@/lib/graphql/generated/graphql";
-import { MutationResolvers, QueryResolvers, ResolversTypes } from "@/app/api/v1/osograph/types/generated/types";
-import { createResolver, ResolverTypeKeys } from "../../utils/resolver-builder";
-import { requireAuth, ensureOrgMembership, withValidation } from "../../utils/resolver-middleware";
-import { CreateDataModelInputSchema, CreateDataModelReleaseInputSchema, CreateDataModelRevisionInputSchema, UpdateDataModelInputSchema } from "@/app/api/v1/osograph/types/generated/validation";
+import {
+  DataModelReleaseWhereSchema,
+  DataModelRevisionWhereSchema,
+  DataModelWhereSchema,
+} from "@/app/api/v1/osograph/utils/validation";
+import { z } from "zod";
+import {
+  MutationResolvers,
+  QueryResolvers,
+  DataModelResolvers as DataModelFieldResolvers,
+  DataModelRevisionResolvers as DataModelRevisionFieldResolvers,
+  DataModelReleaseResolvers as DataModelReleaseFieldResolvers,
+} from "@/app/api/v1/osograph/types/generated/types";
+import {
+  createResolver,
+  ResolverTypeKeys,
+} from "@/apps/frontend/app/api/v1/osograph/utils/resolver-builder";
+import {
+  requireAuth,
+  ensureOrgMembership,
+  withValidation,
+} from "@/apps/frontend/app/api/v1/osograph/utils/resolver-middleware";
+import {
+  CreateDataModelInputSchema,
+  CreateDataModelReleaseInputSchema,
+  CreateDataModelRevisionInputSchema,
+  UpdateDataModelInputSchema,
+} from "@/app/api/v1/osograph/types/generated/validation";
+import { createHash } from "crypto";
 
 type DataModelQueryResolvers = Pick<QueryResolvers, "dataModels">;
-type DataModelMutationResolvers = Pick<Required<MutationResolvers>, "createDataModel" | "updateDataModel" | "createDataModelRevision" | "createDataModelRelease" | "deleteDataModel">;
-type DataModelResolverTypes = Pick<ResolversTypes, "DataModel" | "DataModelRevision" | "DataModelRelease">;
+type DataModelMutationResolvers = Pick<
+  Required<MutationResolvers>,
+  | "createDataModel"
+  | "updateDataModel"
+  | "createDataModelRevision"
+  | "createDataModelRelease"
+  | "deleteDataModel"
+>;
 
 type DataModelResolvers = {
   Query: DataModelQueryResolvers;
   Mutation: DataModelMutationResolvers;
-} & DataModelResolverTypes;
+  DataModel: DataModelFieldResolvers;
+  DataModelRevision: DataModelRevisionFieldResolvers;
+  DataModelRelease: DataModelReleaseFieldResolvers;
+};
 
-const queryResolvers: DataModelQueryResolvers = {
-  dataModels: async (_, args, context) => {
-    return queryWithPagination(args, context, {
-      tableName: "model",
-      whereSchema: DataModelWhereSchema,
-      requireAuth: true,
-      filterByUserOrgs: true,
-      basePredicate: {
-        is: [{ key: "deleted_at", value: null }],
-      },
-    });
-  }
-}
-
-function existingDataModelResolver<TResult extends ResolverTypeKeys, TSchema extends z.ZodSchema>(schema: TSchema, getExistingModelId: (input: z.infer<TSchema>) => string) {
+function existingDataModelResolver<
+  TResult extends ResolverTypeKeys,
+  TSchema extends z.ZodSchema,
+>(schema: TSchema, getExistingModelId: (input: z.infer<TSchema>) => string) {
   return createResolver<TResult>()
     .use(requireAuth())
     .use(withValidation(schema))
@@ -86,14 +93,14 @@ function existingDataModelResolver<TResult extends ResolverTypeKeys, TSchema ext
           supabase: supabase,
         },
         args,
-      }
+      };
     })
     .use(ensureOrgMembership(({ context }) => context.dataModel.org_id));
 }
 
 /**
  * NEW STYLE MUTATION RESOLVERS:
- * 
+ *
  * Strongly typed, with middleware for authentication, validation, and org membership.
  */
 const mutations: DataModelMutationResolvers = {
@@ -125,11 +132,11 @@ const mutations: DataModelMutationResolvers = {
         dataModel: data,
       };
     }),
-  updateDataModel: existingDataModelResolver<"CreateDataModelPayload", ReturnType<typeof UpdateDataModelInputSchema>>(
-    UpdateDataModelInputSchema(),
-    (input) => input.dataModelId
-  )
-    .resolve(async (_, { input }, context) => {
+  updateDataModel: existingDataModelResolver<
+    "CreateDataModelPayload",
+    ReturnType<typeof UpdateDataModelInputSchema>
+  >(UpdateDataModelInputSchema(), (input) => input.dataModelId).resolve(
+    async (_, { input }, context) => {
       const { supabase } = context;
       const updateData: ModelUpdate = {};
       if (input.name) {
@@ -159,12 +166,13 @@ const mutations: DataModelMutationResolvers = {
         message: "DataModel updated successfully",
         dataModel: data,
       };
-    }),
-  createDataModelRevision: existingDataModelResolver<"CreateDataModelRevisionPayload", ReturnType<typeof CreateDataModelRevisionInputSchema>>(
-    CreateDataModelRevisionInputSchema(),
-    (input) => input.dataModelId
-  )
-    .resolve(async (_, { input }, context) => {
+    },
+  ),
+  createDataModelRevision: existingDataModelResolver<
+    "CreateDataModelRevisionPayload",
+    ReturnType<typeof CreateDataModelRevisionInputSchema>
+  >(CreateDataModelRevisionInputSchema(), (input) => input.dataModelId).resolve(
+    async (_, { input }, context) => {
       const { supabase, dataModel } = context;
       const { data: latestRevision } = await supabase
         .from("model_revision")
@@ -177,9 +185,7 @@ const mutations: DataModelMutationResolvers = {
       const hash = createHash("sha256")
         .update(
           JSON.stringify(
-            Object.entries(input).sort((a, b) =>
-              a[0].localeCompare(b[0]),
-            ),
+            Object.entries(input).sort((a, b) => a[0].localeCompare(b[0])),
           ),
         )
         .digest("hex");
@@ -222,29 +228,24 @@ const mutations: DataModelMutationResolvers = {
           kind: input.kind,
           kind_options: input.kindOptions
             ? {
-              time_column: input.kindOptions.timeColumn ?? null,
-              time_column_format:
-                input.kindOptions.timeColumnFormat ?? null,
-              batch_size: input.kindOptions.batchSize ?? null,
-              lookback: input.kindOptions.lookback ?? null,
-              unique_key_columns:
-                input.kindOptions.uniqueKeyColumns ?? null,
-              when_matched_sql:
-                input.kindOptions.whenMatchedSql ?? null,
-              merge_filter: input.kindOptions.mergeFilter ?? null,
-              valid_from_name:
-                input.kindOptions.validFromName ?? null,
-              valid_to_name: input.kindOptions.validToName ?? null,
-              invalidate_hard_deletes:
-                input.kindOptions.invalidateHardDeletes ?? null,
-              updated_at_column:
-                input.kindOptions.updatedAtColumn ?? null,
-              updated_at_as_valid_from:
-                input.kindOptions.updatedAtAsValidFrom ?? null,
-              scd_columns: input.kindOptions.scdColumns ?? null,
-              execution_time_as_valid_from:
-                input.kindOptions.executionTimeAsValidFrom ?? null,
-            }
+                time_column: input.kindOptions.timeColumn ?? null,
+                time_column_format: input.kindOptions.timeColumnFormat ?? null,
+                batch_size: input.kindOptions.batchSize ?? null,
+                lookback: input.kindOptions.lookback ?? null,
+                unique_key_columns: input.kindOptions.uniqueKeyColumns ?? null,
+                when_matched_sql: input.kindOptions.whenMatchedSql ?? null,
+                merge_filter: input.kindOptions.mergeFilter ?? null,
+                valid_from_name: input.kindOptions.validFromName ?? null,
+                valid_to_name: input.kindOptions.validToName ?? null,
+                invalidate_hard_deletes:
+                  input.kindOptions.invalidateHardDeletes ?? null,
+                updated_at_column: input.kindOptions.updatedAtColumn ?? null,
+                updated_at_as_valid_from:
+                  input.kindOptions.updatedAtAsValidFrom ?? null,
+                scd_columns: input.kindOptions.scdColumns ?? null,
+                execution_time_as_valid_from:
+                  input.kindOptions.executionTimeAsValidFrom ?? null,
+              }
             : null,
         })
         .select()
@@ -260,12 +261,13 @@ const mutations: DataModelMutationResolvers = {
         message: "DataModel revision created successfully",
         dataModelRevision: data,
       };
-    }),
-  createDataModelRelease: existingDataModelResolver<"CreateDataModelReleasePayload", ReturnType<typeof CreateDataModelReleaseInputSchema>>(
-    CreateDataModelReleaseInputSchema(),
-    (input) => input.dataModelId
-  )
-    .resolve(async (_, { input }, context) => {
+    },
+  ),
+  createDataModelRelease: existingDataModelResolver<
+    "CreateDataModelReleasePayload",
+    ReturnType<typeof CreateDataModelReleaseInputSchema>
+  >(CreateDataModelReleaseInputSchema(), (input) => input.dataModelId).resolve(
+    async (_, { input }, context) => {
       const { supabase, dataModel } = context;
       const { error: revisionError } = await supabase
         .from("model_revision")
@@ -302,88 +304,99 @@ const mutations: DataModelMutationResolvers = {
         message: "DataModel release created successfully",
         dataModelRelease: data,
       };
-    }),
-}
+    },
+  ),
+  deleteDataModel: createResolver<"SimplePayload">()
+    .use(requireAuth())
+    //.use(withValidation(z.object({ id: z.string().uuid() })))
+    .use(async (context, args) => {
+      // Custom middleware: fetch model and validate org access
+      const supabase = createAdminClient();
+      const { data: dataModel, error } = await supabase
+        .from("model")
+        .select("org_id")
+        .eq("id", args.input.id)
+        .single();
 
-// OLD STYLE
-const mutationResolvers: DataModelMutationResolvers = {
-  deleteDataModel: async (
-    _: unknown,
-    { id }: { id: string },
-    context: GraphQLContext,
-  ) => {
-    const authenticatedUser = requireAuthentication(context.user);
-    const supabase = createAdminClient();
+      if (error || !dataModel) {
+        throw ResourceErrors.notFound("DataModel", args.input.id);
+      }
 
-    const { data: dataModel, error: fetchError } = await supabase
-      .from("model")
-      .select("org_id")
-      .eq("id", id)
-      .single();
-
-    if (fetchError || !dataModel) {
-      throw ResourceErrors.notFound("DataModel", id);
-    }
-
-    await requireOrgMembership(authenticatedUser.userId, dataModel.org_id);
-
-    const { error } = await supabase
-      .from("model")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", id);
-
-    if (error) {
-      throw ServerErrors.database(
-        `Failed to delete data model: ${error.message}`,
+      await requireOrgMembership(
+        context.authenticatedUser.userId,
+        dataModel.org_id,
       );
-    }
 
-    return {
-      success: true,
-      message: "DataModel deleted successfully",
-    };
+      return {
+        context: { ...context, dataModel, supabase },
+        args,
+      };
+    })
+    .resolve(async (_, { input }, context) => {
+      const { supabase } = context;
+      const { error } = await supabase
+        .from("model")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", input.id);
+
+      if (error) {
+        throw ServerErrors.database(
+          `Failed to delete data model: ${error.message}`,
+        );
+      }
+
+      return {
+        success: true,
+        message: "DataModel deleted successfully",
+      };
+    }),
+};
+
+/**
+ * QUERY RESOLVERS:
+ *
+ * Strongly typed query resolvers using queryWithPagination utility.
+ */
+const queries: DataModelQueryResolvers = {
+  dataModels: async (_, args, context) => {
+    return queryWithPagination(args, context, {
+      tableName: "model",
+      whereSchema: DataModelWhereSchema,
+      requireAuth: true,
+      filterByUserOrgs: true,
+      basePredicate: {
+        is: [{ key: "deleted_at", value: null }],
+      },
+    });
   },
-}
+};
 
-
-export const dataModelResolvers: DataModelResolvers = {
-  Query: {
-    dataModels: async (
-      _: unknown,
-      args: FilterableConnectionArgs,
-      context: GraphQLContext,
-    ) => {
-      return queryWithPagination(args, context, {
-        tableName: "model",
-        whereSchema: DataModelWhereSchema,
-        requireAuth: true,
-        filterByUserOrgs: true,
-        basePredicate: {
-          is: [{ key: "deleted_at", value: null }],
-        },
-      });
-    },
-  },
-  Mutation: {
-
-  },
+/**
+ * FIELD RESOLVERS:
+ *
+ * Type resolvers for DataModel, DataModelRevision, and DataModelRelease.
+ */
+const dataModelTypeResolvers: Pick<
+  DataModelResolvers,
+  "DataModel" | "DataModelRevision" | "DataModelRelease"
+> = {
   DataModel: {
-    orgId: (parent: { org_id: string }) => parent.org_id,
-    organization: (parent: { org_id: string }) => {
-      return getOrganization(parent.org_id);
-    },
-    dataset: (parent: { dataset_id: string }) => {
-      return getResourceById({
+    id: (parent) => parent.id,
+    name: (parent) => parent.name,
+    orgId: (parent) => parent.org_id,
+    organization: (parent) => getOrganization(parent.org_id),
+    dataset: async (parent) => {
+      const dataset = await getResourceById({
         tableName: "datasets",
         id: parent.dataset_id,
         userId: "",
       });
+      if (!dataset) {
+        throw ResourceErrors.notFound("Dataset", parent.dataset_id);
+      }
+      return dataset as any; // Type narrowing workaround
     },
-    revisions: async (
-      parent: { id: string; org_id: string },
-      args: FilterableConnectionArgs,
-      context: GraphQLContext,
-    ) => {
+    revisions: async (parent, args, context) => {
       return queryWithPagination(args, context, {
         tableName: "model_revision",
         whereSchema: DataModelRevisionWhereSchema,
@@ -395,11 +408,7 @@ export const dataModelResolvers: DataModelResolvers = {
         },
       });
     },
-    releases: async (
-      parent: { id: string; org_id: string },
-      args: FilterableConnectionArgs,
-      context: GraphQLContext,
-    ) => {
+    releases: async (parent, args, context) => {
       return queryWithPagination(args, context, {
         tableName: "model_release",
         whereSchema: DataModelReleaseWhereSchema,
@@ -415,10 +424,10 @@ export const dataModelResolvers: DataModelResolvers = {
         },
       });
     },
-    isEnabled: (parent: { is_enabled: boolean }) => parent.is_enabled,
-    createdAt: (parent: { created_at: string }) => parent.created_at,
-    updatedAt: (parent: { updated_at: string }) => parent.updated_at,
-    latestRevision: async (parent: { id: string }) => {
+    isEnabled: (parent) => parent.is_enabled,
+    createdAt: (parent) => new Date(parent.created_at),
+    updatedAt: (parent) => new Date(parent.updated_at),
+    latestRevision: async (parent) => {
       const supabase = createAdminClient();
       const { data, error } = await supabase
         .from("model_revision")
@@ -433,7 +442,7 @@ export const dataModelResolvers: DataModelResolvers = {
       }
       return data;
     },
-    latestRelease: async (parent: { id: string }) => {
+    latestRelease: async (parent) => {
       const supabase = createAdminClient();
       const { data, error } = await supabase
         .from("model_release")
@@ -448,18 +457,13 @@ export const dataModelResolvers: DataModelResolvers = {
       }
       return data;
     },
-
-    runs: async (parent: ModelRow, args: ConnectionArgs) => {
+    runs: async (parent, args) => {
       return getModelRunConnection(parent.dataset_id, parent.id, args);
     },
-    modelContext: async (parent: ModelRow) => {
+    modelContext: async (parent) => {
       return getModelContext(parent.dataset_id, parent.id);
     },
-    materializations: async (
-      parent: ModelRow,
-      args: FilterableConnectionArgs,
-      context: GraphQLContext,
-    ) => {
+    materializations: async (parent, args, context) => {
       return getMaterializations(
         args,
         context,
@@ -468,29 +472,39 @@ export const dataModelResolvers: DataModelResolvers = {
         generateTableId("USER_MODEL", parent.id),
       );
     },
-    previewData: async (
-      parent: ModelRow,
-      _args: Record<string, never>,
-      context: GraphQLContext,
-    ): Promise<PreviewData> => {
-      const authenticatedUser = requireAuthentication(context.user);
+    previewData: createResolver<"PreviewData">()
+      .use(requireAuth())
+      .resolve(async (parent, _args, context) => {
+        const tableId = generateTableId("USER_MODEL", parent.id);
 
-      const tableId = generateTableId("USER_MODEL", parent.id);
-
-      return executePreviewQuery(
-        parent.org_id,
-        parent.dataset_id,
-        tableId,
-        authenticatedUser,
-        parent.name,
-      );
-    },
+        return executePreviewQuery(
+          parent.org_id,
+          parent.dataset_id,
+          tableId,
+          context.authenticatedUser,
+          parent.name,
+        );
+      }),
   },
 
   DataModelRevision: {
-    orgId: (parent: { org_id: string }) => parent.org_id,
-    dataModelId: (parent: { model_id: string }) => parent.model_id,
-    dataModel: async (parent: { model_id: string }) => {
+    id: (parent) => parent.id,
+    name: (parent) => parent.name,
+    description: (parent) => parent.description,
+    code: (parent) => parent.code,
+    hash: (parent) => parent.hash,
+    language: (parent) => parent.language,
+    cron: (parent) => parent.cron,
+    kind: (parent) => parent.kind,
+    schema: (parent) =>
+      parent.schema.map((col) => ({
+        name: col.name ?? "",
+        type: col.type ?? "",
+        description: col.description,
+      })),
+    orgId: (parent) => parent.org_id,
+    dataModelId: (parent) => parent.model_id,
+    dataModel: async (parent) => {
       const supabase = createAdminClient();
       const { data, error } = await supabase
         .from("model")
@@ -502,27 +516,29 @@ export const dataModelResolvers: DataModelResolvers = {
       }
       return data;
     },
-    organization: (parent: { org_id: string }) => {
-      return getOrganization(parent.org_id);
-    },
-    revisionNumber: (parent: { revision_number: number }) =>
-      parent.revision_number,
-    start: (parent: { start: string | null }) => parent.start,
-    end: (parent: { end: string | null }) => parent.end,
-    dependsOn: (parent: { depends_on: unknown[] }) => parent.depends_on,
-    partitionedBy: (parent: { partitioned_by: string[] }) =>
-      parent.partitioned_by,
-    clusteredBy: (parent: { clustered_by: string[] }) => parent.clustered_by,
-    kindOptions: (parent: { kind_options: unknown }) => parent.kind_options,
-    createdAt: (parent: { created_at: string }) => parent.created_at,
+    organization: (parent) => getOrganization(parent.org_id),
+    revisionNumber: (parent) => parent.revision_number,
+    start: (parent) => (parent.start ? new Date(parent.start) : null),
+    end: (parent) => (parent.end ? new Date(parent.end) : null),
+    dependsOn: (parent) =>
+      parent.depends_on?.map((dep) => ({
+        dataModelId: dep.model_id ?? "",
+        tableId: dep.model_id ?? "",
+        alias: dep.alias,
+      })) ?? null,
+    partitionedBy: (parent) => parent.partitioned_by ?? null,
+    clusteredBy: (parent) => parent.clustered_by ?? null,
+    kindOptions: (parent) => parent.kind_options ?? null,
+    createdAt: (parent) => new Date(parent.created_at),
   },
 
   DataModelRelease: {
-    orgId: (parent: { org_id: string }) => parent.org_id,
-    dataModelId: (parent: { model_id: string }) => parent.model_id,
-    revisionId: (parent: { model_revision_id: string }) =>
-      parent.model_revision_id,
-    dataModel: async (parent: { model_id: string }) => {
+    id: (parent) => parent.id,
+    description: (parent) => parent.description,
+    orgId: (parent) => parent.org_id,
+    dataModelId: (parent) => parent.model_id,
+    revisionId: (parent) => parent.model_revision_id,
+    dataModel: async (parent) => {
       const supabase = createAdminClient();
       const { data, error } = await supabase
         .from("model")
@@ -534,7 +550,7 @@ export const dataModelResolvers: DataModelResolvers = {
       }
       return data;
     },
-    revision: async (parent: { model_revision_id: string }) => {
+    revision: async (parent) => {
       const supabase = createAdminClient();
       const { data, error } = await supabase
         .from("model_revision")
@@ -549,10 +565,19 @@ export const dataModelResolvers: DataModelResolvers = {
       }
       return data;
     },
-    organization: (parent: { org_id: string }) => {
-      return getOrganization(parent.org_id);
-    },
-    createdAt: (parent: { created_at: string }) => parent.created_at,
-    updatedAt: (parent: { updated_at: string }) => parent.updated_at,
+    organization: (parent) => getOrganization(parent.org_id),
+    createdAt: (parent) => new Date(parent.created_at),
+    updatedAt: (parent) => new Date(parent.updated_at),
   },
+};
+
+/**
+ * FINAL EXPORT:
+ *
+ * Strongly-typed resolver combining queries, mutations, and field resolvers.
+ */
+export const dataModelResolvers: DataModelResolvers = {
+  Query: queries,
+  Mutation: mutations,
+  ...dataModelTypeResolvers,
 };
