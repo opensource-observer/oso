@@ -220,8 +220,8 @@ const mutations = createResolversCollection<DataModelMutationResolvers>()
           language: input.language,
           code: input.code,
           cron: input.cron,
-          start: input.start?.toISOString() ?? null,
-          end: input.end?.toISOString() ?? null,
+          start: input.start,
+          end: input.end,
           schema: input.schema.map((col) => ({
             name: col.name,
             type: col.type,
@@ -438,8 +438,8 @@ const dataModelTypeResolvers: Pick<
       });
     },
     isEnabled: (parent) => parent.is_enabled,
-    createdAt: (parent) => new Date(parent.created_at),
-    updatedAt: (parent) => new Date(parent.updated_at),
+    createdAt: (parent) => parent.created_at,
+    updatedAt: (parent) => parent.updated_at,
     latestRevision: async (parent) => {
       const supabase = createAdminClient();
       const { data, error } = await supabase
@@ -531,8 +531,8 @@ const dataModelTypeResolvers: Pick<
     },
     organization: (parent) => getOrganization(parent.org_id),
     revisionNumber: (parent) => parent.revision_number,
-    start: (parent) => (parent.start ? new Date(parent.start) : null),
-    end: (parent) => (parent.end ? new Date(parent.end) : null),
+    start: (parent) => (parent.start ? parent.start : null),
+    end: (parent) => (parent.end ? parent.end : null),
     dependsOn: (parent) =>
       parent.depends_on?.map((dep) => ({
         dataModelId: dep.model_id ?? "",
@@ -542,7 +542,7 @@ const dataModelTypeResolvers: Pick<
     partitionedBy: (parent) => parent.partitioned_by ?? null,
     clusteredBy: (parent) => parent.clustered_by ?? null,
     kindOptions: (parent) => parent.kind_options ?? null,
-    createdAt: (parent) => new Date(parent.created_at),
+    createdAt: (parent) => parent.created_at,
   },
 
   DataModelRelease: {
@@ -579,8 +579,8 @@ const dataModelTypeResolvers: Pick<
       return data;
     },
     organization: (parent) => getOrganization(parent.org_id),
-    createdAt: (parent) => new Date(parent.created_at),
-    updatedAt: (parent) => new Date(parent.updated_at),
+    createdAt: (parent) => parent.created_at,
+    updatedAt: (parent) => parent.updated_at,
   },
 };
 

@@ -12,7 +12,7 @@
     "dev": "pnpm codegen && next dev",
     "pubsub:start": "gcloud beta emulators pubsub start --host-port=localhost:8085",
     "graphql:codegen": "dotenv -e .env.local -- graphql-codegen --require tsconfig-paths/register --config ./lib/graphql/codegen.ts -v && prettier --write ./lib/graphql/codegen.ts",
-    "graphql:osograph:codegen": "dotenv -e .env.local -- graphql-codegen --require tsconfig-paths/register --config ./app/api/v1/osograph/codegen.ts -v",
+    "graphql:osograph:codegen": "dotenv -e .env.local -- graphql-codegen --require tsconfig-paths/register --config ./app/api/v1/osograph/codegen.ts -v && prettier --write ./app/api/v1/osograph/types/generated/types.ts",
     "graphql:rover": "rover supergraph compose --elv2-license 'accept' --config ./supergraph-config.yaml > ./app/api/v1/graphql/supergraph.graphql",
     "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
     "lint:eslint": "eslint --max-warnings 0 . --fix",
