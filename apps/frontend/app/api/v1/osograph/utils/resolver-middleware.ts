@@ -32,7 +32,7 @@ import type { Middleware } from "@/app/api/v1/osograph/utils/resolver-builder";
 import {
   requireAuthentication,
   requireOrgMembership as legacyRequireOrgMembership,
-} from "@/apps/frontend/app/api/v1/osograph/utils/auth";
+} from "@/app/api/v1/osograph/utils/auth";
 
 /**
  * Authentication enhancer - validates that the user is authenticated.
