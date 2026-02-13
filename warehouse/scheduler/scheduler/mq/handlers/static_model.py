@@ -2,7 +2,6 @@ import asyncio
 import typing as t
 
 import dlt
-import structlog
 from dlt.sources.credentials import FileSystemCredentials
 from dlt.sources.filesystem import readers
 from osoprotobufs.static_model_pb2 import StaticModelRunRequest
@@ -20,8 +19,6 @@ from scheduler.utils import dlt_to_oso_schema, get_warehouse_user
 
 if t.TYPE_CHECKING:
     from scheduler.config import CommonSettings
-
-logger = structlog.getLogger(__name__)
 
 
 class StaticModelRunRequestHandler(RunHandler[StaticModelRunRequest]):
