@@ -1,3 +1,4 @@
+import abc
 import json
 import logging
 import typing as t
@@ -6,8 +7,9 @@ from io import StringIO
 from typing import Protocol
 
 import gcsfs
+from attr import dataclass
 
-system_logger = logging.getLogger(__name__)
+module_system_logger = logging.getLogger(__name__)
 
 
 class BindableLogger(Protocol):
@@ -15,110 +17,151 @@ class BindableLogger(Protocol):
 
     def bind(self, **new_values: t.Any) -> "BindableLogger": ...
 
-    @property
-    def bindings(self) -> dict[str, t.Any]: ...
+    def debug(self, event: str, *args: t.Any, **kw: t.Any) -> None: ...
+    def info(self, event: str, *args: t.Any, **kw: t.Any) -> None: ...
+    def warning(self, event: str, *args: t.Any, **kw: t.Any) -> None: ...
+    def error(self, event: str, *args: t.Any, **kw: t.Any) -> None: ...
+    def critical(self, event: str, *args: t.Any, **kw: t.Any) -> None: ...
+    def exception(self, event: str, *args: t.Any, **kw: t.Any) -> None: ...
 
-    def debug(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def info(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def warning(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def error(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def critical(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def exception(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
+    def log(self, level: int, event: str, *args: t.Any, **kw: t.Any) -> None: ...
 
 
-class BufferedBoundLogger(BindableLogger):
-    """Logger wrapper that buffers log entries and delegates to an underlying logger."""
+class ProxiedBoundLogger(BindableLogger):
+    """Logger wrapper that proxies all calls to an underlying logger."""
 
-    _LOG_METHODS = ("debug", "info", "warning", "error", "critical", "exception")
+    def __init__(self, proxied: list[BindableLogger]):
+        self._proxied_loggers = proxied
 
-    def __init__(self, base_logger: BindableLogger, buffer: "GCSLogBufferProcessor"):
-        self._logger = base_logger
+    def bind(self, **new_values: t.Any) -> "ProxiedBoundLogger":
+        return ProxiedBoundLogger(
+            [logger.bind(**new_values) for logger in self._proxied_loggers]
+        )
+
+    def debug(self, event: str, *args: t.Any, **kw: t.Any) -> None:
+        self.log(logging.DEBUG, event, *args, **kw)
+
+    def info(self, event: str, *args: t.Any, **kw: t.Any) -> None:
+        self.log(logging.INFO, event, *args, **kw)
+
+    def warning(self, event: str, *args: t.Any, **kw: t.Any) -> None:
+        self.log(logging.WARNING, event, *args, **kw)
+
+    def error(self, event: str, *args: t.Any, **kw: t.Any) -> None:
+        self.log(logging.ERROR, event, *args, **kw)
+
+    def critical(self, event: str, *args: t.Any, **kw: t.Any) -> None:
+        self.log(logging.CRITICAL, event, *args, **kw)
+
+    def exception(self, event: str, *args: t.Any, **kw: t.Any) -> None:
+        self.log(logging.ERROR, event, *args, **kw)
+
+    def log(self, level: int, event: str, *args: t.Any, **kw: t.Any) -> None:
+        # Eagerly evaluate the event string and arguments to avoid issues with loggers that don't support lazy formatting
+        new_event = event % args if args else event
+        for logger in self._proxied_loggers:
+            logger.log(level, new_event, **kw)
+
+
+@dataclass
+class LogEntry:
+    timestamp: datetime
+    log_level: str
+    event: str
+    args: tuple
+    extra: dict[str, t.Any]
+
+    def to_dict(self) -> dict[str, t.Any]:
+        return {
+            "timestamp": self.timestamp.isoformat(),
+            "log_level": self.log_level,
+            "event": self.event,
+            "args": self.args,
+            **self.extra,
+        }
+
+
+class LogBuffer(abc.ABC):
+    @abc.abstractmethod
+    def add(self, entry: LogEntry) -> None:
+        """Add a log entry to the buffer."""
+        raise NotImplementedError("add must be implemented by subclasses.")
+
+    @abc.abstractmethod
+    async def flush(self) -> None:
+        """Flush the buffer to the underlying storage."""
+        raise NotImplementedError("flush must be implemented by subclasses.")
+
+
+class BufferedLogger(BindableLogger):
+    def __init__(self, buffer: LogBuffer, context: dict[str, t.Any] | None = None):
         self._buffer = buffer
+        self._context = context or {}
 
-        for method_name in self._LOG_METHODS:
-            setattr(self, method_name, self._create_proxy_method(method_name))
+    def bind(self, **new_values: t.Any) -> "BufferedLogger":
+        new_context = self._context.copy()
+        new_context.update(new_values)
+        return BufferedLogger(self._buffer, new_context)
 
-    def _create_proxy_method(self, method_name: str):
-        """Create a proxy method that logs to buffer and delegates to underlying logger."""
+    def log(self, level: int, event: str, *args: t.Any, **kw: t.Any) -> None:
+        log_entry = LogEntry(
+            timestamp=datetime.now(timezone.utc),
+            log_level=logging.getLevelName(level),
+            event=event,
+            args=args,
+            extra={**self._context, **kw},
+        )
+        self._buffer.add(log_entry)
 
-        def method(event: str | None = None, **kw: t.Any):
-            event_dict = dict(kw)
-            if event is not None:
-                event_dict["event"] = event
-            self._buffer(None, method_name, event_dict)
-            try:
-                getattr(system_logger, method_name)(event, **kw)
-            except Exception:
-                system_logger.fatal("Failed to log to system logger", exc_info=True)
-            try:
-                getattr(self._logger, method_name)(event, **kw)
-            except Exception:
-                system_logger.fatal("Failed to log to underlying logger", exc_info=True)
-            return getattr(self._logger, method_name)(event, **kw)
+    def debug(self, event: str, *args: t.Any, **kw: t.Any) -> None:
+        self.log(logging.DEBUG, event, *args, **kw)
 
-        return method
+    def info(self, event: str, *args: t.Any, **kw: t.Any) -> None:
+        self.log(logging.INFO, event, *args, **kw)
 
-    def bind(self, **new_values: t.Any) -> "BufferedBoundLogger":
-        """Bind new values and return a new BufferedBoundLogger with the same buffer."""
-        return BufferedBoundLogger(self._logger.bind(**new_values), self._buffer)
+    def warning(self, event: str, *args: t.Any, **kw: t.Any) -> None:
+        self.log(logging.WARNING, event, *args, **kw)
 
-    @property
-    def bindings(self) -> dict[str, t.Any]:
-        """Return the bindings from the underlying logger."""
-        return self._logger.bindings
+    def error(self, event: str, *args: t.Any, **kw: t.Any) -> None:
+        self.log(logging.ERROR, event, *args, **kw)
 
-    def debug(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def info(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def warning(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def error(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def critical(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def exception(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
+    def critical(self, event: str, *args: t.Any, **kw: t.Any) -> None:
+        self.log(logging.CRITICAL, event, *args, **kw)
 
-    def __getattr__(self, name: str):
-        return getattr(self._logger, name)
+    def exception(self, event: str, *args: t.Any, **kw: t.Any) -> None:
+        self.log(logging.ERROR, event, *args, **kw)
 
 
-class GCSLogBufferProcessor:
-    def __init__(self, run_id: str, gcs_bucket: str, gcs_client: gcsfs.GCSFileSystem):
+class GCSLogBuffer(LogBuffer):
+    def __init__(
+        self, run_id: str, gcs_client: gcsfs.GCSFileSystem, destination_path: str
+    ):
         self.run_id = run_id
-        self.gcs_bucket = gcs_bucket
         self.gcs_client = gcs_client
-        self.buffer: list[dict] = []
+        self.destination_path = destination_path
+        self.buffer: list[LogEntry] = []
 
-    def __call__(
-        self,
-        _logger: t.Any,
-        method_name: str,
-        event_dict: dict[str, t.Any],
-    ) -> None:
-        buffered_event = dict(event_dict)
-        buffered_event["log_level"] = method_name
-        buffered_event["timestamp"] = datetime.now(timezone.utc).isoformat()
-        self.buffer.append(buffered_event)
+    def add(self, entry: LogEntry) -> None:
+        self.buffer.append(entry)
 
-    async def flush(self, status: str = "unknown") -> str:
+    async def flush(self) -> None:
         if not self.buffer:
-            system_logger.warning(
+            module_system_logger.warning(
                 "No logs to flush for run", extra={"run_id": self.run_id}
             )
-            return ""
-
-        date_prefix = datetime.now(timezone.utc).strftime("%Y/%m/%d")
-        blob_path = (
-            f"{self.gcs_bucket}/run-logs/{date_prefix}/{self.run_id}/{status}.jsonl"
-        )
+            return None
 
         log_content = StringIO()
         for log_entry in self.buffer:
-            log_content.write(json.dumps(log_entry) + "\n")
+            log_content.write(json.dumps(log_entry.to_dict()) + "\n")
 
         try:
             await self.gcs_client._pipe_file(
-                blob_path, log_content.getvalue().encode("utf-8")
+                self.destination_path, log_content.getvalue().encode("utf-8")
             )
 
-            gcs_url = f"gs://{blob_path}"
-            system_logger.info(
+            gcs_url = f"gs://{self.destination_path}"
+            module_system_logger.info(
                 "Successfully uploaded logs to GCS",
                 extra={
                     "run_id": self.run_id,
@@ -126,9 +169,9 @@ class GCSLogBufferProcessor:
                     "log_count": len(self.buffer),
                 },
             )
-            return gcs_url
+            return None
         except Exception as e:
-            system_logger.error(
+            module_system_logger.error(
                 "Failed to upload logs to GCS",
                 extra={
                     "run_id": self.run_id,
@@ -144,3 +187,7 @@ class GCSLogBufferProcessor:
 
     def get_log_count(self) -> int:
         return len(self.buffer)
+
+    @property
+    def destination_url(self) -> str:
+        return f"gs://{self.destination_path}"
