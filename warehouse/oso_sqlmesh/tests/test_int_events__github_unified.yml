@@ -1,0 +1,108 @@
+test_int_events__github_unified_basic:
+  model: oso.int_events__github_unified
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-02
+  inputs:
+    oso.int_ddp__commits_deduped:
+      rows:
+      - repository_id: 101
+        sha: "abc123def"
+        created_at: "2024-01-01 10:00:00"
+        repository_name: "owner/repo"
+        actor_id: 555
+        actor_login: "user1"
+        author_email: "u1@mail"
+    oso.stg_github__releases:
+      rows: []
+    oso.stg_github__comments:
+      rows: []
+    oso.stg_github__comments_since_20251007:
+      rows:
+      - repository_id: 101
+        id: "c1"
+        type: "ISSUE_COMMENT"
+        event_time: "2024-01-01 11:00:00"
+        repository_name: "owner/repo"
+        actor_id: 555
+        actor_login: "user1"
+    oso.stg_github__issues:
+      rows: []
+    oso.stg_github__pull_requests:
+      rows: []
+    oso.stg_github__pull_requests_since_20251007:
+      rows: []
+    oso.stg_github__pull_request_merge_events:
+      rows:
+      - repository_id: 101
+        id: "ev1"
+        type: "PULL_REQUEST_MERGED"
+        event_time: "2024-01-01 12:00:00"
+        repository_name: "owner/repo"
+        actor_id: 555
+        actor_login: "user1"
+    oso.stg_github__pull_request_merge_events_since_20251007:
+      rows:
+      - repository_id: 999
+        repository_name: "dummy/repo"
+        type: "PULL_REQUEST_MERGED"
+        id: "dummy"
+        event_time: "2023-01-01 00:00:00"
+        merged_at: "2023-01-01 00:00:00"
+        created_at: "2023-01-01 00:00:00"
+        closed_at: "2023-01-01 00:00:00"
+        actor_id: 999
+        actor_login: "dummy"
+        state: "closed"
+        merge_commit_sha: "abc123"
+        changed_files: 0
+        additions: 0
+        deletions: 0
+        review_comments: 0.0
+        comments: 0.0
+        author_association: "NONE"
+        number: 1
+    oso.stg_github__stars_and_forks:
+      rows: []
+  outputs:
+    query:
+      rows:
+      - time: "2024-01-01 10:00:00"
+        to_artifact_name: "repo"
+        to_artifact_namespace: "owner"
+        to_artifact_source_id: "101"
+        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
+        from_artifact_name: "user1"
+        from_artifact_namespace: "user1"
+        from_artifact_source_id: "555"
+        from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
+        event_type: "COMMIT_CODE"
+        event_source_id: "abc123def"
+        event_source: "GITHUB"
+        amount: 1.0
+      - time: "2024-01-01 11:00:00"
+        to_artifact_name: "repo"
+        to_artifact_namespace: "owner"
+        to_artifact_source_id: "101"
+        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
+        from_artifact_name: "user1"
+        from_artifact_namespace: "user1"
+        from_artifact_source_id: "555"
+        from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
+        event_type: "ISSUE_COMMENT"
+        event_source_id: "c1"
+        event_source: "GITHUB"
+        amount: 1.0
+      - time: "2024-01-01 12:00:00"
+        to_artifact_name: "repo"
+        to_artifact_namespace: "owner"
+        to_artifact_source_id: "101"
+        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
+        from_artifact_name: "user1"
+        from_artifact_namespace: "user1"
+        from_artifact_source_id: "555"
+        from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
+        event_type: "PULL_REQUEST_MERGED"
+        event_source_id: "ev1"
+        event_source: "GITHUB"
+        amount: 1.0
