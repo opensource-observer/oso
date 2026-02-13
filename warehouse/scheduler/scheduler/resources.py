@@ -231,7 +231,7 @@ def dlt_destination_factory(
     Uses Trino if trino_enabled is True, otherwise uses DuckDB.
     """
     if common_settings.trino_enabled:
-        trino: TrinoResource = resources.resolve("trino")
+        trino: TrinoResource = resources.resolve("consumer_trino")
         return TrinoDLTDestinationResource(
             trino=trino, catalog=common_settings.warehouse_shared_catalog_name
         )
