@@ -103,7 +103,7 @@ class ArchiveIngestionHandler(IngestionHandler):
 
         dlt_resources = []
         for source in archive_config.sources:
-            step_context.log.info(f"Creating DLT resource for {source.url}")
+            step_context.log.info(f"Creating DLT resource for: {source.url}")
 
             filename = Path(urlparse(source.url).path).stem
             table_name = f"data_ingestion_{filename}".replace("-", "_")
