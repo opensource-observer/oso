@@ -1,6 +1,6 @@
 import time
+import typing as t
 from http.client import IncompleteRead, RemoteDisconnected
-from typing import Any, Callable, Dict, Generator, List, Optional
 
 from gql import Client, gql
 from gql.transport.exceptions import TransportError
@@ -18,7 +18,7 @@ from .types import (
 )
 
 
-def get_nested_value(data: Dict[str, Any], path: str) -> Any:
+def get_nested_value(data: t.Dict[str, t.Any], path: str) -> t.Any:
     """Get a value from nested dictionary using dot notation path.
 
     Args:
@@ -41,11 +41,11 @@ def get_nested_value(data: Dict[str, Any], path: str) -> Any:
 
 
 def extract_data_for_pagination(
-    result: Dict[str, Any],
+    result: t.Dict[str, t.Any],
     target_query: str,
-    transform_fn: Optional[Callable[[Any], Any]],
-    pagination_config: Optional[PaginationConfig],
-) -> tuple[List[Any], Optional[Dict[str, Any]]]:
+    transform_fn: t.Optional[t.Callable[[t.Any], t.Any]],
+    pagination_config: t.Optional[PaginationConfig],
+) -> tuple[t.List[t.Any], t.Optional[t.Dict[str, t.Any]]]:
     """Extract data and pagination info from the GraphQL query result.
 
     Args:
@@ -107,15 +107,15 @@ class PaginationVariableManager:
 
     def __init__(
         self,
-        pagination_config: Optional[PaginationConfig],
-        initial_parameters: Optional[Dict[str, Dict[str, Any]]],
+        pagination_config: t.Optional[PaginationConfig],
+        initial_parameters: t.Optional[t.Dict[str, t.Dict[str, t.Any]]],
     ):
         self.pagination_config = pagination_config
         self.variables = self._initialize_variables(initial_parameters)
 
     def _initialize_variables(
-        self, initial_parameters: Optional[Dict[str, Dict[str, Any]]]
-    ) -> Dict[str, Any]:
+        self, initial_parameters: t.Optional[t.Dict[str, t.Dict[str, t.Any]]]
+    ) -> t.Dict[str, t.Any]:
         """Initialize variables from parameters."""
         return {
             key: param["value"] for key, param in (initial_parameters or {}).items()
@@ -125,8 +125,8 @@ class PaginationVariableManager:
         self,
         page_number: int,
         total_items: int,
-        page_size: Optional[int],
-    ) -> Dict[str, Any]:
+        page_size: t.Optional[int],
+    ) -> t.Dict[str, t.Any]:
         """Get query variables for the current page.
 
         Args:
@@ -177,8 +177,8 @@ class PaginationVariableManager:
 
     def update_for_next_page(
         self,
-        pagination_info: Optional[Dict[str, Any]],
-        last_item: Optional[Dict[str, Any]],
+        pagination_info: t.Optional[t.Dict[str, t.Any]],
+        last_item: t.Optional[t.Dict[str, t.Any]],
     ) -> None:
         """Update internal state for the next page based on pagination type.
 
@@ -220,12 +220,12 @@ class PaginationDecisionEngine:
 
     @staticmethod
     def compute_has_more(
-        pagination_config: Optional[PaginationConfig],
-        pagination_info: Optional[Dict[str, Any]],
+        pagination_config: t.Optional[PaginationConfig],
+        pagination_info: t.Optional[t.Dict[str, t.Any]],
         items_in_page: int,
         total_items: int,
         successful_pages: int,
-        data_items: List[Any],
+        data_items: t.List[t.Any],
     ) -> bool:
         """Determine if more pages should be fetched.
 
@@ -287,10 +287,10 @@ class GraphQLPaginationExecutor:
         self,
         client: Client,
         logger: GraphQLLogger,
-        pagination_config: Optional[PaginationConfig],
-        retry_config: Optional[RetryConfig],
+        pagination_config: t.Optional[PaginationConfig],
+        retry_config: t.Optional[RetryConfig],
         endpoint: str,
-        masked_endpoint: Optional[str],
+        masked_endpoint: t.Optional[str],
     ):
         self.client = client
         self.logger = logger
@@ -303,15 +303,15 @@ class GraphQLPaginationExecutor:
     def execute_paginated_query(
         self,
         generated_query: str,
-        initial_variables: Dict[str, Any],
-        transform_fn: Optional[Callable[[Any], Any]],
+        initial_variables: t.Dict[str, t.Any],
+        transform_fn: t.Optional[t.Callable[[t.Any], t.Any]],
         target_query: str,
         initial_page_number: int = 0,
         initial_total_items: int = 0,
-        page_callback: Optional[
-            Callable[[List[Any], Optional[Dict[str, Any]], int, int], None]
+        page_callback: t.Optional[
+            t.Callable[[t.List[t.Any], t.Optional[t.Dict[str, t.Any]], int, int], None]
         ] = None,
-    ) -> Generator[Any, None, PaginationResult]:
+    ) -> t.Generator[t.Any, None, PaginationResult]:
         """Execute a paginated GraphQL query, yielding items as they're fetched.
 
         Args:
@@ -352,8 +352,8 @@ class GraphQLPaginationExecutor:
                 )
 
                 def execute_query_with_page_size(
-                    page_size: Optional[int] = None,
-                ) -> Dict[str, Any]:
+                    page_size: t.Optional[int] = None,
+                ) -> t.Dict[str, t.Any]:
                     """Execute query with given page size."""
                     effective_page_size = page_size or original_page_size
                     query_variables = variable_manager.get_variables_for_page(

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+import typing as t
 
 from .introspection import get_graphql_introspection, get_type_info
 from .types import GraphQLLogger, PaginationConfig, PaginationType
@@ -10,26 +10,26 @@ class FieldExpander:
     def __init__(
         self,
         logger: GraphQLLogger,
-        types_dict: Dict[str, Dict[str, Any]],
+        types_dict: t.Dict[str, t.Dict[str, t.Any]],
         max_depth: int,
-        pagination_config: Optional[PaginationConfig] = None,
-        exclude_fields: Optional[List[str]] = None,
+        pagination_config: t.Optional[PaginationConfig] = None,
+        exclude_fields: t.Optional[t.List[str]] = None,
     ):
         self.logger = logger
         self.types_dict = types_dict
         self.max_depth = max_depth
-        self.visited_paths: Set[str] = set()
+        self.visited_paths: t.Set[str] = set()
         self.pagination_config = pagination_config
         self.exclude_fields = exclude_fields or []
 
     def expand_abstract_type(
         self,
         field_name: str,
-        type_def: Dict[str, Any],
+        type_def: t.Dict[str, t.Any],
         current_path: str,
         depth: int,
         field_path: str,
-    ) -> Optional[str]:
+    ) -> t.Optional[str]:
         """Expand UNION or INTERFACE types using inline fragments."""
         if depth >= self.max_depth:
             self.logger.warning(
@@ -108,11 +108,11 @@ class FieldExpander:
 
     def expand_field(
         self,
-        field: Dict[str, Any],
+        field: t.Dict[str, t.Any],
         current_path: str = "",
         depth: int = 0,
         field_path: str = "",
-    ) -> Optional[str]:
+    ) -> t.Optional[str]:
         """
         Expand a field in the introspection query, handling cycles and max depth.
         Returns None if the field should be skipped due to expansion limitations.
@@ -208,8 +208,8 @@ class FieldExpander:
 
 
 def get_query_parameters(
-    parameters: Optional[Dict[str, Dict[str, Any]]],
-    pagination_config: Optional[PaginationConfig] = None,
+    parameters: t.Optional[t.Dict[str, t.Dict[str, t.Any]]],
+    pagination_config: t.Optional[PaginationConfig] = None,
 ) -> tuple[str, str]:
     """
     Get the parameters for the GraphQL query.
@@ -312,8 +312,11 @@ class GraphQLQueryBuilder:
     def __init__(
         self,
         logger: GraphQLLogger,
-        introspection_fetcher: Optional[
-            Callable[[str, Optional[Tuple[Tuple[str, str], ...]], int], Dict[str, Any]]
+        introspection_fetcher: t.Optional[
+            t.Callable[
+                [str, t.Optional[t.Tuple[t.Tuple[str, str], ...]], int],
+                t.Dict[str, t.Any],
+            ]
         ] = None,
     ):
         """
@@ -330,13 +333,13 @@ class GraphQLQueryBuilder:
     def build_query(
         self,
         endpoint: str,
-        headers_tuple: Optional[Tuple[Tuple[str, str], ...]],
+        headers_tuple: t.Optional[t.Tuple[t.Tuple[str, str], ...]],
         target_type: str,
         target_query: str,
         max_depth: int,
-        parameters: Optional[Dict[str, Dict[str, Any]]],
-        pagination_config: Optional[PaginationConfig],
-        exclude_fields: Optional[List[str]],
+        parameters: t.Optional[t.Dict[str, t.Dict[str, t.Any]]],
+        pagination_config: t.Optional[PaginationConfig],
+        exclude_fields: t.Optional[t.List[str]],
     ) -> str:
         """
         Build a complete GraphQL query from configuration.

@@ -1,15 +1,15 @@
+import typing as t
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, Optional, Protocol
 
 
-class GraphQLLogger(Protocol):
+class GraphQLLogger(t.Protocol):
     """Protocol for logger objects used in GraphQL operations."""
 
-    def debug(self, *args, **kwargs) -> Any: ...
-    def info(self, *args, **kwargs) -> Any: ...
-    def warning(self, *args, **kwargs) -> Any: ...
-    def error(self, *args, **kwargs) -> Any: ...
+    def debug(self, *args, **kwargs) -> t.Any: ...
+    def info(self, *args, **kwargs) -> t.Any: ...
+    def warning(self, *args, **kwargs) -> t.Any: ...
+    def error(self, *args, **kwargs) -> t.Any: ...
 
 
 class PaginationType(Enum):
@@ -28,12 +28,12 @@ class PaginationConfig:
 
     type: PaginationType
     page_size: int = 50
-    max_pages: Optional[int] = None
+    max_pages: t.Optional[int] = None
     rate_limit_seconds: float = 0.0
 
     offset_field: str = "offset"
     limit_field: str = "limit"
-    total_count_path: Optional[str] = None
+    total_count_path: t.Optional[str] = None
 
     cursor_field: str = "after"
     page_size_field: str = "first"
@@ -48,7 +48,7 @@ class PaginationConfig:
     cursor_key: str = "id"
     order_direction: str = "asc"
 
-    stop_condition: Optional[Callable[[Dict[str, Any], int], bool]] = None
+    stop_condition: t.Optional[t.Callable[[t.Dict[str, t.Any], int], bool]] = None
 
 
 @dataclass
@@ -70,12 +70,12 @@ class RetryConfig:
 class GraphQLPaginationState:
     """State information for resuming GraphQL pagination."""
 
-    last_cursor: Optional[Any] = None
+    last_cursor: t.Optional[t.Any] = None
     pagination_type: PaginationType = PaginationType.KEYSET
     checkpoint_field: str = "id"
     total_processed: int = 0
     successful_pages: int = 0
-    last_checkpoint_value: Optional[Any] = None
+    last_checkpoint_value: t.Optional[t.Any] = None
 
 
 @dataclass

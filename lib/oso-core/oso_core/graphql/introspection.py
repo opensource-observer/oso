@@ -1,5 +1,5 @@
+import typing as t
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
 
 from gql import Client, gql
 from gql.transport.exceptions import TransportError
@@ -86,9 +86,9 @@ def create_fragment(depth: int, max_depth=FRAGMENT_MAX_DEPTH) -> str:
 
 def get_graphql_introspection(
     endpoint: str,
-    headers_tuple: Optional[Tuple[Tuple[str, str], ...]],
+    headers_tuple: t.Optional[t.Tuple[t.Tuple[str, str], ...]],
     max_depth: int,
-) -> Dict[str, Any]:
+) -> t.Dict[str, t.Any]:
     """Fetch the GraphQL introspection query from the given endpoint."""
     headers_dict = dict(headers_tuple) if headers_tuple else None
 
@@ -131,7 +131,7 @@ class _TypeToPython:
 class TypeToPython:
     """A mapping of GraphQL types to Python types."""
 
-    def __init__(self, available_types: List[Dict[str, Any]]):
+    def __init__(self, available_types: t.List[t.Dict[str, t.Any]]):
         self.available_types = available_types
         self._scalar_types = {
             attr: getattr(_TypeToPython, attr)
@@ -152,7 +152,7 @@ class TypeToPython:
         return f'"{name}"' if is_object else "Any"
 
 
-def get_type_info(graphql_type: Dict[str, Any]) -> Dict[str, Any]:
+def get_type_info(graphql_type: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
     """Extract core type information from a GraphQL type."""
     if not graphql_type:
         return {
@@ -206,7 +206,7 @@ def get_type_info(graphql_type: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def resolve_type(graphql_type: Dict[str, Any], type_mapper: TypeToPython) -> str:
+def resolve_type(graphql_type: t.Dict[str, t.Any], type_mapper: TypeToPython) -> str:
     """Resolve the type of a GraphQL field to a Python type annotation."""
     if not graphql_type:
         return "Any"

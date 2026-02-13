@@ -1,7 +1,7 @@
 import random
 import time
+import typing as t
 from http.client import IncompleteRead, RemoteDisconnected
-from typing import Callable, Optional, TypeVar
 
 from gql.transport.exceptions import (
     TransportError,
@@ -14,11 +14,11 @@ from requests.exceptions import Timeout
 
 from .types import GraphQLLogger, RetryConfig
 
-D = TypeVar("D")
+D = t.TypeVar("D")
 
 
 def sanitize_error_message(
-    error_message: str, endpoint: str, masked_endpoint: Optional[str] = None
+    error_message: str, endpoint: str, masked_endpoint: t.Optional[str] = None
 ) -> str:
     """
     Sanitize error messages by replacing the real endpoint with a masked endpoint.
@@ -38,12 +38,12 @@ def sanitize_error_message(
 
 
 def execute_with_retry(
-    func: Callable[[], D],
-    retry_config: Optional[RetryConfig],
+    func: t.Callable[[], D],
+    retry_config: t.Optional[RetryConfig],
     logger: GraphQLLogger,
     operation_name: str = "GraphQL operation",
-    endpoint: Optional[str] = None,
-    masked_endpoint: Optional[str] = None,
+    endpoint: t.Optional[str] = None,
+    masked_endpoint: t.Optional[str] = None,
 ) -> D:
     """
     Execute a function with retry mechanism and exponential backoff.
@@ -105,14 +105,14 @@ def execute_with_retry(
 
 
 def execute_with_adaptive_retry(
-    func: Callable[[Optional[int]], D],
-    retry_config: Optional[RetryConfig],
+    func: t.Callable[[t.Optional[int]], D],
+    retry_config: t.Optional[RetryConfig],
     logger: GraphQLLogger,
-    initial_page_size: Optional[int],
+    initial_page_size: t.Optional[int],
     operation_name: str = "GraphQL operation",
-    endpoint: Optional[str] = None,
-    masked_endpoint: Optional[str] = None,
-) -> Optional[D]:
+    endpoint: t.Optional[str] = None,
+    masked_endpoint: t.Optional[str] = None,
+) -> t.Optional[D]:
     """
     Execute a function with retry mechanism that reduces page size on failures.
 
