@@ -136,9 +136,6 @@ def project_details_by_account_id(
     yield from resource()
 
 
-# how much each project got and when did they get it
-
-
 @dlt_factory(key_prefix="drips", ins={"apps_df": AssetIn(applications_df_key)})
 def rpgf_applications(
     context: AssetExecutionContext,
