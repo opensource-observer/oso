@@ -215,7 +215,8 @@ class GraphQLIngestionHandler(IngestionHandler):
 
             query_builder = GraphQLQueryBuilder(step_context.log)
             try:
-                generated_query = query_builder.build_query(
+                generated_query = await asyncio.to_thread(
+                    query_builder.build_query,
                     endpoint=graphql_config.endpoint,
                     headers_tuple=headers_tuple,
                     target_type=graphql_config.target_type,
