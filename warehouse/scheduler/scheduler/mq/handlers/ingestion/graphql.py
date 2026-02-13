@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, List, Optional
+import typing as t
 
 import dlt
 from dlt import pipeline
@@ -12,7 +12,7 @@ from oso_core.graphql.client import (
     PaginationType,
     RetryConfig,
 )
-from pydantic import BaseModel, ConfigDict, ValidationError, model_validator
+from pydantic import BaseModel, ValidationError, model_validator
 from scheduler.config import CommonSettings
 from scheduler.dlt_destination import DLTDestinationResource
 from scheduler.mq.handlers.ingestion.base import IngestionHandler
@@ -30,9 +30,9 @@ from scheduler.utils import dlt_to_oso_schema
 class GraphQLParameterValue(BaseModel):
     """Value for a GraphQL parameter - text, number, or array."""
 
-    textValue: Optional[str] = None
-    numberValue: Optional[float] = None
-    arrayValue: Optional[list[str]] = None
+    textValue: t.Optional[str] = None
+    numberValue: t.Optional[float] = None
+    arrayValue: t.Optional[list[str]] = None
 
     @model_validator(mode="after")
     def validate_exactly_one_value(self):
@@ -60,15 +60,13 @@ class GraphQLParameter(BaseModel):
 class GraphQLPaginationConfigModel(BaseModel):
     """Pydantic model for pagination configuration from API."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     type: str
     page_size: int = 50
-    max_pages: Optional[int] = None
+    max_pages: t.Optional[int] = None
     rate_limit_seconds: float = 0.0
     offset_field: str = "offset"
     limit_field: str = "limit"
-    total_count_path: Optional[str] = None
+    total_count_path: t.Optional[str] = None
     cursor_field: str = "after"
     page_size_field: str = "first"
     next_cursor_path: str = "pageInfo.endCursor"
@@ -134,17 +132,15 @@ class GraphQLRetryConfigModel(BaseModel):
 class GraphQLConfigModel(BaseModel):
     """Pydantic model for GraphQL configuration."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     endpoint: str
     target_type: str
     target_query: str
     max_depth: int = 5
-    headers: Optional[Dict[str, str]] = None
-    parameters: Optional[List[GraphQLParameter]] = None
-    pagination: Optional[GraphQLPaginationConfigModel] = None
-    exclude: Optional[List[str]] = None
-    retry: Optional[GraphQLRetryConfigModel] = None
+    headers: t.Optional[t.Dict[str, str]] = None
+    parameters: t.Optional[t.List[GraphQLParameter]] = None
+    pagination: t.Optional[GraphQLPaginationConfigModel] = None
+    exclude: t.Optional[t.List[str]] = None
+    retry: t.Optional[GraphQLRetryConfigModel] = None
 
 
 class GraphQLIngestionHandler(IngestionHandler):
@@ -170,9 +166,9 @@ class GraphQLIngestionHandler(IngestionHandler):
                 step_context.log.error(
                     "Invalid GraphQL config", extra={"errors": e.errors()}
                 )
-                return FailedResponse(message=error_msg)
+                return FailedResponse(exception=e, message=error_msg)
 
-            normalized_parameters: Optional[Dict[str, Dict[str, Any]]] = None
+            normalized_parameters: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = None
             if graphql_config.parameters:
                 normalized_parameters = {
                     p.name: {
@@ -230,7 +226,7 @@ class GraphQLIngestionHandler(IngestionHandler):
                     exclude_fields=graphql_config.exclude,
                 )
             except ValueError as e:
-                return FailedResponse(message=str(e))
+                return FailedResponse(exception=e, message=str(e))
 
             step_context.log.info(
                 "Generated GraphQL query", extra={"query": generated_query}
@@ -351,6 +347,8 @@ class GraphQLIngestionHandler(IngestionHandler):
                 extra={"error": str(e)},
                 exc_info=True,
             )
-            return FailedResponse(message=f"GraphQL data ingestion failed: {e}")
+            return FailedResponse(
+                exception=e, message=f"GraphQL data ingestion failed: {e}"
+            )
 
         return SuccessResponse(message="GraphQL data ingestion completed successfully")
