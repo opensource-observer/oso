@@ -8,7 +8,7 @@ spec:
         images:
           - name: ghcr.io/opensource-observer/oso
             newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-            newTag: deploy-20260213004901-c0605cb # {"$imagepolicy": "flux-system:oso:tag"}
+            newTag: deploy-20260213174034-69b653d # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     app:
       resources:
@@ -35,4 +35,3 @@ spec:
             resources: ["services"]
             verbs: ["get", "list", "watch"]
         enableClusterRoleBinding: true
-      
