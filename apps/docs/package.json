@@ -20,7 +20,8 @@
     "lint:prettier": "prettier --ignore-path ../../.gitignore --ignore-path .gitignore --ignore-path .prettierignore --log-level warn --check **/*.{js,ts,tsx,md,json}",
     "plasmic:update": "pnpm update @plasmicapp/cli @plasmicapp/react-web",
     "plasmic:sync": "pnpm plasmic sync --yes --force",
-    "update:deps": "ncu -i"
+    "update:deps": "ncu -i",
+    "test": "node scripts/test_js_snippets.mjs"
   },
   "dependencies": {
     "@docusaurus/core": "3.8.1",

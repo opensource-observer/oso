@@ -1,0 +1,26 @@
+name: Docs Data Science Cron
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Daily
+  workflow_dispatch:
+
+jobs:
+  test-python-snippets:
+    runs-on: ubuntu-latest
+    env:
+      OSO_API_KEY: ${{ secrets.OSO_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python and UV
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: 3.12
+
+      - name: Install dependencies
+        run: uv sync --all-packages --all-extras
+
+      - name: Run Python Snippet Tests
+        run: uv run python apps/docs/scripts/test_python_snippets.py
