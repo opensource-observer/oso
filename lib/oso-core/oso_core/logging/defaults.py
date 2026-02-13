@@ -18,6 +18,19 @@ def ensure_event_type(
     return event_dict
 
 
+def flatten_extra(
+    logger: logging.Logger, log_method: str, event_dict: structlog.types.EventDict
+):
+    """This flattens the `extra` dict into the top level of the log entry so that
+    all fields are searchable in the log UI"""
+
+    extra = event_dict.pop("extra", {})
+    if isinstance(extra, dict):
+        event_dict.update(extra)
+
+    return event_dict
+
+
 def configure_structured_logging(
     *,
     enable_json_logs: bool = os.environ.get("OSO_ENABLE_JSON_LOGS", "0")
@@ -48,6 +61,7 @@ def configure_structured_logging(
         structlog.processors.StackInfoRenderer(),
         structlog.processors.ExceptionRenderer(),
         ensure_event_type,
+        flatten_extra,
     ]
 
     structlog.configure(

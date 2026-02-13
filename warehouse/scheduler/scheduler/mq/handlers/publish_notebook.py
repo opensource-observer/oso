@@ -3,7 +3,6 @@ import gzip
 import json
 import urllib.parse
 
-import structlog
 from lzstring import LZString
 from osoprotobufs.publish_notebook_pb2 import PublishNotebookRunRequest
 from playwright.async_api import async_playwright
@@ -11,8 +10,6 @@ from scheduler.config import CommonSettings
 from scheduler.graphql_client.client import Client
 from scheduler.mq.common import RunHandler
 from scheduler.types import HandlerResponse, RunContext, SuccessResponse
-
-logger = structlog.getLogger(__name__)
 
 WAIT_JS = """
     () => {
@@ -115,7 +112,7 @@ class PublishNotebookRunRequestHandler(RunHandler[PublishNotebookRunRequest]):
 
         notebooks = (await oso_client.get_notebook(message.notebook_id)).notebooks.edges
         if len(notebooks) != 1:
-            logger.error(
+            context.internal_log.error(
                 "Notebook not found or multiple notebooks returned.",
                 notebook_id=message.notebook_id,
             )
@@ -136,7 +133,7 @@ class PublishNotebookRunRequestHandler(RunHandler[PublishNotebookRunRequest]):
                     screen={"width": 1280, "height": 720},
                 )
                 await page.goto(url, wait_until="networkidle")
-                logger.info("Page loaded, waiting for preview button...")
+                context.internal_log.info("Page loaded, waiting for preview button...")
                 await page.wait_for_selector(
                     "[data-testid='large-spinner']", timeout=30000
                 )
@@ -148,20 +145,24 @@ class PublishNotebookRunRequestHandler(RunHandler[PublishNotebookRunRequest]):
                 )
                 assert preview_button is not None
                 await preview_button.click()
-                logger.info("Preview button clicked, waiting for content...")
+                context.internal_log.info(
+                    "Preview button clicked, waiting for content..."
+                )
 
                 await page.wait_for_function(WAIT_JS, timeout=250000, polling=100)
 
                 await page.wait_for_timeout(5000)
 
-                logger.info("Page is stable, extracting content...")
+                context.internal_log.info("Page is stable, extracting content...")
                 css_list: list[str] = await page.evaluate(GET_CSS_JS)
                 body_html: str = await page.evaluate(GET_BODY_JS)
 
                 content = f"<style>{'\n'.join(css_list)}</style>\n{body_html}"
 
         if content is None:
-            logger.error("Failed to extract content from the notebook page.")
+            context.internal_log.error(
+                "Failed to extract content from the notebook page."
+            )
             raise RuntimeError("Content extraction failed")
 
         gzip_content = base64.b64encode(gzip.compress(content.encode("utf-8"))).decode(
@@ -172,10 +173,10 @@ class PublishNotebookRunRequestHandler(RunHandler[PublishNotebookRunRequest]):
             notebook_id=notebook.id, html_content=gzip_content
         )
         if not response.save_published_notebook_html.success:
-            logger.error("Failed to save published notebook HTML.")
+            context.internal_log.error("Failed to save published notebook HTML.")
             raise RuntimeError("Failed to save published notebook HTML")
 
-        logger.info("Notebook published successfully.")
+        context.internal_log.info("Notebook published successfully.")
         return SuccessResponse(
             message=f"Processed PublishNotebookRunRequest with ID: {context.run_id}"
         )
