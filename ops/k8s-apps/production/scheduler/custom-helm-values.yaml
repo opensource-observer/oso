@@ -11,6 +11,10 @@ spec:
             newTag: deploy-20260213004901-c0605cb # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     app:
+      resources:
+        requests:
+          cpu: "500m"
+          memory: "768Mi"
       queues:
         - name: "data_model_run_requests"
         - name: "data_ingestion_run_requests"
@@ -31,3 +35,4 @@ spec:
             resources: ["services"]
             verbs: ["get", "list", "watch"]
         enableClusterRoleBinding: true
+      
