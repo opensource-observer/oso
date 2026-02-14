@@ -33,6 +33,7 @@ import uuid
 from dataclasses import dataclass
 from threading import Event, Lock
 
+import structlog
 from aioprometheus.collectors import Counter, Gauge, Histogram
 from google.cloud.pubsub import SubscriberClient
 from google.cloud.pubsub_v1.subscriber.message import Message
@@ -362,6 +363,9 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         queued_message: QueuedPubSubMessage,
     ) -> None:
         metrics.gauge("pubsub_messages_active").inc({})
+
+        logger = structlog.get_logger(f"scheduler.{handler.topic}")
+
         try:
             logger.debug(
                 f"Processing queued message #{message_number} {queued_message}",
@@ -374,6 +378,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                     handler.handle_message,
                     additional_inject={
                         "message": queued_message.message,
+                        "logger": logger,
                     },
                 )
                 match response:

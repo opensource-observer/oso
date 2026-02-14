@@ -1,5 +1,6 @@
 import typing as t
 
+import structlog
 from google.protobuf.message import Message
 from oso_core.resources import ResourcesRegistry
 from scheduler.materialization.duckdb import DuckdbMaterializationStrategy
@@ -24,7 +25,10 @@ class MessageHandlerTestHarness(t.Generic[T]):
 
         return await resources_context.run(
             self.handler.handle_message,
-            additional_inject={"message": message},
+            additional_inject={
+                "message": message,
+                "logger": structlog.get_logger("scheduler.testing"),
+            },
         )
 
 

@@ -8,9 +8,13 @@ spec:
         images:
           - name: ghcr.io/opensource-observer/oso
             newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-            newTag: deploy-20260212222111-b19767c # {"$imagepolicy": "flux-system:oso:tag"}
+            newTag: deploy-20260214184339-014222a # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     app:
+      resources:
+        requests:
+          cpu: "500m"
+          memory: "768Mi"
       queues:
         - name: "data_model_run_requests"
         - name: "data_ingestion_run_requests"
