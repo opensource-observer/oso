@@ -66,7 +66,9 @@ class OSOStepContext(StepContext):
         logger: BindableLogger,
         internal_logger: BindableLogger,
     ) -> "OSOStepContext":
-        return cls(run, step_id, oso_client, materialization_strategy, logger)
+        return cls(
+            run, step_id, oso_client, materialization_strategy, logger, internal_logger
+        )
 
     def __init__(
         self,
@@ -75,13 +77,14 @@ class OSOStepContext(StepContext):
         oso_client: OSOClient,
         materialization_strategy: MaterializationStrategy,
         logger: BindableLogger,
+        internal_logger: BindableLogger,
     ) -> None:
         self._run = run
         self._step_id = step_id
         self._oso_client = oso_client
         self._materialization_strategy = materialization_strategy
         self._logger = logger
-        self._internal_logger = logger
+        self._internal_logger = internal_logger
 
     @property
     def log(self) -> BindableLogger:
