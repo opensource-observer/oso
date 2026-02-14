@@ -28,7 +28,12 @@ MODEL (
 );
 
 WITH raw_events AS (
-  /* Commits from unified GHA + OpenDevData (via DDP pipeline) */
+  /* Commits from unified GHA + OpenDevData (via DDP pipeline).
+     Unlike int_events__github which uses stg_github__distinct_commits_resolved_mergebot
+     with push_id as event_source_id, this model uses int_ddp__commits_deduped with
+     sha as event_source_id. This means event_source_id here is commit-level (unique
+     per commit) rather than push-level (unique per push, which may contain multiple
+     commits). The DDP source also includes OpenDevData commits beyond GHA. */
   SELECT
     created_at AS event_time,
     'COMMIT_CODE' AS event_type,
@@ -56,7 +61,9 @@ WITH raw_events AS (
 
   UNION ALL
 
-  /* Comments (historical) */
+  /* Comments (historical, up to cutover date).
+     Date boundary guards ensure no overlap with _since_20251007 sources,
+     even though staging models also enforce disjoint ranges. */
   SELECT
     event_time,
     type AS event_type,
@@ -66,7 +73,7 @@ WITH raw_events AS (
     actor_login AS actor_name,
     actor_id::TEXT AS actor_id
   FROM oso.stg_github__comments
-  WHERE event_time BETWEEN @start_dt AND @end_dt
+  WHERE event_time BETWEEN @start_dt AND LEAST(@end_dt, @github_events_pre_v20251007_end_date)
 
   UNION ALL
 
@@ -80,7 +87,7 @@ WITH raw_events AS (
     actor_login AS actor_name,
     actor_id::TEXT AS actor_id
   FROM oso.stg_github__comments_since_20251007
-  WHERE event_time BETWEEN @start_dt AND @end_dt
+  WHERE event_time BETWEEN GREATEST(@start_dt, @github_events_v20251007_start_date) AND @end_dt
 
   UNION ALL
 
@@ -98,7 +105,7 @@ WITH raw_events AS (
 
   UNION ALL
 
-  /* Pull Requests (historical) */
+  /* Pull Requests (historical, up to cutover date) */
   SELECT
     event_time,
     type AS event_type,
@@ -108,7 +115,7 @@ WITH raw_events AS (
     actor_login AS actor_name,
     actor_id::TEXT AS actor_id
   FROM oso.stg_github__pull_requests
-  WHERE event_time BETWEEN @start_dt AND @end_dt
+  WHERE event_time BETWEEN @start_dt AND LEAST(@end_dt, @github_events_pre_v20251007_end_date)
 
   UNION ALL
 
@@ -122,11 +129,11 @@ WITH raw_events AS (
     actor_login AS actor_name,
     actor_id::TEXT AS actor_id
   FROM oso.stg_github__pull_requests_since_20251007
-  WHERE event_time BETWEEN @start_dt AND @end_dt
+  WHERE event_time BETWEEN GREATEST(@start_dt, @github_events_v20251007_start_date) AND @end_dt
 
   UNION ALL
 
-  /* Pull Request Merge Events (historical) */
+  /* Pull Request Merge Events (historical, up to cutover date) */
   SELECT
     event_time,
     type AS event_type,
@@ -136,7 +143,7 @@ WITH raw_events AS (
     actor_login AS actor_name,
     actor_id::TEXT AS actor_id
   FROM oso.stg_github__pull_request_merge_events
-  WHERE event_time BETWEEN @start_dt AND @end_dt
+  WHERE event_time BETWEEN @start_dt AND LEAST(@end_dt, @github_events_pre_v20251007_end_date)
 
   UNION ALL
 
@@ -150,7 +157,7 @@ WITH raw_events AS (
     actor_login AS actor_name,
     actor_id::TEXT AS actor_id
   FROM oso.stg_github__pull_request_merge_events_since_20251007
-  WHERE event_time BETWEEN @start_dt AND @end_dt
+  WHERE event_time BETWEEN GREATEST(@start_dt, @github_events_v20251007_start_date) AND @end_dt
 
   UNION ALL
 
@@ -183,6 +190,11 @@ parsed_events AS (
     actor_id::TEXT AS from_artifact_source_id,
     1::DOUBLE AS amount
   FROM raw_events
+  /* Filter out events with malformed repository names (missing 'owner/repo'
+     format). This guard prevents SPLIT from producing NULLs for
+     to_artifact_name/to_artifact_namespace. Not present in the legacy
+     int_events__github models, so row counts may differ slightly. */
+  WHERE STRPOS(repository_name, '/') > 0
 )
 
 SELECT
