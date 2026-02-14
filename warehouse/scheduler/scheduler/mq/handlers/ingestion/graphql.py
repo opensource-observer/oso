@@ -153,6 +153,7 @@ class GraphQLIngestionHandler(IngestionHandler):
         config: dict[str, object],
         dataset_id: str,
         org_id: str,
+        destination_user: str,
         dlt_destination: DLTDestinationResource,
         common_settings: CommonSettings,
     ) -> HandlerResponse:
@@ -278,7 +279,8 @@ class GraphQLIngestionHandler(IngestionHandler):
             pipeline_name = f"{org_id}_{dataset_id}".replace("-", "")[:50]
 
             async with dlt_destination.get_destination(
-                dataset_schema=dataset_schema
+                dataset_schema=dataset_schema,
+                user=destination_user,
             ) as destination:
                 p = pipeline(
                     pipeline_name=pipeline_name,
