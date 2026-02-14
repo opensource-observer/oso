@@ -15,6 +15,7 @@ from scheduler.types import (
     RunContext,
     StepContext,
     SuccessResponse,
+    TableReference,
 )
 from scheduler.utils import dlt_to_oso_schema
 
@@ -98,8 +99,15 @@ class ArchiveIngestionHandler(IngestionHandler):
             },
         )
 
-        catalog = common_settings.warehouse_shared_catalog_name
-        dataset_schema = f"org_{org_id}_{dataset_id}".replace("-", "_")
+        placeholder_target_table = step_context.generate_destination_table_exp(
+            TableReference(
+                org_id=org_id,
+                dataset_id=dataset_id,
+                table_id="placeholder_table",
+            )
+        )
+        catalog = placeholder_target_table.catalog
+        dataset_schema = placeholder_target_table.db
 
         dlt_resources = []
         for source in archive_config.sources:
