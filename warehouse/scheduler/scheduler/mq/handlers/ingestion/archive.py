@@ -99,7 +99,7 @@ class ArchiveIngestionHandler(IngestionHandler):
         )
 
         catalog = common_settings.warehouse_shared_catalog_name
-        dataset_schema = f"{org_id}_{dataset_id}".replace("-", "_")
+        dataset_schema = f"org_{org_id}_{dataset_id}".replace("-", "_")
 
         dlt_resources = []
         for source in archive_config.sources:
