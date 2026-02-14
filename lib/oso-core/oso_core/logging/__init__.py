@@ -3,9 +3,9 @@ import os
 import typing as t
 
 import structlog
-from oso_core.logging.defaults import configure_structured_logging
 
 from .buffered import BufferedLogger
+from .defaults import configure_structured_logging
 from .proxied import ProxiedBoundLogger
 from .types import BindableLogger, LogBuffer, LogEntry
 
