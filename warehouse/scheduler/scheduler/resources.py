@@ -22,6 +22,7 @@ from oso_dagster.resources.udm_engine_adapter import (
     TrinoEngineAdapterResource,
     UserDefinedModelEngineAdapterResource,
 )
+from posthog import Posthog
 from scheduler.dlt_destination import (
     DLTDestinationResource,
     DuckDBDLTDestinationResource,
@@ -230,7 +231,7 @@ def dlt_destination_factory(
     Uses Trino if trino_enabled is True, otherwise uses DuckDB.
     """
     if common_settings.trino_enabled:
-        trino: TrinoResource = resources.resolve("trino")
+        trino: TrinoResource = resources.resolve("consumer_trino")
         return TrinoDLTDestinationResource(
             trino=trino, catalog=common_settings.warehouse_shared_catalog_name
         )
@@ -266,6 +267,26 @@ def metrics_factory() -> MetricsContainer:
     return metrics
 
 
+@resource_factory("posthog_client")
+def posthog_client_factory(common_settings: "CommonSettings"):
+    """Factory function to create a PostHog client resource."""
+    if not common_settings.posthog_api_key:
+        posthog = Posthog(project_api_key="", host=common_settings.posthog_host)
+        logger.warning(
+            (
+                "PostHog API key is not set. PostHog client will be initialized with"
+                "an empty api key, and all calls to it will be no-ops. "
+                "Set SCHEDULER_POSTHOG_API_KEY to enable"
+            )
+        )
+    else:
+        posthog = Posthog(
+            project_api_key=common_settings.posthog_api_key,
+            host=common_settings.posthog_host,
+        )
+    return posthog
+
+
 def default_resource_registry(common_settings: "CommonSettings") -> ResourcesRegistry:
     registry = ResourcesRegistry()
     registry.add_singleton("common_settings", common_settings)
@@ -285,5 +306,6 @@ def default_resource_registry(common_settings: "CommonSettings") -> ResourcesReg
     registry.add(gcs_factory)
     registry.add(upload_filesystem_credentials_factory)
     registry.add(metrics_factory)
+    registry.add(posthog_client_factory)
 
     return registry

@@ -4,8 +4,8 @@ Implementations of the run context and step context for message handlers.
 
 import typing as t
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
-import structlog
 from aioprometheus.collectors import Counter, Histogram
 from google.protobuf.message import Message as ProtobufMessage
 from oso_core.instrumentation import MetricsContainer
@@ -13,6 +13,7 @@ from oso_core.instrumentation.common import MetricsLabeler
 from oso_core.instrumentation.timing import async_time
 from oso_core.resources import ResourcesContext
 from oso_dagster.resources.gcs import GCSFileResource
+from posthog import Posthog
 from scheduler.config import CommonSettings
 from scheduler.graphql_client.client import UNSET
 from scheduler.graphql_client.client import Client as OSOClient
@@ -30,7 +31,12 @@ from scheduler.graphql_client.input_types import (
     UpdateMetadataInput,
 )
 from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
-from scheduler.logging import BindableLogger, BufferedBoundLogger, GCSLogBufferProcessor
+from scheduler.logging import (
+    BindableLogger,
+    BufferedLogger,
+    GCSLogBuffer,
+    ProxiedBoundLogger,
+)
 from scheduler.types import (
     AlreadyLockedMessageResponse,
     FailedResponse,
@@ -46,8 +52,6 @@ from scheduler.types import (
 )
 from scheduler.utils import convert_uuid_bytes_to_str
 
-system_logger = structlog.getLogger(__name__)
-
 T = t.TypeVar("T", bound=ProtobufMessage)
 
 
@@ -60,6 +64,7 @@ class OSOStepContext(StepContext):
         oso_client: OSOClient,
         materialization_strategy: MaterializationStrategy,
         logger: BindableLogger,
+        internal_logger: BindableLogger,
     ) -> "OSOStepContext":
         return cls(run, step_id, oso_client, materialization_strategy, logger)
 
@@ -76,10 +81,15 @@ class OSOStepContext(StepContext):
         self._oso_client = oso_client
         self._materialization_strategy = materialization_strategy
         self._logger = logger
+        self._internal_logger = logger
 
     @property
     def log(self) -> BindableLogger:
         return self._logger
+
+    @property
+    def internal_log(self) -> BindableLogger:
+        return self._internal_logger
 
     @property
     def materialization_strategy(self) -> MaterializationStrategy:
@@ -88,7 +98,7 @@ class OSOStepContext(StepContext):
     async def create_materialization(
         self, table_id: str, warehouse_fqn: str, schema: list[DataModelColumnInput]
     ) -> CreateMaterialization:
-        self._logger.info("Creating materialization")
+        self._logger.debug("Creating materialization")
         # Placeholder for actual materialization creation logic
 
         return await self._oso_client.create_materialization(
@@ -117,16 +127,22 @@ class OSORunContext(RunContext):
         metrics: MetricsContainer,
         gcs: "GCSFileResource",
         gcs_bucket: str,
+        internal_logger: BindableLogger,
     ) -> "OSORunContext":
         gcs_client = gcs.get_client(asynchronous=True)
-        log_buffer = GCSLogBufferProcessor(
+        date_prefix = datetime.now(timezone.utc).strftime("%Y/%m/%d")
+
+        log_destination_path = (
+            f"{gcs_bucket}/run-logs/{date_prefix}/{run_id}/logs.jsonl"
+        )
+        log_buffer = GCSLogBuffer(
             run_id=run_id,
-            gcs_bucket=gcs_bucket,
+            destination_path=log_destination_path,
             gcs_client=gcs_client,
         )
 
-        base_logger = structlog.get_logger(run_id).bind(run_id=run_id)
-        buffered_logger = BufferedBoundLogger(base_logger, log_buffer)
+        buffered_logger = BufferedLogger(log_buffer, context={"run_id": run_id})
+        proxied_logger = ProxiedBoundLogger([internal_logger, buffered_logger])
         get_run_data = await oso_client.get_run(run_id=run_id)
         run_data = get_run_data.runs.edges[0].node
 
@@ -135,7 +151,8 @@ class OSORunContext(RunContext):
             oso_client,
             run_data,
             materialization_strategy,
-            buffered_logger,
+            proxied_logger,
+            internal_logger,
             log_buffer,
             metrics,
         )
@@ -147,7 +164,8 @@ class OSORunContext(RunContext):
         run_data: RunCommon,
         materialization_strategy: MaterializationStrategy,
         logger: BindableLogger,
-        log_buffer: GCSLogBufferProcessor,
+        internal_logger: BindableLogger,
+        log_buffer: GCSLogBuffer,
         metrics: MetricsContainer,
     ) -> None:
         self._run_id = run_id
@@ -155,12 +173,17 @@ class OSORunContext(RunContext):
         self._run_data = run_data
         self._materialization_strategy = materialization_strategy
         self._logger = logger
+        self._internal_logger = internal_logger
         self._log_buffer = log_buffer
         self._metrics = metrics
 
     @property
     def log(self) -> BindableLogger:
         return self._logger
+
+    @property
+    def internal_log(self) -> BindableLogger:
+        return self._internal_logger
 
     @property
     def materialization_strategy(self) -> MaterializationStrategy:
@@ -189,13 +212,20 @@ class OSORunContext(RunContext):
 
         try:
             async with async_time(self._metrics.histogram("step_duration_ms")):
-                yield OSOStepContext.create(
-                    self.as_view,
-                    step.id,
-                    self._oso_client,
-                    self._materialization_strategy,
-                    self._logger.bind(step=name, step_display_name=display_name),
+                step_context = OSOStepContext.create(
+                    run=self.as_view,
+                    step_id=step.id,
+                    oso_client=self._oso_client,
+                    materialization_strategy=self._materialization_strategy,
+                    logger=self._logger.bind(
+                        step_id=step.id, step=name, step_display_name=display_name
+                    ),
+                    internal_logger=self._internal_logger.bind(
+                        step_id=step.id, step=name, step_display_name=display_name
+                    ),
                 )
+                step_context.log.debug(f"Started step {name} with ID: {step.id}")
+                yield step_context
         except Exception as e:
             self._logger.error(f"Error in step context {name}: {e}")
             await self._oso_client.finish_step(
@@ -239,21 +269,23 @@ class OSORunContext(RunContext):
         metadata: UpdateMetadataInput | None = None,
     ) -> FinishRun:
         """Finish the run with the given status."""
+        self.log.info(
+            f"Finishing run with status: {status}, status_code: {status_code}"
+        )
 
         try:
-            logs_url = await self._log_buffer.flush(status=status)
+            await self._log_buffer.flush()
         except Exception as e:
-            system_logger.error(
+            self.internal_log.error(
                 f"Failed to upload logs to GCS for run_id {self._run_id}: {e}",
                 exc_info=True,
             )
-            logs_url = ""
 
         return await self._oso_client.finish_run(
             run_id=self._run_id,
             status=status,
             status_code=status_code,
-            logs_url=logs_url,
+            logs_url=self._log_buffer.destination_url,
             metadata=metadata if metadata else UNSET,
         )
 
@@ -289,27 +321,26 @@ class RunHandler(MessageHandler[T]):
     async def handle_message(
         self,
         message: ProtobufMessage,
+        logger: BindableLogger,
         resources: ResourcesContext,
         materialization_strategy: MaterializationStrategy,
         metrics: MetricsContainer,
+        posthog_client: Posthog,
+        oso_client: OSOClient,
+        common_settings: CommonSettings,
+        gcs: GCSFileResource,
     ) -> HandlerResponse:
         run_id = getattr(message, "run_id", None)
         if not run_id:
-            system_logger.error(
+            logger.error(
                 "Message does not contain a run_id; acknowledging and skipping."
             )
             return SkipResponse()
         if not isinstance(run_id, bytes):
-            system_logger.error(
-                "run_id is not of type bytes; acknowledging and skipping."
-            )
+            logger.error("run_id is not of type bytes; acknowledging and skipping.")
             return SkipResponse()
 
         run_id_str = convert_uuid_bytes_to_str(run_id)
-
-        oso_client: OSOClient = resources.resolve("oso_client")
-        common_settings: CommonSettings = resources.resolve("common_settings")
-        gcs: GCSFileResource = resources.resolve("gcs")
 
         async with async_time(
             metrics.histogram("run_context_load_duration_ms")
@@ -321,8 +352,21 @@ class RunHandler(MessageHandler[T]):
                 metrics=metrics,
                 gcs=gcs,
                 gcs_bucket=common_settings.run_logs_gcs_bucket,
+                internal_logger=logger.bind(run_id=run_id_str),
             )
             labeler_ctx.add_labels({"org_id": run_context.organization.name})
+
+        posthog_client.capture(
+            "run_message_received",
+            properties={
+                "run_id": run_id_str,
+                "org_name": run_context.organization.name,
+                "trigger_type": run_context.trigger_type,
+                "requested_by": run_context.requested_by.email
+                if run_context.requested_by
+                else "unknown",
+            },
+        )
 
         labeler = MetricsLabeler()
         # Try to set the run to running in the database for user's visibility
@@ -330,7 +374,7 @@ class RunHandler(MessageHandler[T]):
             run_context.log.info(f"Reporting run {run_id_str} as started.")
             await oso_client.start_run(run_id=run_id_str)
         except Exception as e:
-            system_logger.error(f"Error starting run {run_id_str}: {e}")
+            logger.error(f"Error starting run {run_id_str}: {e}")
 
             labeler.set_labels(
                 {
@@ -345,6 +389,8 @@ class RunHandler(MessageHandler[T]):
                 response=FailedResponse(message=f"Failed to start run {run_id_str}."),
                 metrics=metrics,
                 labeler=labeler,
+                posthog_client=posthog_client,
+                logger=logger,
             )
 
         labeler.set_labels(
@@ -365,11 +411,10 @@ class RunHandler(MessageHandler[T]):
                     },
                 )
         except Exception as e:
-            system_logger.error(
-                f"Error handling run message for run_id {run_id_str}: {e}"
-            )
+            logger.error(f"Error handling run message for run_id {run_id_str}: {e}")
             response = FailedResponse(
-                message=f"Failed to process the message for run_id {run_id_str}."
+                exception=e,
+                message=f"Failed to process the message for run_id {run_id_str}.",
             )
 
         try:
@@ -379,14 +424,15 @@ class RunHandler(MessageHandler[T]):
                 run_context=run_context,
                 metrics=metrics,
                 labeler=labeler,
+                posthog_client=posthog_client,
+                logger=logger,
             )
         except Exception as e:
-            system_logger.error(
-                f"Error reporting response for run_id {run_id_str}: {e}"
-            )
+            logger.error(f"Error reporting response for run_id {run_id_str}: {e}")
 
             return FailedResponse(
-                message=f"Failed to report the response for run_id {run_id_str}."
+                exception=e,
+                message=f"Failed to report the response for run_id {run_id_str}.",
             )
 
     async def report_response(
@@ -396,6 +442,8 @@ class RunHandler(MessageHandler[T]):
         response: HandlerResponse,
         metrics: MetricsContainer,
         labeler: MetricsLabeler,
+        posthog_client: Posthog,
+        logger: BindableLogger,
     ) -> HandlerResponse:
         """Handle the response from processing a run message.
 
@@ -403,11 +451,25 @@ class RunHandler(MessageHandler[T]):
             response: The response from processing the run message.
         """
         # Write the response to the database
+
+        posthog_properties = {
+            "run_id": run_id_str,
+            "org_name": run_context.organization.name,
+            "trigger_type": run_context.trigger_type,
+            "response_type": type(response).__name__,
+            "requested_by": run_context.requested_by.email
+            if run_context.requested_by
+            else "unknown",
+            "status_code": getattr(response, "status_code", "unknown"),
+        }
         match response:
             case AlreadyLockedMessageResponse():
                 # No need to do anything here as another worker is processing it
                 metrics.counter("run_count_total").inc(
                     labeler.get_labels({"response_type": "already_locked"}),
+                )
+                posthog_client.capture(
+                    "run_message_already_locked", properties=posthog_properties
                 )
                 return response
             case SkipResponse(status_code=status_code):
@@ -418,12 +480,26 @@ class RunHandler(MessageHandler[T]):
                 metrics.counter("run_count_total").inc(
                     labeler.get_labels({"response_type": "skipped"}),
                 )
+                posthog_client.capture(
+                    "run_message_skipped", properties=posthog_properties
+                )
                 return response
-            case FailedResponse(status_code=status_code, details=details):
-                system_logger.error(f"Failed to process run_id {run_id_str}.")
+
+            case FailedResponse(
+                exception=exception, status_code=status_code, details=details
+            ):
+                logger.error(f"Failed to process run_id {run_id_str}.")
                 metrics.counter("run_count_total").inc(
                     labeler.get_labels({"response_type": "failed"}),
                 )
+                if exception:
+                    posthog_client.capture_exception(
+                        exception, properties=posthog_properties
+                    )
+                else:
+                    posthog_client.capture(
+                        "run_message_failed", properties=posthog_properties
+                    )
                 await run_context.finish_run(
                     status=RunStatus.FAILED,
                     status_code=status_code,
@@ -434,7 +510,7 @@ class RunHandler(MessageHandler[T]):
                 )
                 return response
             case SuccessResponse(status_code=status_code):
-                system_logger.info(f"Successfully processed run_id {run_id_str}.")
+                logger.info(f"Successfully processed run_id {run_id_str}.")
                 metrics.counter("run_count_total").inc(
                     labeler.get_labels({"response_type": "success"}),
                 )
@@ -444,11 +520,14 @@ class RunHandler(MessageHandler[T]):
                 )
                 return response
             case _:
-                system_logger.warning(
+                logger.warning(
                     f"Unhandled response type {type(response)} from run message handler for run_id {run_id_str}."
                 )
                 metrics.counter("run_count_total").inc(
                     labeler.get_labels({"response_type": "unknown"}),
+                )
+                posthog_client.capture(
+                    "run_message_unhandled_response", properties=posthog_properties
                 )
                 await run_context.finish_run(
                     status=RunStatus.FAILED,

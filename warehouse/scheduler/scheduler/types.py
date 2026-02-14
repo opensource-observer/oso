@@ -8,7 +8,7 @@ import structlog
 from google.protobuf.json_format import Parse
 from google.protobuf.message import Message
 from oso_core.resources import ResourcesContext
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from queryrewriter.rewrite import rewrite_query
 from queryrewriter.types import RewriteResponse, TableResolver
 from scheduler.graphql_client.create_materialization import CreateMaterialization
@@ -370,6 +370,12 @@ class StepContext(abc.ABC):
         """A logger for the message handler context."""
         raise NotImplementedError("log must be implemented by subclasses.")
 
+    @property
+    @abc.abstractmethod
+    def internal_log(self) -> BindableLogger:
+        """An internal logger that is not included in the metadata of the run."""
+        raise NotImplementedError("internal_log must be implemented by subclasses.")
+
     @abc.abstractmethod
     async def create_materialization(
         self, table_id: str, warehouse_fqn: str, schema: list[DataModelColumnInput]
@@ -422,6 +428,12 @@ class RunContext(abc.ABC):
     def log(self) -> BindableLogger:
         """A logger for the message handler context."""
         raise NotImplementedError("log must be implemented by subclasses.")
+
+    @property
+    @abc.abstractmethod
+    def internal_log(self) -> BindableLogger:
+        """An internal logger that is not included in the metadata of the run."""
+        raise NotImplementedError("internal_log must be implemented by subclasses.")
 
     @property
     @abc.abstractmethod
@@ -540,7 +552,12 @@ class SkipResponse(HandlerResponse):
 
 
 class FailedResponse(HandlerResponse):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     message: str = Field(default="Failed to process the message.")
+    exception: Exception | None = Field(
+        default=None, description="The exception that caused the failure, if any."
+    )
     status_code: int = Field(default=500)
     details: dict[str, t.Any] = Field(default_factory=dict)
 
@@ -560,7 +577,9 @@ class MessageHandler(abc.ABC, t.Generic[T]):
     message_type: t.Type[T]
     schema_file_name: str
 
-    async def handle_message(self, message: T, *args, **kwargs) -> HandlerResponse:
+    async def handle_message(
+        self, message: T, logger: BindableLogger, *args, **kwargs
+    ) -> HandlerResponse:
         """A method to handle incoming messages"""
         raise NotImplementedError("handle_message must be implemented by subclasses.")
 

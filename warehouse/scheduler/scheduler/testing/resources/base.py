@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 from oso_core.instrumentation.container import MetricsContainer
 from oso_core.resources import ResourcesRegistry
 from scheduler.config import CommonSettings
@@ -17,6 +19,8 @@ def base_testing_resources() -> ResourcesRegistry:
     resources.add_singleton("common_settings", common_settings)
 
     resources.add_singleton("metrics", metrics)
+
+    resources.add_singleton("posthog_client", MagicMock())
 
     oso_client = FakeOSOClient()
 

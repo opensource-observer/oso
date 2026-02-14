@@ -109,11 +109,15 @@ class CreateDataModelReleaseInput(BaseModel):
 
 class CreateDatasetInput(BaseModel):
     org_id: str = Field(alias="orgId")
+    "The organization ID the dataset belongs to"
     name: str
+    "The name of the dataset. This must be unique within the organization."
     display_name: Optional[str] = Field(alias="displayName", default=None)
+    "The display name of the dataset."
     description: Optional[str] = None
+    "The description of the dataset."
     type: Optional[DatasetType] = DatasetType.USER_MODEL
-    is_public: Optional[bool] = Field(alias="isPublic", default=False)
+    "The type of the dataset.\n\nTypes:\n  * USER_MODEL: Sometimes called a UDM, this dataset type contains\n    user-defined data models.\n  * DATA_INGESTION: This dataset type is used for datasets that are ingested\n    from external sources using strategies like REST/GraphQL APIs, file\n    uploads, etc.\n  * STATIC_MODEL: This is used for datasets composed of statically uploaded\n    models. Currently only CSV files are supported for static models."
 
 
 class UpdateDatasetInput(BaseModel):
@@ -121,7 +125,6 @@ class UpdateDatasetInput(BaseModel):
     name: Optional[str] = None
     display_name: Optional[str] = Field(alias="displayName", default=None)
     description: Optional[str] = None
-    is_public: Optional[bool] = Field(alias="isPublic", default=None)
 
 
 class CreateInvitationInput(BaseModel):
@@ -136,6 +139,7 @@ class AcceptInvitationInput(BaseModel):
 
 class RevokeInvitationInput(BaseModel):
     invitation_id: str = Field(alias="invitationId")
+    org_id: str = Field(alias="orgId")
 
 
 class ModelColumnContextInput(BaseModel):
@@ -188,7 +192,9 @@ class UpdateMemberRoleInput(BaseModel):
 
 class CreateUserModelRunRequestInput(BaseModel):
     dataset_id: str = Field(alias="datasetId")
+    "The ID of the dataset to run. This must be a USER_MODEL dataset."
     selected_models: Optional[List[str]] = Field(alias="selectedModels", default=None)
+    "For user model runs, users can optionally specify a list of data model release\nIDs to run. If not provided, all models will be run in topological order based\non dependencies."
 
 
 class CreateDataIngestionRunRequestInput(BaseModel):
@@ -201,7 +207,9 @@ class CreateDataConnectionRunRequestInput(BaseModel):
 
 class CreateStaticModelRunRequestInput(BaseModel):
     dataset_id: str = Field(alias="datasetId")
+    "The ID of the static model dataset to run."
     selected_models: Optional[List[str]] = Field(alias="selectedModels", default=None)
+    "For static model runs, users can optionally specify a list of model IDs to\nrun. If not provided, all models will be run."
 
 
 class CancelRunInput(BaseModel):
@@ -210,8 +218,11 @@ class CancelRunInput(BaseModel):
 
 class CreateStaticModelInput(BaseModel):
     org_id: str = Field(alias="orgId")
+    "The ID of the organization to which the static model belongs."
     dataset_id: str = Field(alias="datasetId")
+    "The ID of the dataset associated with the static model."
     name: str
+    "The desired name for the static model (must be unique within the organization)."
 
 
 class UpdateStaticModelInput(BaseModel):

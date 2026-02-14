@@ -80,7 +80,6 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
           display_name: validated.displayName,
           description: validated.description,
           created_by: authenticatedUser.userId,
-          is_public: validated.isPublic ?? false,
           dataset_type: validated.type,
         })
         .select()
@@ -106,7 +105,6 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
           name?: string;
           displayName?: string;
           description?: string;
-          isPublic?: boolean;
         };
       },
       context: GraphQLContext,
@@ -137,7 +135,6 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
           name: input.name,
           display_name: input.displayName,
           description: input.description,
-          is_public: input.isPublic,
         })
         .eq("id", input.id)
         .select()
@@ -201,7 +198,6 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
     updatedAt: (parent: { updated_at: string }) => parent.updated_at,
     creatorId: (parent: { created_by: string }) => parent.created_by,
     orgId: (parent: { org_id: string }) => parent.org_id,
-    isPublic: (parent: { is_public: boolean }) => parent.is_public,
     type: (parent: { dataset_type: string }) => parent.dataset_type,
 
     creator: async (parent: { created_by: string }) => {
