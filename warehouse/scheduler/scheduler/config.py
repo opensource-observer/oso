@@ -139,6 +139,11 @@ class CommonSettings(BaseSettings):
         description="Host URL for PostHog analytics",
     )
 
+    concurrency_lock_ttl_seconds: int = Field(
+        default=120,
+        description="Time-to-live for concurrency locks in seconds",
+    )
+
     @model_validator(mode="after")
     def handle_generated_config(self):
         if not self.local_duckdb_dir_path:

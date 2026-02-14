@@ -40,9 +40,11 @@ from scheduler.mq.handlers.sync_connection import SyncConnectionRunRequestHandle
 from scheduler.mq.pubsub import GCPPubSubMessageQueueService
 from scheduler.testing.client import FakeUDMClient
 from scheduler.types import (
+    ConcurrencyLockStore,
     GenericMessageQueueService,
     MaterializationStrategy,
     MessageHandlerRegistry,
+    RunLoggerFactory,
     UserDefinedModelStateClient,
 )
 
@@ -287,6 +289,32 @@ def posthog_client_factory(common_settings: "CommonSettings"):
     return posthog
 
 
+@resource_factory("concurrency_lock_store")
+def concurrency_lock_store_factory(
+    common_settings: "CommonSettings",
+) -> ConcurrencyLockStore:
+    """Factory function to create a concurrency lock store resource."""
+    if common_settings.redis_host:
+        from redis.asyncio import Redis
+        from scheduler.mq.concurrency.redis import RedisConcurrencyLockStore
+
+        return RedisConcurrencyLockStore(
+            redis_client=Redis(
+                host=common_settings.redis_host,
+                port=common_settings.redis_port,
+            )
+        )
+    else:
+        from scheduler.mq.concurrency.inmem import InMemoryConcurrencyLockStore
+
+        return InMemoryConcurrencyLockStore()
+
+
+def buffered_logger_factory() -> RunLoggerFactory:
+    """Factory function to create a buffered logger resource."""
+    return structlog.get_logger("scheduler.buffered_logger")
+
+
 def default_resource_registry(common_settings: "CommonSettings") -> ResourcesRegistry:
     registry = ResourcesRegistry()
     registry.add_singleton("common_settings", common_settings)
@@ -307,5 +335,6 @@ def default_resource_registry(common_settings: "CommonSettings") -> ResourcesReg
     registry.add(upload_filesystem_credentials_factory)
     registry.add(metrics_factory)
     registry.add(posthog_client_factory)
+    registry.add(concurrency_lock_store_factory)
 
     return registry
