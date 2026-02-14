@@ -9,7 +9,7 @@ from scheduler.testing.handlers import (
 from scheduler.testing.resources.gcs import FakeGCSFileResource
 from scheduler.testing.resources.trino import FakeTrinoResource
 from scheduler.testing.uuids import generate_uuid_as_bytes
-from scheduler.types import SuccessResponse
+from scheduler.types import AlreadyLockedMessageResponse, SuccessResponse
 
 from .query import QueryRunRequestHandler
 
@@ -85,3 +85,8 @@ async def test_duplicate_concurrent_queries_are_skipped(
     ), (
         "Expected one SuccessResponse and one failure response for duplicate concurrent queries"
     )
+
+    # One of the responses should indicate that the run is already in progress
+    assert isinstance(response1, AlreadyLockedMessageResponse) != isinstance(
+        response2, AlreadyLockedMessageResponse
+    ), "Expected one AlreadyLockedMessageResponse for duplicate concurrent queries"
