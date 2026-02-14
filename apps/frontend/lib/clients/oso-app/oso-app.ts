@@ -2505,16 +2505,14 @@ class OsoAppClient {
       displayName: string;
       description: string;
       datasetType: DatasetType;
-      isPublic: boolean;
     }>,
   ) {
-    const { orgId, name, displayName, description, datasetType, isPublic } = {
+    const { orgId, name, displayName, description, datasetType } = {
       orgId: ensure(args.orgId, "Missing orgId argument"),
       name: ensure(args.name, "Missing name argument"),
       displayName: ensure(args.displayName, "Missing displayName argument"),
       description: args.description,
       datasetType: ensure(args.datasetType, "Missing datasetType argument"),
-      isPublic: args.isPublic,
     };
 
     const CREATE_DATASET_MUTATION = gql(`
@@ -2528,7 +2526,6 @@ class OsoAppClient {
             displayName
             description
             type
-            isPublic
           }
         }
       }
@@ -2543,7 +2540,6 @@ class OsoAppClient {
           displayName,
           description,
           type: datasetType as any,
-          isPublic,
         },
       },
       "Failed to create dataset",
@@ -2564,15 +2560,13 @@ class OsoAppClient {
       name: string;
       displayName: string;
       description: string;
-      isPublic: boolean;
     }>,
   ) {
-    const { datasetId, name, displayName, description, isPublic } = {
+    const { datasetId, name, displayName, description } = {
       datasetId: ensure(args.datasetId, "Missing datasetId argument"),
       name: args.name,
       displayName: args.displayName,
       description: args.description,
-      isPublic: args.isPublic,
     };
 
     const UPDATE_DATASET_MUTATION = gql(`
@@ -2585,7 +2579,6 @@ class OsoAppClient {
             name
             displayName
             description
-            isPublic
           }
         }
       }
@@ -2599,7 +2592,6 @@ class OsoAppClient {
           name,
           displayName,
           description,
-          isPublic,
         },
       },
       "Failed to update dataset",

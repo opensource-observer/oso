@@ -37,7 +37,6 @@ export const datasetMutations: GraphQLResolverModule<GraphQLContext>["Mutation"]
           name: input.name,
           display_name: input.displayName,
           description: input.description,
-          is_public: input.isPublic,
         })
         .eq("id", input.id)
         .select()
