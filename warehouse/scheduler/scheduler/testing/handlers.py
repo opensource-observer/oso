@@ -2,11 +2,11 @@ import typing as t
 
 import structlog
 from google.protobuf.message import Message
-from oso_core.logging.types import BindableLogger
 from oso_core.resources import ResourcesRegistry
 from scheduler.materialization.duckdb import DuckdbMaterializationStrategy
 from scheduler.testing.resources.base import base_testing_resources
-from scheduler.types import MessageHandler, RunLoggerContainer, RunLoggerFactory
+from scheduler.testing.resources.logging import FakeRunLoggerFactory
+from scheduler.types import MessageHandler
 
 T = t.TypeVar("T", bound=Message)
 
@@ -43,23 +43,6 @@ class MessageHandlerTestHarness(t.Generic[T]):
 async def async_iter(items: t.List[t.Any]) -> t.AsyncIterator[t.Any]:
     for item in items:
         yield item
-
-
-class FakeRunLoggerContainer(RunLoggerContainer):
-    def __init__(self, run_id: str):
-        self._run_id = run_id
-
-    @property
-    def logger(self) -> BindableLogger:
-        return structlog.get_logger("scheduler.testing").bind(run_id=self._run_id)
-
-    async def destination_uris(self) -> list[str]:
-        return []
-
-
-class FakeRunLoggerFactory(RunLoggerFactory):
-    def create_logger_container(self, run_id: str):
-        return FakeRunLoggerContainer(run_id)
 
 
 def default_message_handler_test_harness(

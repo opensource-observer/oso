@@ -29,6 +29,7 @@ from scheduler.dlt_destination import (
     TrinoDLTDestinationResource,
 )
 from scheduler.graphql_client.client import Client as OSOClient
+from scheduler.logging import GCSRunLoggerFactory
 from scheduler.materialization.duckdb import DuckdbMaterializationStrategy
 from scheduler.materialization.trino import TrinoMaterializationStrategy
 from scheduler.mq.handlers.data_ingestion import DataIngestionRunRequestHandler
@@ -310,9 +311,25 @@ def concurrency_lock_store_factory(
         return InMemoryConcurrencyLockStore()
 
 
-def buffered_logger_factory() -> RunLoggerFactory:
+@resource_factory("run_logger_factory")
+def gcs_run_logger_factory(
+    common_settings: "CommonSettings", resources: ResourcesContext
+) -> RunLoggerFactory:
     """Factory function to create a buffered logger resource."""
-    return structlog.get_logger("scheduler.buffered_logger")
+
+    if not common_settings.enable_run_logs_upload:
+        logger.info("Run logs upload is disabled. Using FakeRunLoggerFactory.")
+        from scheduler.testing.resources.logging import FakeRunLoggerFactory
+
+        return FakeRunLoggerFactory()
+
+    gcs = resources.resolve("gcs")
+    assert isinstance(gcs, GCSFileResource), "GCS resource must be a GCSFileResource"
+
+    return GCSRunLoggerFactory(
+        gcs=gcs,
+        bucket=common_settings.run_logs_gcs_bucket,
+    )
 
 
 def default_resource_registry(common_settings: "CommonSettings") -> ResourcesRegistry:
