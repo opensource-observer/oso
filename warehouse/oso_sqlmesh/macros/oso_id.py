@@ -4,37 +4,32 @@ from sqlmesh.core.macros import MacroEvaluator
 
 
 def _generate_oso_id(evaluator: MacroEvaluator, *args: exp.Expression):
-    """Creates a deterministic ID by concatenating the arguments and hashing them."""
+    """Creates a deterministic ID by concatenating the arguments and hashing them.
+
+    Returns base64-encoded SHA256 hash for both DuckDB and Trino,
+    ensuring consistency between local development and production.
+    """
     if evaluator.runtime_stage == "loading":
         return exp.Literal(this="someid", is_string=True)
+    concatenated = exp.Concat(expressions=args, safe=True, coalesce=False)
     if evaluator.engine_adapter.dialect == "trino":
-        # Trino's CONCAT returns NULL if any arg is NULL, unlike DuckDB which
-        # treats NULLs as empty strings. Cast to VARCHAR first (handles non-string
-        # types like bigint), then COALESCE with empty string for NULL safety.
-        safe_args = tuple(
-            exp.Coalesce(
-                this=exp.Cast(this=arg, to=exp.DataType.build("VARCHAR")),
-                expressions=[exp.Literal(this="", is_string=True)],
-            )
-            for arg in args
-        )
-        concatenated = exp.Concat(expressions=safe_args, safe=False, coalesce=False)
         # Trino's SHA256 function only accepts type `varbinary`. So we convert
         # the varchar to varbinary with trino's to_utf8.
         concatenated = exp.Anonymous(this="to_utf8", expressions=[concatenated])
-        sha = exp.SHA2(
-            this=concatenated,
-            length=exp.Literal(this=256, is_string=False),
-        )
-        # Trino SHA256 returns varbinary, use lower(to_hex(...)) for consistent
-        # lowercase hex output matching DuckDB behavior
-        return exp.Lower(this=exp.Anonymous(this="to_hex", expressions=[sha]))
-    # DuckDB: CONCAT is NULL-safe and SHA2 returns a hex string directly
-    concatenated = exp.Concat(expressions=args, safe=True, coalesce=False)
-    return exp.SHA2(
+    sha = exp.SHA2(
         this=concatenated,
         length=exp.Literal(this=256, is_string=False),
     )
+
+    # Convert to base64 for consistency across engines
+    if evaluator.engine_adapter.dialect == "duckdb":
+        # DuckDB: SHA256 returns hex VARCHAR, need to convert hex -> blob -> base64
+        # Use FROM_HEX to convert hex string to BLOB, then TO_BASE64
+        hex_to_blob = exp.Anonymous(this="FROM_HEX", expressions=[sha])
+        return exp.ToBase64(this=hex_to_blob)
+    else:
+        # Trino: SHA256 already returns varbinary, can directly convert to base64
+        return exp.ToBase64(this=sha)
 
 
 @macro()

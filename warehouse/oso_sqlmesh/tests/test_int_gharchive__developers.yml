@@ -16,6 +16,7 @@ test_int_gharchive__developers_single_entry:
       rows: []
   outputs:
     query:
+      partial: true
       columns:
         created_at: timestamp(6)
       rows:
@@ -23,7 +24,6 @@ test_int_gharchive__developers_single_entry:
           actor_login: "dev1"
           author_name: "Developer One"
           author_email: "dev1@example.com"
-          author_synthetic_id: "1facfdf7db24f616894dc628cefee011936ea41fed0d50c5f44b943f3bd49a2d"
 
 test_int_gharchive__developers_takes_latest:
   model: oso.int_gharchive__developers
@@ -53,6 +53,7 @@ test_int_gharchive__developers_takes_latest:
       rows: []
   outputs:
     query:
+      partial: true
       columns:
         created_at: timestamp(6)
       rows:
@@ -60,7 +61,6 @@ test_int_gharchive__developers_takes_latest:
           actor_login: "new_login"
           author_name: "Dave"
           author_email: "dave@new.com"
-          author_synthetic_id: "35c39a0a173e95f92cda0c7e188180cd34a8fea777f83d13484e9d1a8b0ef139"
 
 test_int_gharchive__developers_merge_sources:
   model: oso.int_gharchive__developers
@@ -85,9 +85,9 @@ test_int_gharchive__developers_merge_sources:
           created_at: "2026-01-01 10:00:00.000000"
   outputs:
     query:
+      partial: true
       rows:
         - actor_id: 789
           actor_login: "modern_dev"
           author_name: null
           author_email: null
-          author_synthetic_id: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"

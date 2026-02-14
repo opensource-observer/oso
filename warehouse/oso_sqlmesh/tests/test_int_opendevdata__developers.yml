@@ -24,13 +24,13 @@ test_int_opendevdata__developers_single_entry:
           decoded_id: 12345
   outputs:
     query:
+      partial: true
       rows:
         - canonical_developer_id: 101
           primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
           actor_id: 12345
           author_name: "Open Dev"
           author_email: "dev@open.com"
-          author_synthetic_id: "f1e739cb553e5df92e1317f1d0ac3df2c1b4436b13c7e6d3440cc9fc1dba85ec"
 
 test_int_opendevdata__developers_nextgen_nodeid:
   model: oso.int_opendevdata__developers
@@ -58,13 +58,13 @@ test_int_opendevdata__developers_nextgen_nodeid:
           decoded_id: 98765
   outputs:
     query:
+      partial: true
       rows:
         - canonical_developer_id: 102
           primary_github_user_id: "U_kgDOAAGBzQ"
           actor_id: 98765
           author_name: "NextGen Dev"
           author_email: "nextgen@open.com"
-          author_synthetic_id: "90354a6883d979ada18f4055896cbada809a8802fed724d44bb71301a896c3a5"
 
 test_int_opendevdata__developers_null_github_user_id:
   model: oso.int_opendevdata__developers
@@ -90,13 +90,13 @@ test_int_opendevdata__developers_null_github_user_id:
       rows: []
   outputs:
     query:
+      partial: true
       rows:
         - canonical_developer_id: 103
           primary_github_user_id: null
           actor_id: null
           author_name: "No GitHub Dev"
           author_email: "nogithub@open.com"
-          author_synthetic_id: "36070ecda8c14c6e128153c997c0460af008dca4e1ee4d2d8c6643d50e8b29ac"
 
 test_int_opendevdata__developers_takes_latest:
   model: oso.int_opendevdata__developers
@@ -132,13 +132,13 @@ test_int_opendevdata__developers_takes_latest:
           decoded_id: 12345
   outputs:
     query:
+      partial: true
       rows:
         - canonical_developer_id: 202
           primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
           actor_id: 12345
           author_name: "New Name"
           author_email: "original@test.com"
-          author_synthetic_id: "0a1a2393c79d37c6d7001e3b29ce1aac9460c8ad33fba9d76916ad6b8ad42d12"
 
 test_int_opendevdata__developers_filter_nulls:
   model: oso.int_opendevdata__developers

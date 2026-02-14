@@ -265,7 +265,8 @@ def metrics_start(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None)
                     this=MacroVar(this="end_ds"),
                     format=exp.Literal(this="%Y-%m-%d", is_string=True),
                 ),
-                to=exp.DataType.build("TIMESTAMP(6)"),
+                to=exp.DataType(this=exp.DataType.Type.DATETIME),
+                _type=exp.DataType(this=exp.DataType.Type.DATETIME),
             ),
             expression=exp.Interval(
                 # The interval parameter should be a string or some dialects
@@ -299,7 +300,8 @@ def metrics_end(evaluator: MacroEvaluator, _data_type: t.Optional[str] = None):
                         is_string=True,
                     ),
                 ),
-                to=exp.DataType.build("TIMESTAMP(6)"),
+                to=exp.DataType(this=exp.DataType.Type.DATETIME),
+                _type=exp.DataType(this=exp.DataType.Type.DATETIME),
             ),
             expression=exp.Interval(
                 this=exp.Literal(this=f"{current_interval[0]}", is_string=True),

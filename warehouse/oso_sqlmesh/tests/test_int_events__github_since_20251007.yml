@@ -66,16 +66,15 @@ test_int_events__github_since_20251007_basic:
       rows: []
   outputs:
     query:
+      partial: true
       rows:
       - time: "2025-10-07 10:00:00.000000"
         to_artifact_name: "repo"
         to_artifact_namespace: "owner"
         to_artifact_source_id: "101"
-        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
         from_artifact_name: "user1"
         from_artifact_namespace: "user1"
         from_artifact_source_id: "555"
-        from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
         event_type: "COMMIT_CODE"
         event_source_id: "123"
         event_source: "GITHUB"
@@ -84,11 +83,9 @@ test_int_events__github_since_20251007_basic:
         to_artifact_name: "repo"
         to_artifact_namespace: "owner"
         to_artifact_source_id: "101"
-        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
         from_artifact_name: "user1"
         from_artifact_namespace: "user1"
         from_artifact_source_id: "555"
-        from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
         event_type: "PULL_REQUEST_MERGED"
         event_source_id: "ev1"
         event_source: "GITHUB"

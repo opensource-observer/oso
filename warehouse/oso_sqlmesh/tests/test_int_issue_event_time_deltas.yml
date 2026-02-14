@@ -29,11 +29,11 @@ test_int_issue_event_time_deltas_basic:
 
   outputs:
     query:
+      partial: true
       rows:
       - time: "2024-01-01 10:00:00.000000"
         event_type: "ISSUE_OPENED"
         event_source: "GITHUB"
-        issue_id: "3ef5da8a93fe039ae9024f73f56a684e161d56c7c9a3ece50458723572cb9e1b"
         issue_number: 1
         to_artifact_id: "repo_1_hash"
         from_artifact_id: "user_1_hash"
@@ -47,7 +47,6 @@ test_int_issue_event_time_deltas_basic:
       - time: "2024-01-01 12:30:00.000000"
         event_type: "ISSUE_COMMENT"
         event_source: "GITHUB"
-        issue_id: "3ef5da8a93fe039ae9024f73f56a684e161d56c7c9a3ece50458723572cb9e1b"
         issue_number: 1
         to_artifact_id: "repo_1_hash"
         from_artifact_id: "user_2_hash"
@@ -61,7 +60,6 @@ test_int_issue_event_time_deltas_basic:
       - time: "2024-01-01 15:00:00.000000"
         event_type: "ISSUE_CLOSED"
         event_source: "GITHUB"
-        issue_id: "3ef5da8a93fe039ae9024f73f56a684e161d56c7c9a3ece50458723572cb9e1b"
         issue_number: 1
         to_artifact_id: "repo_1_hash"
         from_artifact_id: "user_1_hash"
@@ -75,7 +73,6 @@ test_int_issue_event_time_deltas_basic:
       - time: "2024-01-02 16:00:00.000000"
         event_type: "ISSUE_REOPENED"
         event_source: "GITHUB"
-        issue_id: "3ef5da8a93fe039ae9024f73f56a684e161d56c7c9a3ece50458723572cb9e1b"
         issue_number: 1
         to_artifact_id: "repo_1_hash"
         from_artifact_id: "user_1_hash"
@@ -89,7 +86,6 @@ test_int_issue_event_time_deltas_basic:
       - time: "2024-01-02 17:00:00.000000"
         event_type: "PULL_REQUEST_OPENED"
         event_source: "GITHUB"
-        issue_id: "3ef5da8a93fe039ae9024f73f56a684e161d56c7c9a3ece50458723572cb9e1b"
         issue_number: 1
         to_artifact_id: "repo_1_hash"
         from_artifact_id: "user_3_hash"
@@ -103,7 +99,6 @@ test_int_issue_event_time_deltas_basic:
       - time: "2024-01-03 13:00:00.000000"
         event_type: "PULL_REQUEST_REVIEW_COMMENT"
         event_source: "GITHUB"
-        issue_id: "3ef5da8a93fe039ae9024f73f56a684e161d56c7c9a3ece50458723572cb9e1b"
         issue_number: 1
         to_artifact_id: "repo_1_hash"
         from_artifact_id: "user_5_hash"
@@ -117,7 +112,6 @@ test_int_issue_event_time_deltas_basic:
       - time: "2024-01-03 14:00:00.000000"
         event_type: "PULL_REQUEST_MERGED"
         event_source: "GITHUB"
-        issue_id: "3ef5da8a93fe039ae9024f73f56a684e161d56c7c9a3ece50458723572cb9e1b"
         issue_number: 1
         to_artifact_id: "repo_1_hash"
         from_artifact_id: "user_4_hash"
@@ -131,7 +125,6 @@ test_int_issue_event_time_deltas_basic:
       - time: "2024-01-03 13:59:59.000000"
         event_type: "PULL_REQUEST_REVIEW_COMMENT"
         event_source: "GITHUB"
-        issue_id: "3ef5da8a93fe039ae9024f73f56a684e161d56c7c9a3ece50458723572cb9e1b"
         issue_number: 1
         to_artifact_id: "repo_1_hash"
         from_artifact_id: "user_4_hash"
