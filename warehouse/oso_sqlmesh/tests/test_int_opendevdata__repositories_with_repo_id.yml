@@ -2,10 +2,13 @@ test_int_opendevdata__repositories_with_repo_id:
   model: oso.int_opendevdata__repositories_with_repo_id
   inputs:
     oso.stg_opendevdata__repos:
+      columns:
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
       rows:
         # Scenario 1: Match found via GraphQL ID (OSSD match takes precedence)
         - id: 1
-          repo_created_at: "2020-01-01"
+          repo_created_at: "2020-01-01 00:00:00.000000"
           name: "Owner/Repo1"
           github_graphql_id: "NODE_A"
           num_stars: 10
@@ -13,7 +16,7 @@ test_int_opendevdata__repositories_with_repo_id:
           is_blacklist: 0
         # Scenario 2: Match found via Repo Name (GHArchive fallback)
         - id: 2
-          repo_created_at: "2020-02-01"
+          repo_created_at: "2020-02-01 00:00:00.000000"
           name: "Owner/Repo2"
           github_graphql_id: "NODE_B"
           num_stars: 20
@@ -21,7 +24,7 @@ test_int_opendevdata__repositories_with_repo_id:
           is_blacklist: 0
         # Scenario 3: No match found
         - id: 3
-          repo_created_at: "2020-03-01"
+          repo_created_at: "2020-03-01 00:00:00.000000"
           name: "Owner/Repo3"
           github_graphql_id: "NODE_C"
           num_stars: 5
@@ -29,7 +32,7 @@ test_int_opendevdata__repositories_with_repo_id:
           is_blacklist: 0
         # Scenario 4: Blacklisted repo
         - id: 4
-          repo_created_at: "2020-04-01"
+          repo_created_at: "2020-04-01 00:00:00.000000"
           name: "Owner/Repo4"
           github_graphql_id: "NODE_D"
           num_stars: 1
@@ -37,7 +40,7 @@ test_int_opendevdata__repositories_with_repo_id:
           is_blacklist: 1
         # Scenario 5: Empty GraphQL ID falls back to Name Match
         - id: 5
-          repo_created_at: "2020-05-01"
+          repo_created_at: "2020-05-01 00:00:00.000000"
           name: "owner/repo_empty"
           github_graphql_id: ""
           num_stars: 2
@@ -46,7 +49,7 @@ test_int_opendevdata__repositories_with_repo_id:
         # Scenario 6: Legacy Node ID format - decodes to repo_id 12345
         # MDQ6UmVwb3NpdG9yeTEyMzQ1 decodes to "04:Repository12345"
         - id: 6
-          repo_created_at: "2020-06-01"
+          repo_created_at: "2020-06-01 00:00:00.000000"
           name: "Owner/RepoLegacy"
           github_graphql_id: "MDQ6UmVwb3NpdG9yeTEyMzQ1"
           num_stars: 50
@@ -55,7 +58,7 @@ test_int_opendevdata__repositories_with_repo_id:
         # Scenario 7: Next-gen Node ID format - decodes to repo_id 98765
         # R_kgDOAAGBzQ is a synthetic next-gen Node ID (msgpack [0, 98765])
         - id: 7
-          repo_created_at: "2020-07-01"
+          repo_created_at: "2020-07-01 00:00:00.000000"
           name: "Owner/RepoNextgen"
           github_graphql_id: "R_kgDOAAGBzQ"
           num_stars: 100
@@ -64,7 +67,7 @@ test_int_opendevdata__repositories_with_repo_id:
         # Scenario 8: OSSD match takes precedence even when decoding would succeed
         # This repo has a valid Node ID but also has an OSSD match
         - id: 8
-          repo_created_at: "2020-08-01"
+          repo_created_at: "2020-08-01 00:00:00.000000"
           name: "Owner/RepoOssdPriority"
           github_graphql_id: "NODE_OSSD_PRIORITY"
           num_stars: 30
@@ -73,7 +76,7 @@ test_int_opendevdata__repositories_with_repo_id:
         # Scenario 9: Node ID decoding takes precedence over GHArchive name match
         # This repo has a valid Node ID and a matching GHArchive name
         - id: 9
-          repo_created_at: "2020-09-01"
+          repo_created_at: "2020-09-01 00:00:00.000000"
           name: "owner/repo_node_over_gha"
           github_graphql_id: "MDQ6UmVwb3NpdG9yeTk4NzY1NDMy"
           num_stars: 40
@@ -81,6 +84,10 @@ test_int_opendevdata__repositories_with_repo_id:
           is_blacklist: 0
 
     oso.stg_ossd__current_repositories:
+      columns:
+        created_at: timestamp(6)
+        updated_at: timestamp(6)
+        ingestion_time: timestamp(6)
       rows:
         - id: 1001
           node_id: "NODE_A"
@@ -100,19 +107,22 @@ test_int_opendevdata__repositories_with_repo_id:
           decoded_id: 98765432
 
     oso.int_gharchive__repositories:
+      columns:
+        valid_from: timestamp(6)
+        valid_to: timestamp(6)
       rows:
         # Match for Repo2 (GHArchive fallback)
         - repo_id: 2001
           repo_name: "owner/repo2"
-          valid_from: "2020-01-01"
+          valid_from: "2020-01-01 00:00:00.000000"
         # Match for Empty GraphQL ID case
         - repo_id: 2003
           repo_name: "owner/repo_empty"
-          valid_from: "2020-05-01"
+          valid_from: "2020-05-01 00:00:00.000000"
         # Match for Scenario 9 - but should NOT be used because Node ID decoding succeeds
         - repo_id: 2009
           repo_name: "owner/repo_node_over_gha"
-          valid_from: "2020-09-01"
+          valid_from: "2020-09-01 00:00:00.000000"
 
   outputs:
     query:
@@ -124,7 +134,7 @@ test_int_opendevdata__repositories_with_repo_id:
           repo_name: "owner/repo1"
           star_count: 10
           fork_count: 5
-          repo_created_at: "2020-01-01"
+          repo_created_at: "2020-01-01 00:00:00.000000"
           repo_id_source: "ossd"
           is_opendevdata_blacklist: false
 
@@ -135,7 +145,7 @@ test_int_opendevdata__repositories_with_repo_id:
           repo_name: "owner/repo2"
           star_count: 20
           fork_count: 10
-          repo_created_at: "2020-02-01"
+          repo_created_at: "2020-02-01 00:00:00.000000"
           repo_id_source: "gharchive"
           is_opendevdata_blacklist: false
 
@@ -146,7 +156,7 @@ test_int_opendevdata__repositories_with_repo_id:
           repo_name: "owner/repo3"
           star_count: 5
           fork_count: 2
-          repo_created_at: "2020-03-01"
+          repo_created_at: "2020-03-01 00:00:00.000000"
           repo_id_source: "opendevdata"
           is_opendevdata_blacklist: false
 
@@ -157,7 +167,7 @@ test_int_opendevdata__repositories_with_repo_id:
           repo_name: "owner/repo4"
           star_count: 1
           fork_count: 1
-          repo_created_at: "2020-04-01"
+          repo_created_at: "2020-04-01 00:00:00.000000"
           repo_id_source: "opendevdata"
           is_opendevdata_blacklist: true
 
@@ -168,7 +178,7 @@ test_int_opendevdata__repositories_with_repo_id:
           repo_name: "owner/repo_empty"
           star_count: 2
           fork_count: 1
-          repo_created_at: "2020-05-01"
+          repo_created_at: "2020-05-01 00:00:00.000000"
           repo_id_source: "gharchive"
           is_opendevdata_blacklist: false
 
@@ -179,7 +189,7 @@ test_int_opendevdata__repositories_with_repo_id:
           repo_name: "owner/repolegacy"
           star_count: 50
           fork_count: 25
-          repo_created_at: "2020-06-01"
+          repo_created_at: "2020-06-01 00:00:00.000000"
           repo_id_source: "node_id"
           is_opendevdata_blacklist: false
 
@@ -190,7 +200,7 @@ test_int_opendevdata__repositories_with_repo_id:
           repo_name: "owner/reponextgen"
           star_count: 100
           fork_count: 50
-          repo_created_at: "2020-07-01"
+          repo_created_at: "2020-07-01 00:00:00.000000"
           repo_id_source: "node_id"
           is_opendevdata_blacklist: false
 
@@ -201,7 +211,7 @@ test_int_opendevdata__repositories_with_repo_id:
           repo_name: "owner/repoossdpriority"
           star_count: 30
           fork_count: 15
-          repo_created_at: "2020-08-01"
+          repo_created_at: "2020-08-01 00:00:00.000000"
           repo_id_source: "ossd"
           is_opendevdata_blacklist: false
 
@@ -212,6 +222,6 @@ test_int_opendevdata__repositories_with_repo_id:
           repo_name: "owner/repo_node_over_gha"
           star_count: 40
           fork_count: 20
-          repo_created_at: "2020-09-01"
+          repo_created_at: "2020-09-01 00:00:00.000000"
           repo_id_source: "node_id"
           is_opendevdata_blacklist: false

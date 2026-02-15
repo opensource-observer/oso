@@ -5,6 +5,8 @@ test_bot_activity_to_project_daily_basic:
     end: 2024-01-05
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
       - to_artifact_id: repo_1
         from_artifact_id: bot_user_1
@@ -77,6 +79,8 @@ test_bot_activity_to_project_daily_no_bots:
     end: 2024-01-02
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
       - to_artifact_id: repo_1
         from_artifact_id: human_user_1
@@ -105,6 +109,8 @@ test_bot_activity_to_project_daily_multiple_events_same_day:
     end: 2024-01-01
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
       - to_artifact_id: repo_1
         from_artifact_id: bot_user_1

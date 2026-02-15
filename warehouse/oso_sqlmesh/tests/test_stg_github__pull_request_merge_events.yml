@@ -5,10 +5,12 @@ test_stg_github__pull_request_merge_events_basic:
     end_dt: 2024-01-05
   inputs:
     oso.stg_github__events:
+      columns:
+        created_at: timestamp(6)
       rows:
       # Pull request merged event - should be included
       - id: "event_1"
-        created_at: "2024-01-01 16:45:00"
+        created_at: "2024-01-01 16:45:00.000000"
         type: "PullRequestEvent"
         public: true
         repo:
@@ -26,7 +28,7 @@ test_stg_github__pull_request_merge_events_basic:
         payload: '{"action": "closed", "number": 1, "pull_request": {"id": "pr_1", "created_at": "2024-01-01T10:00:00Z", "merged_at": "2024-01-01T16:45:00Z", "updated_at": "2024-01-01T16:45:00Z", "closed_at": "2024-01-01T16:45:00Z", "state": "closed", "user": {"id": 1001, "login": "user1"}, "merge_commit_sha": "abc123", "changed_files": 3, "additions": 50, "deletions": 10, "review_comments": 2, "comments": 1, "author_association": "CONTRIBUTOR"}}'
       # Another pull request merged event - should be included
       - id: "event_2"
-        created_at: "2024-01-02 14:30:00"
+        created_at: "2024-01-02 14:30:00.000000"
         type: "PullRequestEvent"
         public: true
         repo:
@@ -44,7 +46,7 @@ test_stg_github__pull_request_merge_events_basic:
         payload: '{"action": "closed", "number": 5, "pull_request": {"id": "pr_5", "created_at": "2024-01-02T09:00:00Z", "merged_at": "2024-01-02T14:30:00Z", "updated_at": "2024-01-02T14:30:00Z", "closed_at": "2024-01-02T14:30:00Z", "state": "closed", "user": {"id": 1002, "login": "user2"}, "merge_commit_sha": "def456", "changed_files": 1, "additions": 25, "deletions": 5, "review_comments": 0, "comments": 3, "author_association": "MEMBER"}}'
       # Pull request closed but not merged - should be excluded (merged_at is null)
       - id: "event_3"
-        created_at: "2024-01-03 10:30:00"
+        created_at: "2024-01-03 10:30:00.000000"
         type: "PullRequestEvent"
         public: true
         repo:
@@ -62,7 +64,7 @@ test_stg_github__pull_request_merge_events_basic:
         payload: '{"action": "closed", "number": 2, "pull_request": {"id": "pr_2", "created_at": "2024-01-03T08:00:00Z", "merged_at": null, "updated_at": "2024-01-03T10:30:00Z", "closed_at": "2024-01-03T10:30:00Z", "state": "closed", "user": {"id": 1003, "login": "user3"}, "merge_commit_sha": null, "changed_files": 2, "additions": 15, "deletions": 8, "review_comments": 1, "comments": 0, "author_association": "CONTRIBUTOR"}}'
       # Pull request opened - should be excluded (action is not 'closed')
       - id: "event_4"
-        created_at: "2024-01-04 09:15:00"
+        created_at: "2024-01-04 09:15:00.000000"
         type: "PullRequestEvent"
         public: true
         repo:
@@ -80,7 +82,7 @@ test_stg_github__pull_request_merge_events_basic:
         payload: '{"action": "opened", "number": 7, "pull_request": {"id": "pr_7", "created_at": "2024-01-04T09:15:00Z", "merged_at": null, "updated_at": "2024-01-04T09:15:00Z", "closed_at": null, "state": "open", "user": {"id": 1004, "login": "user4"}, "merge_commit_sha": null, "changed_files": 4, "additions": 100, "deletions": 20, "review_comments": 0, "comments": 0, "author_association": "FIRST_TIME_CONTRIBUTOR"}}'
       # Non-PullRequestEvent - should be excluded
       - id: "event_5"
-        created_at: "2024-01-04 12:00:00"
+        created_at: "2024-01-04 12:00:00.000000"
         type: "IssuesEvent"
         public: true
         repo:
@@ -103,10 +105,10 @@ test_stg_github__pull_request_merge_events_basic:
         repository_name: "owner1/repo1"
         type: "PULL_REQUEST_MERGED"
         id: "pr_1"
-        event_time: "2024-01-01 16:45:00"
-        merged_at: "2024-01-01 16:45:00"
-        created_at: "2024-01-01 10:00:00"
-        closed_at: "2024-01-01 16:45:00"
+        event_time: "2024-01-01 16:45:00.000000"
+        merged_at: "2024-01-01 16:45:00.000000"
+        created_at: "2024-01-01 10:00:00.000000"
+        closed_at: "2024-01-01 16:45:00.000000"
         actor_id: 1001
         actor_login: "user1"
         state: "closed"
@@ -122,10 +124,10 @@ test_stg_github__pull_request_merge_events_basic:
         repository_name: "owner2/repo2"
         type: "PULL_REQUEST_MERGED"
         id: "pr_5"
-        event_time: "2024-01-02 14:30:00"
-        merged_at: "2024-01-02 14:30:00"
-        created_at: "2024-01-02 09:00:00"
-        closed_at: "2024-01-02 14:30:00"
+        event_time: "2024-01-02 14:30:00.000000"
+        merged_at: "2024-01-02 14:30:00.000000"
+        created_at: "2024-01-02 09:00:00.000000"
+        closed_at: "2024-01-02 14:30:00.000000"
         actor_id: 1002
         actor_login: "user2"
         state: "closed"
@@ -145,10 +147,12 @@ test_stg_github__pull_request_merge_events_edge_cases:
     end_dt: 2024-02-05
   inputs:
     oso.stg_github__events:
+      columns:
+        created_at: timestamp(6)
       rows:
       # Pull request merged with minimal data - should be included
       - id: "event_6"
-        created_at: "2024-02-01 12:00:00"
+        created_at: "2024-02-01 12:00:00.000000"
         type: "PullRequestEvent"
         public: true
         repo:
@@ -166,7 +170,7 @@ test_stg_github__pull_request_merge_events_edge_cases:
         payload: '{"action": "closed", "number": 100, "pull_request": {"id": "pr_100", "created_at": "2024-02-01T10:00:00Z", "merged_at": "2024-02-01T12:00:00Z", "updated_at": "2024-02-01T12:00:00Z", "closed_at": "2024-02-01T12:00:00Z", "state": "closed", "user": {"id": 2001, "login": "user6"}, "merge_commit_sha": "ghi789", "changed_files": 0, "additions": 0, "deletions": 0, "review_comments": 0, "comments": 0, "author_association": "OWNER"}}'
       # Pull request with null values in some fields - should be included
       - id: "event_7"
-        created_at: "2024-02-02 15:30:00"
+        created_at: "2024-02-02 15:30:00.000000"
         type: "PullRequestEvent"
         public: true
         repo:
@@ -189,10 +193,10 @@ test_stg_github__pull_request_merge_events_edge_cases:
         repository_name: "owner3/repo3"
         type: "PULL_REQUEST_MERGED"
         id: "pr_100"
-        event_time: "2024-02-01 12:00:00"
-        merged_at: "2024-02-01 12:00:00"
-        created_at: "2024-02-01 10:00:00"
-        closed_at: "2024-02-01 12:00:00"
+        event_time: "2024-02-01 12:00:00.000000"
+        merged_at: "2024-02-01 12:00:00.000000"
+        created_at: "2024-02-01 10:00:00.000000"
+        closed_at: "2024-02-01 12:00:00.000000"
         actor_id: 2001
         actor_login: "user6"
         state: "closed"
@@ -208,10 +212,10 @@ test_stg_github__pull_request_merge_events_edge_cases:
         repository_name: "owner4/repo4"
         type: "PULL_REQUEST_MERGED"
         id: "pr_200"
-        event_time: "2024-02-02 15:30:00"
-        merged_at: "2024-02-02 15:30:00"
-        created_at: "2024-02-02 14:00:00"
-        closed_at: "2024-02-02 15:30:00"
+        event_time: "2024-02-02 15:30:00.000000"
+        merged_at: "2024-02-02 15:30:00.000000"
+        created_at: "2024-02-02 14:00:00.000000"
+        closed_at: "2024-02-02 15:30:00.000000"
         actor_id: 2002
         actor_login: "user7"
         state: "closed"

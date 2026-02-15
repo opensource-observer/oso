@@ -5,6 +5,8 @@ test_burstiness_to_artifact_daily:
     end: 2024-01-31
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
       # repo_1 with mixed event types across days
       - bucket_day: 2024-01-01
@@ -87,6 +89,9 @@ test_burstiness_to_artifact_daily:
         event_type: RELEASE_PUBLISHED
         amount: 5
     oso.int_first_last_commit_to_github_repository:
+      columns:
+        first_commit_time: timestamp(6)
+        last_commit_time: timestamp(6)
       rows:
       - artifact_id: repo_1
         artifact_source_id: github
@@ -165,6 +170,8 @@ test_burstiness_to_artifact_daily_with_gaps:
     end: 2024-02-10
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
       - bucket_day: 2024-02-01
         from_artifact_id: user_3
@@ -197,6 +204,9 @@ test_burstiness_to_artifact_daily_with_gaps:
         event_type: STARRED
         amount: 3
     oso.int_first_last_commit_to_github_repository:
+      columns:
+        first_commit_time: timestamp(6)
+        last_commit_time: timestamp(6)
       rows:
       - artifact_id: repo_3
         artifact_source_id: github

@@ -5,6 +5,8 @@ test_contributors_to_project_daily_basic:
     end: 2024-01-05
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
       - to_artifact_id: repo_1
         from_artifact_id: user_1
@@ -71,6 +73,8 @@ test_contributors_to_project_daily_no_qualifying_events:
     end: 2024-01-02
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
       - to_artifact_id: repo_1
         from_artifact_id: user_1
@@ -105,6 +109,8 @@ test_contributors_to_project_daily_distinct_count:
     end: 2024-01-01
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
       - to_artifact_id: repo_1
         from_artifact_id: user_1
@@ -151,6 +157,8 @@ test_contributors_to_project_daily_same_user_multiple_events:
     end: 2024-01-02
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
       - to_artifact_id: repo_1
         from_artifact_id: user_1
@@ -205,6 +213,8 @@ test_contributors_to_project_daily_all_event_types:
     end: 2024-01-03
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
       - to_artifact_id: repo_1
         from_artifact_id: user_1

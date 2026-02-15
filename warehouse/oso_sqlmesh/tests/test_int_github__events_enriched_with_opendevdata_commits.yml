@@ -1,15 +1,15 @@
 test_int_github__events_enriched_with_opendevdata_commits:
   model: oso.int_github__events_enriched_with_opendevdata_commits
   vars:
-    start_dt: "2024-01-01"
-    end_dt: "2024-01-02"
+    start: "2024-01-01"
+    end: "2024-01-02"
     github_incremental_start: "2024-01-01"
   inputs:
     oso.stg_github__events:
       columns:
         id: text
         type: text
-        created_at: timestamp
+        created_at: timestamp(6)
         repo: STRUCT(id BIGINT, name VARCHAR, url VARCHAR)
         actor: STRUCT(id BIGINT, login VARCHAR, avatar_url VARCHAR, url VARCHAR)
         org: STRUCT(id BIGINT, login VARCHAR, avatar_url VARCHAR, url VARCHAR)
@@ -19,7 +19,7 @@ test_int_github__events_enriched_with_opendevdata_commits:
       rows:
       - id: "event_1"
         type: "PushEvent"
-        created_at: "2024-01-01 10:00:00"
+        created_at: "2024-01-01 10:00:00.000000"
         public: true
         other: ""
         repo:
@@ -43,7 +43,7 @@ test_int_github__events_enriched_with_opendevdata_commits:
           }
       - id: "event_2"
         type: "PushEvent"
-        created_at: "2024-01-01 11:00:00"
+        created_at: "2024-01-01 11:00:00.000000"
         public: true
         other: ""
         repo:
@@ -67,7 +67,7 @@ test_int_github__events_enriched_with_opendevdata_commits:
           }
       - id: "event_3"
         type: "WatchEvent"
-        created_at: "2024-01-01 12:00:00"
+        created_at: "2024-01-01 12:00:00.000000"
         public: true
         other: ""
         repo:
@@ -87,7 +87,7 @@ test_int_github__events_enriched_with_opendevdata_commits:
         payload: "{}"
       - id: "event_4"
         type: "PushEvent"
-        created_at: "2024-01-01 13:00:00"
+        created_at: "2024-01-01 13:00:00.000000"
         public: true
         other: ""
         repo:
@@ -111,6 +111,8 @@ test_int_github__events_enriched_with_opendevdata_commits:
           }
 
     oso.int_opendevdata__repositories_with_repo_id:
+      columns:
+        repo_created_at: timestamp(6)
       rows:
       - repo_id: 101
         opendevdata_id: 5001
@@ -120,6 +122,10 @@ test_int_github__events_enriched_with_opendevdata_commits:
         github_graphql_id: "NODE_B"
 
     oso.stg_opendevdata__commits:
+      columns:
+        created_at: timestamp(6)
+        authored_at: timestamp(6)
+        committed_at: timestamp(6)
       rows:
       - sha1: "sha_match"
         repo_id: 5001
@@ -134,6 +140,7 @@ test_int_github__events_enriched_with_opendevdata_commits:
 
   outputs:
     query:
+      partial: true
       rows:
       - type: "PushEvent"
         public: true
@@ -142,21 +149,7 @@ test_int_github__events_enriched_with_opendevdata_commits:
             "head": "sha_match",
             "commits": [{"sha": "sha_match"}]
           }
-        repo:
-          id: 101
-          name: "owner/repo1"
-          url: "url1"
-        actor:
-          id: 555
-          login: "user1"
-          avatar_url: "url"
-          url: "url"
-        org:
-          id: 999
-          login: "org1"
-          avatar_url: "url"
-          url: "url"
-        created_at: "2024-01-01 10:00:00"
+        created_at: "2024-01-01 10:00:00.000000"
         id: "event_1"
         other: ""
         repo_id: 101
@@ -172,21 +165,7 @@ test_int_github__events_enriched_with_opendevdata_commits:
             "head": "sha_no_match",
             "commits": [{"sha": "sha_no_match"}]
           }
-        repo:
-          id: 101
-          name: "owner/repo1"
-          url: "url1"
-        actor:
-          id: 555
-          login: "user1"
-          avatar_url: "url"
-          url: "url"
-        org:
-          id: 999
-          login: "org1"
-          avatar_url: "url"
-          url: "url"
-        created_at: "2024-01-01 11:00:00"
+        created_at: "2024-01-01 11:00:00.000000"
         id: "event_2"
         other: ""
         repo_id: 101
@@ -198,21 +177,7 @@ test_int_github__events_enriched_with_opendevdata_commits:
       - type: "WatchEvent"
         public: true
         payload: "{}"
-        repo:
-          id: 101
-          name: "owner/repo1"
-          url: "url1"
-        actor:
-          id: 555
-          login: "user1"
-          avatar_url: "url"
-          url: "url"
-        org:
-          id: 999
-          login: "org1"
-          avatar_url: "url"
-          url: "url"
-        created_at: "2024-01-01 12:00:00"
+        created_at: "2024-01-01 12:00:00.000000"
         id: "event_3"
         other: ""
         repo_id: 101
@@ -228,21 +193,7 @@ test_int_github__events_enriched_with_opendevdata_commits:
             "head": "sha_match_but_wrong_repo",
             "commits": [{"sha": "sha_match_but_wrong_repo"}]
           }
-        repo:
-          id: 102
-          name: "owner/repo2"
-          url: "url2"
-        actor:
-          id: 555
-          login: "user1"
-          avatar_url: "url"
-          url: "url"
-        org:
-          id: 999
-          login: "org1"
-          avatar_url: "url"
-          url: "url"
-        created_at: "2024-01-01 13:00:00"
+        created_at: "2024-01-01 13:00:00.000000"
         id: "event_4"
         other: ""
         repo_id: 102

@@ -2,28 +2,30 @@ test_int_last_contribution_to_collection:
   model: oso.int_last_contribution_to_collection
   inputs:
     oso.int_last_contribution_to_project:
+      columns:
+        time: timestamp(6)
       rows:
-        - time: "2024-01-01 10:00:00"
+        - time: "2024-01-01 10:00:00.000000"
           event_source: GITHUB
           from_artifact_id: user_1
           to_project_id: project_1
-        - time: "2024-01-02 11:00:00"
+        - time: "2024-01-02 11:00:00.000000"
           event_source: GITHUB
           from_artifact_id: user_1
           to_project_id: project_2
-        - time: "2024-01-03 12:00:00"
+        - time: "2024-01-03 12:00:00.000000"
           event_source: GITHUB
           from_artifact_id: user_2
           to_project_id: project_1
-        - time: "2024-01-04 13:00:00"
+        - time: "2024-01-04 13:00:00.000000"
           event_source: GITHUB
           from_artifact_id: user_2
           to_project_id: project_3
-        - time: "2024-01-05 14:00:00"
+        - time: "2024-01-05 14:00:00.000000"
           event_source: GITHUB
           from_artifact_id: user_3
           to_project_id: project_2
-        - time: "2024-01-01 09:00:00"
+        - time: "2024-01-01 09:00:00.000000"
           event_source: GITHUB
           from_artifact_id: user_1
           to_project_id: project_1
@@ -38,19 +40,19 @@ test_int_last_contribution_to_collection:
   outputs:
     query:
       rows:
-        - time: 2024-01-02
+        - time: "2024-01-02 11:00:00.000000"
           event_source: GITHUB
           from_artifact_id: user_1
           to_collection_id: collection_1
-        - time: 2024-01-03
+        - time: "2024-01-03 12:00:00.000000"
           event_source: GITHUB
           from_artifact_id: user_2
           to_collection_id: collection_1
-        - time: 2024-01-04
+        - time: "2024-01-04 13:00:00.000000"
           event_source: GITHUB
           from_artifact_id: user_2
           to_collection_id: collection_2
-        - time: 2024-01-05
+        - time: "2024-01-05 14:00:00.000000"
           event_source: GITHUB
           from_artifact_id: user_3
           to_collection_id: collection_1
@@ -59,16 +61,18 @@ test_int_last_contribution_to_collection_multiple_event_sources:
   model: oso.int_last_contribution_to_collection
   inputs:
     oso.int_last_contribution_to_project:
+      columns:
+        time: timestamp(6)
       rows:
-        - time: "2024-01-01 10:00:00"
+        - time: "2024-01-01 10:00:00.000000"
           event_source: GITHUB
           from_artifact_id: user_1
           to_project_id: project_1
-        - time: "2024-01-02 11:00:00"
+        - time: "2024-01-02 11:00:00.000000"
           event_source: GITLAB
           from_artifact_id: user_1
           to_project_id: project_1
-        - time: "2024-01-03 12:00:00"
+        - time: "2024-01-03 12:00:00.000000"
           event_source: GITHUB
           from_artifact_id: user_2
           to_project_id: project_2
@@ -81,15 +85,15 @@ test_int_last_contribution_to_collection_multiple_event_sources:
   outputs:
     query:
       rows:
-        - time: 2024-01-01
+        - time: "2024-01-01 10:00:00.000000"
           event_source: GITHUB
           from_artifact_id: user_1
           to_collection_id: collection_1
-        - time: 2024-01-02
+        - time: "2024-01-02 11:00:00.000000"
           event_source: GITLAB
           from_artifact_id: user_1
           to_collection_id: collection_1
-        - time: 2024-01-03
+        - time: "2024-01-03 12:00:00.000000"
           event_source: GITHUB
           from_artifact_id: user_2
           to_collection_id: collection_1

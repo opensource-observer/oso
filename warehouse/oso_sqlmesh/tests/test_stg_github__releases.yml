@@ -5,10 +5,12 @@ test_stg_github__releases_basic:
     end_dt: 2024-01-05
   inputs:
     oso.stg_github__events:
+      columns:
+        created_at: timestamp(6)
       rows:
       # Release published event - should be included
       - id: "event_1"
-        created_at: "2024-01-01 14:00:00"
+        created_at: "2024-01-01 14:00:00.000000"
         type: "ReleaseEvent"
         public: true
         repo:
@@ -26,7 +28,7 @@ test_stg_github__releases_basic:
         payload: '{"action": "published", "release": {"id": 123456, "tag_name": "v1.0.0", "name": "Release 1.0.0", "created_at": "2024-01-01T14:00:00Z", "published_at": "2024-01-01T14:00:00Z", "draft": false, "prerelease": false, "author": {"login": "user1", "id": 1001}}}'
       # Another release published event - should be included
       - id: "event_2"
-        created_at: "2024-01-02 10:30:00"
+        created_at: "2024-01-02 10:30:00.000000"
         type: "ReleaseEvent"
         public: true
         repo:
@@ -44,7 +46,7 @@ test_stg_github__releases_basic:
         payload: '{"action": "published", "release": {"id": 789012, "tag_name": "v2.1.0", "name": "Release 2.1.0", "created_at": "2024-01-02T10:30:00Z", "published_at": "2024-01-02T10:30:00Z", "draft": false, "prerelease": true, "author": {"login": "user2", "id": 1002}}}'
       # Release event with different action - should still be included (model doesn't filter by action)
       - id: "event_3"
-        created_at: "2024-01-03 16:45:00"
+        created_at: "2024-01-03 16:45:00.000000"
         type: "ReleaseEvent"
         public: true
         repo:
@@ -62,7 +64,7 @@ test_stg_github__releases_basic:
         payload: '{"action": "edited", "release": {"id": 345678, "tag_name": "v1.1.0", "name": "Release 1.1.0", "created_at": "2024-01-03T16:45:00Z", "published_at": "2024-01-03T16:45:00Z", "draft": false, "prerelease": false, "author": {"login": "user3", "id": 1003}}}'
       # Non-ReleaseEvent - should be excluded
       - id: "event_4"
-        created_at: "2024-01-04 12:00:00"
+        created_at: "2024-01-04 12:00:00.000000"
         type: "PushEvent"
         public: true
         repo:
@@ -82,21 +84,21 @@ test_stg_github__releases_basic:
     query:
       rows:
       - id: "event_1"
-        created_at: "2024-01-01 14:00:00"
+        created_at: "2024-01-01 14:00:00.000000"
         repository_id: 12345
         repository_name: "owner1/repo1"
         actor_id: 1001
         actor_login: "user1"
         type: "RELEASE_PUBLISHED"
       - id: "event_2"
-        created_at: "2024-01-02 10:30:00"
+        created_at: "2024-01-02 10:30:00.000000"
         repository_id: 67890
         repository_name: "owner2/repo2"
         actor_id: 1002
         actor_login: "user2"
         type: "RELEASE_PUBLISHED"
       - id: "event_3"
-        created_at: "2024-01-03 16:45:00"
+        created_at: "2024-01-03 16:45:00.000000"
         repository_id: 11111
         repository_name: "owner3/repo3"
         actor_id: 1003
@@ -110,10 +112,12 @@ test_stg_github__releases_edge_cases:
     end_dt: 2024-03-05
   inputs:
     oso.stg_github__events:
+      columns:
+        created_at: timestamp(6)
       rows:
       # Release with minimal payload - should be included
       - id: "event_9"
-        created_at: "2024-03-01 08:00:00"
+        created_at: "2024-03-01 08:00:00.000000"
         type: "ReleaseEvent"
         public: true
         repo:
@@ -131,7 +135,7 @@ test_stg_github__releases_edge_cases:
         payload: '{"action": "published", "release": {"id": 890123, "tag_name": "v4.0.0", "created_at": "2024-03-01T08:00:00Z"}}'
       # Release with deleted action - should be included
       - id: "event_10"
-        created_at: "2024-03-02 14:30:00"
+        created_at: "2024-03-02 14:30:00.000000"
         type: "ReleaseEvent"
         public: true
         repo:
@@ -151,14 +155,14 @@ test_stg_github__releases_edge_cases:
     query:
       rows:
       - id: "event_9"
-        created_at: "2024-03-01 08:00:00"
+        created_at: "2024-03-01 08:00:00.000000"
         repository_id: 66666
         repository_name: "owner8/repo8"
         actor_id: 3001
         actor_login: "user9"
         type: "RELEASE_PUBLISHED"
       - id: "event_10"
-        created_at: "2024-03-02 14:30:00"
+        created_at: "2024-03-02 14:30:00.000000"
         repository_id: 77777
         repository_name: "owner9/repo9"
         actor_id: 3002

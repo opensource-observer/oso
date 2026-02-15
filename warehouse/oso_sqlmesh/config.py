@@ -91,6 +91,17 @@ config = Config(
                 ),
                 retries=int(os.environ.get("SQLMESH_TRINO_RETRIES", "5")),
             ),
+            test_connection=TrinoConnectionConfig(
+                host=os.environ.get("SQLMESH_TRINO_HOST", "localhost"),
+                port=int(os.environ.get("SQLMESH_TRINO_PORT", "8080")),
+                http_scheme="http",
+                user=os.environ.get("SQLMESH_TRINO_USER", "sqlmesh"),
+                catalog=os.environ.get("SQLMESH_TRINO_CATALOG", "iceberg"),
+                concurrent_tasks=int(
+                    os.environ.get("SQLMESH_TRINO_CONCURRENT_TASKS", "8")
+                ),
+                retries=int(os.environ.get("SQLMESH_TRINO_RETRIES", "5")),
+            ),
             state_connection=PostgresConnectionConfig(
                 host=os.environ.get("SQLMESH_POSTGRES_HOST", "localhost"),
                 port=int(os.environ.get("SQLMESH_POSTGRES_PORT", "5432")),

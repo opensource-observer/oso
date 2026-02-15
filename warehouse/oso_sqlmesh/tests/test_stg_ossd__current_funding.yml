@@ -39,7 +39,7 @@ test_stg_ossd__current_funding_date_parsing:
         # Test 4: Date with double-digit hour timestamp
         - to_project_name: "Normal-Timestamp"
           amount: "3000.0"
-          funding_date: "2024-09-01 12:00:00"
+          funding_date: "2024-09-01 12:00:00.000000"
           from_funder_name: "Optimism"
           grant_pool_name: "Grants_Season_6"
           metadata: '{"token_amount": "1500"}'

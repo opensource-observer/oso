@@ -47,9 +47,9 @@ test_int_github_users_by_ens_user:
           artifact_name: 'nakamoto'
   outputs:
     query:
+      partial: true
       rows:
-        - user_id: '92036233f97f059deef18860fd0009becc731d6397eb2d27d2b68cf07df563d4'
-          user_source_id: 'vitalik.eth'
+        - user_source_id: 'vitalik.eth'
           user_source: 'ENS'
           user_namespace: ''
           user_name: 'vitalik.eth'
@@ -58,10 +58,8 @@ test_int_github_users_by_ens_user:
           artifact_source: 'GITHUB'
           artifact_namespace: 'vbuterin'
           artifact_name: 'vbuterin'
-          artifact_id: '3ebd1f060e85967654d98a4e4f7a5cfd74f9b63d88aebb99dcfe90ce9c4543a4'
           artifact_type: 'GIT_USER'
-        - user_id: 'db148b24413fec56e281701d63bd4fd4d0360430344e1ffe9c50f8b22ec9d7af'
-          user_source_id: 'satoshi.eth'
+        - user_source_id: 'satoshi.eth'
           user_source: 'ENS'
           user_namespace: ''
           user_name: 'satoshi.eth'
@@ -70,5 +68,4 @@ test_int_github_users_by_ens_user:
           artifact_source: 'GITHUB'
           artifact_namespace: 'nakamoto'
           artifact_name: 'nakamoto'
-          artifact_id: 'ac5417aa372e91152334be2201f8c22063828a49437ff956cec1dd46445caf0e'
           artifact_type: 'GIT_USER'

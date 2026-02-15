@@ -41,6 +41,45 @@ def time_aggregation_bucket(
             unit=exp.Var(this=current_interval[1].upper()),
         )
 
+    # Handle multi-month intervals that can't use simple truncation
+    if interval in ("quarterly", "quarter"):
+        return exp.TimestampTrunc(
+            this=time_exp,
+            unit=exp.Literal(this="quarter", is_string=True),
+        )
+
+    if interval in ("biannually", "biannual"):
+        # Bucket into 6-month periods (Jan 1 or Jul 1)
+        # CASE WHEN MONTH(time) <= 6
+        #   THEN DATE_TRUNC('year', time)
+        #   ELSE DATE_TRUNC('year', time) + INTERVAL 6 MONTH
+        # END
+        return exp.Case(
+            ifs=[
+                exp.If(
+                    this=exp.LTE(
+                        this=exp.Extract(
+                            this=exp.Var(this="MONTH"),
+                            expression=time_exp.copy(),
+                        ),
+                        expression=exp.Literal(this="6", is_string=False),
+                    ),
+                    true=exp.TimestampTrunc(
+                        this=time_exp.copy(),
+                        unit=exp.Literal(this="year", is_string=True),
+                    ),
+                )
+            ],
+            default=exp.DateAdd(
+                this=exp.TimestampTrunc(
+                    this=time_exp.copy(),
+                    unit=exp.Literal(this="year", is_string=True),
+                ),
+                expression=exp.Literal(this="6", is_string=False),
+                unit=exp.Var(this="MONTH"),
+            ),
+        )
+
     if evaluator.engine_adapter.dialect == "duckdb":
         return exp.Anonymous(
             this="TIME_BUCKET",

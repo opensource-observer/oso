@@ -2,6 +2,8 @@ test_int_last_of_event_from_artifact__github:
   model: oso.int_last_of_event_from_artifact__github
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
         - to_artifact_id: repo_1
           from_artifact_id: user_1
@@ -72,6 +74,8 @@ test_int_last_of_event_from_artifact__github_single_events:
   model: oso.int_last_of_event_from_artifact__github
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
         - to_artifact_id: repo_single
           from_artifact_id: user_single
@@ -92,6 +96,8 @@ test_int_last_of_event_from_artifact__github_multiple_events_same_group:
   model: oso.int_last_of_event_from_artifact__github
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
         - to_artifact_id: repo_test
           from_artifact_id: user_test

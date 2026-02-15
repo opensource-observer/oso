@@ -5,9 +5,11 @@ test_stg_github__issues_basic:
     end_dt: 2024-01-05
   inputs:
     oso.stg_github__events:
+      columns:
+        created_at: timestamp(6)
       rows:
       - id: "event_1"
-        created_at: "2024-01-01 10:00:00"
+        created_at: "2024-01-01 10:00:00.000000"
         type: "IssuesEvent"
         public: true
         repo:
@@ -24,7 +26,7 @@ test_stg_github__issues_basic:
         other: ""
         payload: '{"action": "opened", "issue": {"number": 1, "created_at": "2024-01-01T10:00:00Z", "updated_at": "2024-01-01T10:00:00Z", "closed_at": null, "state": "open", "comments": 0}}'
       - id: "event_2"
-        created_at: "2024-01-02 14:30:00"
+        created_at: "2024-01-02 14:30:00.000000"
         type: "IssuesEvent"
         public: true
         repo:
@@ -41,7 +43,7 @@ test_stg_github__issues_basic:
         other: ""
         payload: '{"action": "closed", "issue": {"number": 1, "created_at": "2024-01-01T10:00:00Z", "updated_at": "2024-01-02T14:30:00Z", "closed_at": "2024-01-02T14:30:00Z", "state": "closed", "comments": 2}}'
       - id: "event_3"
-        created_at: "2024-01-03 16:15:00"
+        created_at: "2024-01-03 16:15:00.000000"
         type: "IssuesEvent"
         public: true
         repo:
@@ -58,7 +60,7 @@ test_stg_github__issues_basic:
         other: ""
         payload: '{"action": "reopened", "issue": {"number": 5, "created_at": "2024-01-02T12:00:00Z", "updated_at": "2024-01-03T16:15:00Z", "closed_at": null, "state": "open", "comments": 1}}'
       - id: "event_4"
-        created_at: "2024-01-04 11:45:00"
+        created_at: "2024-01-04 11:45:00.000000"
         type: "IssuesEvent"
         public: true
         repo:
@@ -75,7 +77,7 @@ test_stg_github__issues_basic:
         other: ""
         payload: '{"action": "assigned", "issue": {"number": 8, "created_at": "2024-01-03T09:00:00Z", "updated_at": "2024-01-04T11:45:00Z", "closed_at": null, "state": "open", "comments": 3}}'
       - id: "event_5"
-        created_at: "2024-01-04 15:00:00"
+        created_at: "2024-01-04 15:00:00.000000"
         type: "PullRequestEvent"
         public: true
         repo:
@@ -92,7 +94,7 @@ test_stg_github__issues_basic:
         other: ""
         payload: '{"action": "opened", "pull_request": {"number": 10, "created_at": "2024-01-04T15:00:00Z", "updated_at": "2024-01-04T15:00:00Z", "merged_at": null, "closed_at": null, "state": "open", "comments": 0}}'
       - id: "event_6"
-        created_at: "2024-01-06 12:00:00"
+        created_at: "2024-01-06 12:00:00.000000"
         type: "IssuesEvent"
         public: true
         repo:
@@ -112,50 +114,50 @@ test_stg_github__issues_basic:
     query:
       rows:
       - id: "event_1"
-        event_time: "2024-01-01 10:00:00"
+        event_time: "2024-01-01 10:00:00.000000"
         repository_id: 12345
         repository_name: "owner1/repo1"
         actor_id: 1001
         actor_login: "user1"
         type: "ISSUE_OPENED"
         number: 1
-        created_at: "2024-01-01 10:00:00"
+        created_at: "2024-01-01 10:00:00.000000"
         closed_at: null
         state: "open"
         comments: 0.0
       - id: "event_2"
-        event_time: "2024-01-02 14:30:00"
+        event_time: "2024-01-02 14:30:00.000000"
         repository_id: 12345
         repository_name: "owner1/repo1"
         actor_id: 1002
         actor_login: "user2"
         type: "ISSUE_CLOSED"
         number: 1
-        created_at: "2024-01-01 10:00:00"
-        closed_at: "2024-01-02 14:30:00"
+        created_at: "2024-01-01 10:00:00.000000"
+        closed_at: "2024-01-02 14:30:00.000000"
         state: "closed"
         comments: 2.0
       - id: "event_3"
-        event_time: "2024-01-03 16:15:00"
+        event_time: "2024-01-03 16:15:00.000000"
         repository_id: 67890
         repository_name: "owner2/repo2"
         actor_id: 1003
         actor_login: "user3"
         type: "ISSUE_REOPENED"
         number: 5
-        created_at: "2024-01-02 12:00:00"
+        created_at: "2024-01-02 12:00:00.000000"
         closed_at: null
         state: "open"
         comments: 1.0
       - id: "event_4"
-        event_time: "2024-01-04 11:45:00"
+        event_time: "2024-01-04 11:45:00.000000"
         repository_id: 67890
         repository_name: "owner2/repo2"
         actor_id: 1004
         actor_login: "user4"
         type: "ISSUE_ASSIGNED"
         number: 8
-        created_at: "2024-01-03 09:00:00"
+        created_at: "2024-01-03 09:00:00.000000"
         closed_at: null
         state: "open"
         comments: 3.0

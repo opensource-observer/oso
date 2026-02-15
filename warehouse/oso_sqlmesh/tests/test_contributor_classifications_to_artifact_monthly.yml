@@ -28,6 +28,8 @@ test_contributor_classifications_to_artifact_monthly:
         metric: contributor_active_days
         amount: 28
     oso.int_first_contribution_to_artifact:
+      columns:
+        time: timestamp(6)
       rows:
       # First contribution for contributor_1 was in 2023 (not first-time in Jan 2024)
       - time: 2023-05-20
@@ -45,6 +47,8 @@ test_contributor_classifications_to_artifact_monthly:
         from_artifact_id: contributor_3
         to_artifact_id: artifact_2
     oso.int_last_contribution_to_artifact:
+      columns:
+        time: timestamp(6)
       rows:
       - time: 2024-01-25
         event_source: GITHUB
@@ -150,6 +154,8 @@ test_active_contributors_consistency:
         metric: contributor_active_days
         amount: 18  # Still full-time
     oso.int_first_contribution_to_artifact:
+      columns:
+        time: timestamp(6)
       rows:
       # Both were first-time in month 1
       - time: 2024-01-15
@@ -161,6 +167,8 @@ test_active_contributors_consistency:
         from_artifact_id: contributor_2
         to_artifact_id: artifact_1
     oso.int_last_contribution_to_artifact:
+      columns:
+        time: timestamp(6)
       rows:
       - time: 2024-01-25
         event_source: GITHUB
@@ -283,6 +291,8 @@ test_activity_level_transitions:
         metric: contributor_active_days
         amount: 7  # Still part-time
     oso.int_first_contribution_to_artifact:
+      columns:
+        time: timestamp(6)
       rows:
       # Both were first-time in month 1
       - time: 2024-01-15
@@ -294,6 +304,8 @@ test_activity_level_transitions:
         from_artifact_id: contributor_2
         to_artifact_id: artifact_1
     oso.int_last_contribution_to_artifact:
+      columns:
+        time: timestamp(6)
       rows:
       - time: 2024-02-20
         event_source: GITHUB
@@ -427,6 +439,8 @@ test_reactivated_contributors:
         metric: contributor_active_days
         amount: 17  # Full-time
     oso.int_first_contribution_to_artifact:
+      columns:
+        time: timestamp(6)
       rows:
       # Both were first-time in month 1
       - time: 2024-01-15
@@ -438,6 +452,8 @@ test_reactivated_contributors:
         from_artifact_id: contributor_2
         to_artifact_id: artifact_1
     oso.int_last_contribution_to_artifact:
+      columns:
+        time: timestamp(6)
       rows:
       - time: 2024-02-20
         event_source: GITHUB
@@ -555,6 +571,8 @@ test_churned_contributors:
       # Month 3: contributor_2 churns too (no entries)
       # Month 4: No activity from either (to validate churn events are within date range)
     oso.int_first_contribution_to_artifact:
+      columns:
+        time: timestamp(6)
       rows:
       # Both were first-time in month 1
       - time: 2024-01-15
@@ -566,6 +584,8 @@ test_churned_contributors:
         from_artifact_id: contributor_2
         to_artifact_id: artifact_1
     oso.int_last_contribution_to_artifact:
+      columns:
+        time: timestamp(6)
       rows:
       - time: 2024-01-15
         event_source: GITHUB
@@ -627,12 +647,16 @@ test_churned_after_first_time:
         amount: 5  # Part-time
       # Month 2: No activity (churned immediately after first time)
     oso.int_first_contribution_to_artifact:
+      columns:
+        time: timestamp(6)
       rows:
       - time: 2024-01-15
         event_source: GITHUB
         from_artifact_id: contributor_1
         to_artifact_id: artifact_1
     oso.int_last_contribution_to_artifact:
+      columns:
+        time: timestamp(6)
       rows:
       - time: 2024-01-15
         event_source: GITHUB

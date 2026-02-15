@@ -8,14 +8,14 @@ test_stg_github__pull_request_merge_events_since_20251007_basic:
       columns:
         id: text
         type: text
-        created_at: timestamp
+        created_at: timestamp(6)
         repo: STRUCT(id BIGINT, name VARCHAR, url VARCHAR)
         actor: STRUCT(id BIGINT, login VARCHAR, avatar_url VARCHAR, url VARCHAR)
         payload: text
       rows:
       - id: "event_1"
         type: "PullRequestEvent"
-        created_at: "2025-10-07 10:00:00"
+        created_at: "2025-10-07 10:00:00.000000"
         repo:
           id: 123
           name: "owner/repo"
@@ -40,7 +40,7 @@ test_stg_github__pull_request_merge_events_since_20251007_basic:
           }
       - id: "event_2"
         type: "PullRequestEvent"
-        created_at: "2025-10-07 11:00:00"
+        created_at: "2025-10-07 11:00:00.000000"
         repo:
           id: 123
           name: "owner/repo"
@@ -65,9 +65,9 @@ test_stg_github__pull_request_merge_events_since_20251007_basic:
         repository_name: "owner/repo"
         type: "PULL_REQUEST_MERGED"
         id: "1001"
-        event_time: "2025-10-07 10:00:00"
+        event_time: "2025-10-07 10:00:00.000000"
         merged_at: null
-        created_at: "2025-10-07 10:00:00"
+        created_at: "2025-10-07 10:00:00.000000"
         closed_at: null
         actor_id: 555
         actor_login: "user1"

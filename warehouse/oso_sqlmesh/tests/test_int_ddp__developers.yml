@@ -4,7 +4,9 @@ test_int_ddp__developers_authors_only:
     oso.int_ddp__commits_unified:
       columns:
         sha: varchar
-        created_at: timestamp
+        created_at: timestamp(6)
+        committed_at: timestamp(6)
+        authored_at: timestamp(6)
         repository_id: bigint
         actor_id: bigint
         actor_login: varchar
@@ -14,7 +16,9 @@ test_int_ddp__developers_authors_only:
         is_bot: bigint
       rows:
         - sha: "abc123"
-          created_at: "2024-01-01 10:00:00"
+          created_at: "2024-01-01 10:00:00.000000"
+          committed_at: "2024-01-01 10:00:00.000000"
+          authored_at: "2024-01-01 09:00:00.000000"
           repository_id: 1
           actor_id: 100
           actor_login: "pusher1"
@@ -41,7 +45,9 @@ test_int_ddp__developers_dedup_prefers_author:
     oso.int_ddp__commits_unified:
       columns:
         sha: varchar
-        created_at: timestamp
+        created_at: timestamp(6)
+        committed_at: timestamp(6)
+        authored_at: timestamp(6)
         repository_id: bigint
         actor_id: bigint
         actor_login: varchar
@@ -51,7 +57,9 @@ test_int_ddp__developers_dedup_prefers_author:
         is_bot: bigint
       rows:
         - sha: "abc123"
-          created_at: "2024-01-01 10:00:00"
+          created_at: "2024-01-01 10:00:00.000000"
+          committed_at: "2024-01-01 10:00:00.000000"
+          authored_at: "2024-01-01 09:00:00.000000"
           repository_id: 1
           actor_id: 100
           actor_login: "dev1"
@@ -73,7 +81,9 @@ test_int_ddp__developers_null_author_id:
     oso.int_ddp__commits_unified:
       columns:
         sha: varchar
-        created_at: timestamp
+        created_at: timestamp(6)
+        committed_at: timestamp(6)
+        authored_at: timestamp(6)
         repository_id: bigint
         actor_id: bigint
         actor_login: varchar
@@ -83,7 +93,9 @@ test_int_ddp__developers_null_author_id:
         is_bot: bigint
       rows:
         - sha: "xyz789"
-          created_at: "2024-01-01 10:00:00"
+          created_at: "2024-01-01 10:00:00.000000"
+          committed_at: "2024-01-01 10:00:00.000000"
+          authored_at: "2024-01-01 09:00:00.000000"
           repository_id: 1
           actor_id: 300
           actor_login: "pusher_only"

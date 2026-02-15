@@ -5,6 +5,8 @@ test_contributor_active_days_to_project_monthly:
     end: 2024-01-31
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
       # Contributor 1 - Active on 4 different days with multiple event types
       - to_artifact_id: repo_1
@@ -163,6 +165,8 @@ test_contributor_active_days_to_project_monthly_edge_cases:
     end: 2024-02-29  # February (leap year)
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
       # Contributor with no activity - should not appear in results
       

@@ -5,6 +5,8 @@ test_int_events_daily__github_with_lag:
     end_date: 2024-01-05
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
         - bucket_day: 2024-01-01
           from_artifact_id: user_1
@@ -95,6 +97,8 @@ test_int_events_daily__github_with_lag_single_user_repo:
     end_date: 2024-01-10
   inputs:
     oso.int_events_daily__github:
+      columns:
+        bucket_day: date
       rows:
         - bucket_day: 2024-01-01
           from_artifact_id: user_single

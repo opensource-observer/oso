@@ -26,9 +26,9 @@ test_int_addresses_by_ens_user:
           registrant: {id: "0x8888888888888888888888888888888888888888"}
   outputs:
     query:
+      partial: true
       rows:
-        - user_id: '4c1af79ddcc5aee9d287f9946eb66e391c36872650859b4a49da35842e71529e'
-          user_source_id: 'test1.eth'
+        - user_source_id: 'test1.eth'
           user_source: 'ENS'
           user_namespace: ''
           user_name: 'test1.eth'
@@ -36,10 +36,8 @@ test_int_addresses_by_ens_user:
           artifact_source: 'MAINNET'
           artifact_namespace: ''
           artifact_name: '0x1111111111111111111111111111111111111111'
-          artifact_id: 'e79d6e6596d72c20caee5be1bce7c5f573433f46346ffd72e02015a706d898db'
           artifact_type: 'SOCIAL_HANDLE'
-        - user_id: 'b3fe8e1796fdf9b8d12bfd2e6f267dad283dedb2011fd33e177e51e914f086cb'
-          user_source_id: 'test2.eth'
+        - user_source_id: 'test2.eth'
           user_source: 'ENS'
           user_namespace: ''
           user_name: 'test2.eth'
@@ -47,5 +45,4 @@ test_int_addresses_by_ens_user:
           artifact_source: 'MAINNET'
           artifact_namespace: ''
           artifact_name: '0x3333333333333333333333333333333333333333'
-          artifact_id: '0b8d4d221d3e1cfa97c9f8b4f4436d89a2b739f093823f8f208a74b8ed4cde3b'
           artifact_type: 'SOCIAL_HANDLE'
