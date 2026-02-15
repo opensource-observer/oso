@@ -24,6 +24,15 @@ test_int_events__github_unified_basic:
         actor_login: text
       rows: []
     oso.stg_github__comments:
+      rows:
+      - repository_id: 101
+        id: "c1"
+        type: "ISSUE_COMMENT"
+        event_time: "2024-01-01 11:00:00"
+        repository_name: "owner/repo"
+        actor_id: 555
+        actor_login: "user1"
+    oso.stg_github__comments_since_20251007:
       columns:
         repository_id: bigint
         id: text
@@ -33,16 +42,15 @@ test_int_events__github_unified_basic:
         actor_id: bigint
         actor_login: text
       rows: []
-    oso.stg_github__comments_since_20251007:
-      rows:
-      - repository_id: 101
-        id: "c1"
-        type: "ISSUE_COMMENT"
-        event_time: "2024-01-01 11:00:00"
-        repository_name: "owner/repo"
-        actor_id: 555
-        actor_login: "user1"
     oso.stg_github__issues:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_requests:
       columns:
@@ -74,6 +82,14 @@ test_int_events__github_unified_basic:
         actor_id: 555
         actor_login: "user1"
     oso.stg_github__pull_request_merge_events_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__stars_and_forks:
       columns:
@@ -401,10 +417,26 @@ test_int_events__github_unified_historical_and_new_overlap:
         author_email: text
       rows: []
     oso.stg_github__releases:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__comments:
       rows:
-      # Same comment in both historical and _since_20251007 tables
+      # Two identical comments in the historical table.
+      # UNION ALL (within the same SELECT) preserves duplicate rows.
+      - repository_id: 101
+        id: "overlap1"
+        type: "ISSUE_COMMENT"
+        event_time: "2024-01-01 15:00:00"
+        repository_name: "owner/repo"
+        actor_id: 555
+        actor_login: "user1"
       - repository_id: 101
         id: "overlap1"
         type: "ISSUE_COMMENT"
@@ -413,16 +445,24 @@ test_int_events__github_unified_historical_and_new_overlap:
         actor_id: 555
         actor_login: "user1"
     oso.stg_github__comments_since_20251007:
-      rows:
-      # Duplicate of the same comment — UNION ALL will produce both rows
-      - repository_id: 101
-        id: "overlap1"
-        type: "ISSUE_COMMENT"
-        event_time: "2024-01-01 15:00:00"
-        repository_name: "owner/repo"
-        actor_id: 555
-        actor_login: "user1"
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
     oso.stg_github__issues:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_requests:
       columns:
@@ -476,8 +516,7 @@ test_int_events__github_unified_historical_and_new_overlap:
       rows: []
   outputs:
     query:
-      # UNION ALL does NOT deduplicate — both rows appear.
-      # This documents the expected behavior: upstream tables must not overlap.
+      # Duplicate rows in input are preserved — the model does not deduplicate.
       rows:
       - time: "2024-01-01 15:00:00"
         to_artifact_name: "repo"
@@ -532,6 +571,14 @@ test_int_events__github_unified_stars_and_releases:
         actor_id: 555
         actor_login: "user1"
     oso.stg_github__comments:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__comments_since_20251007:
       columns:
