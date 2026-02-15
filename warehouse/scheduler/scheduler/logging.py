@@ -106,7 +106,7 @@ class BufferedLogger(BindableLogger):
     def log(self, level: int, event: str, *args: t.Any, **kw: t.Any) -> None:
         log_entry = LogEntry(
             timestamp=datetime.now(timezone.utc),
-            log_level=logging.getLevelName(level),
+            log_level=logging.getLevelName(level).lower(),
             event=event,
             args=args,
             extra={**self._context, **kw},
