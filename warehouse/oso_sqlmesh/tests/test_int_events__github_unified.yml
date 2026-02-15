@@ -14,8 +14,24 @@ test_int_events__github_unified_basic:
         actor_login: "user1"
         author_email: "u1@mail"
     oso.stg_github__releases:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__comments:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__comments_since_20251007:
       rows:
@@ -29,8 +45,24 @@ test_int_events__github_unified_basic:
     oso.stg_github__issues:
       rows: []
     oso.stg_github__pull_requests:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_requests_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_request_merge_events:
       rows:
@@ -44,6 +76,14 @@ test_int_events__github_unified_basic:
     oso.stg_github__pull_request_merge_events_since_20251007:
       rows: []
     oso.stg_github__stars_and_forks:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
   outputs:
     query:
@@ -112,22 +152,94 @@ test_int_events__github_unified_malformed_repo_filtered:
         actor_login: "baduser"
         author_email: "bad@mail"
     oso.stg_github__releases:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__comments:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__comments_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__issues:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_requests:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_requests_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_request_merge_events:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_request_merge_events_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__stars_and_forks:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
   outputs:
     query:
@@ -164,22 +276,94 @@ test_int_events__github_unified_null_actor_login_fallback:
         actor_login: ~
         author_email: "u1@mail"
     oso.stg_github__releases:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__comments:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__comments_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__issues:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_requests:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_requests_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_request_merge_events:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_request_merge_events_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__stars_and_forks:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
   outputs:
     query:
@@ -207,6 +391,14 @@ test_int_events__github_unified_historical_and_new_overlap:
     end_dt: 2024-01-02
   inputs:
     oso.int_ddp__commits_deduped:
+      columns:
+        repository_id: bigint
+        sha: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+        author_email: text
       rows: []
     oso.stg_github__releases:
       rows: []
@@ -233,14 +425,54 @@ test_int_events__github_unified_historical_and_new_overlap:
     oso.stg_github__issues:
       rows: []
     oso.stg_github__pull_requests:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_requests_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_request_merge_events:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_request_merge_events_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__stars_and_forks:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
   outputs:
     query:
@@ -281,6 +513,14 @@ test_int_events__github_unified_stars_and_releases:
     end_dt: 2024-01-02
   inputs:
     oso.int_ddp__commits_deduped:
+      columns:
+        repository_id: bigint
+        sha: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+        author_email: text
       rows: []
     oso.stg_github__releases:
       rows:
@@ -294,16 +534,64 @@ test_int_events__github_unified_stars_and_releases:
     oso.stg_github__comments:
       rows: []
     oso.stg_github__comments_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__issues:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_requests:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_requests_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_request_merge_events:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__pull_request_merge_events_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
       rows: []
     oso.stg_github__stars_and_forks:
       rows:
