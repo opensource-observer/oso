@@ -25,7 +25,7 @@ export default defineConfig(
     ...rootConfig,
     includeIgnoreFile(gitignorePath),
     {
-      ignores: ["lib/graphql/generated/**", "public/**"],
+      ignores: ["lib/graphql/generated/**", "public/**", "app/api/v1/osograph/types/generated/**"],
     },
     ...fixupConfigRules(
       compat.extends("next/core-web-vitals", "plugin:storybook/recommended"),

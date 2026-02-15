@@ -83,7 +83,7 @@ export async function buildQuery<TTable extends ValidTableName>(
   hook?: <TQuery extends ReturnType<typeof _inferQueryType<TTable>>>(
     query: TQuery,
   ) => TQuery,
-  single?: boolean,
+  single?: boolean | null,
 ) {
   type TQuery = ReturnType<typeof _inferQueryType<TTable>>;
   let query = _inferQueryType(client, tableName);
