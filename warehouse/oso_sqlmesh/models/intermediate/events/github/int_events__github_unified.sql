@@ -28,12 +28,7 @@ MODEL (
 );
 
 WITH raw_events AS (
-  /* Commits from unified GHA + OpenDevData (via DDP pipeline).
-     Unlike int_events__github which uses stg_github__distinct_commits_resolved_mergebot
-     with push_id as event_source_id, this model uses int_ddp__commits_deduped with
-     sha as event_source_id. This means event_source_id here is commit-level (unique
-     per commit) rather than push-level (unique per push, which may contain multiple
-     commits). The DDP source also includes OpenDevData commits beyond GHA. */
+  /* Commits */
   SELECT
     created_at AS event_time,
     'COMMIT_CODE' AS event_type,
