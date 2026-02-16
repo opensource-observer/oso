@@ -464,6 +464,6 @@ This approach helps organize data by department or project while maintaining pro
 - Explore other [pyoso tutorials](../tutorials/index.md) to learn more query patterns.
 - See the official Trino docs on Google Sheets connector for advanced settings:
   [Trino: Google Sheets Connector](https://trino.io/docs/current/connector/googlesheets.html).
-- Learn about [OSO's data models](../integrate/overview.md) to understand what data you can join with your sheets.
+- Learn about [integrating with OSO](../integrate/index.md) to understand what data you can join with your sheets.
 
 That's it! You've now connected a Google Sheet to OSO and pulled its data into Python via pyoso. Feel free to customize queries, join with other OSO tables, and build dashboards on top of your sheet data.
