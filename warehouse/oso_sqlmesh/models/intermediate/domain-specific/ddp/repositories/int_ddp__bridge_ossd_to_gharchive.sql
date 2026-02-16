@@ -5,7 +5,8 @@ MODEL (
   kind FULL,
   grain (project_id, gharchive_id),
   tags (
-    "ddp"
+    "ddp",
+    "entity_category=project"
   ),
   audits (
     has_at_least_n_rows(threshold := 0)
