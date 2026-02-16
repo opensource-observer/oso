@@ -13,6 +13,8 @@ dependencies = [
     "structlog>=25.4.0",
     "polyfactory",
     "pydantic>=2.12.3",
+    "gql>=3.0.0,<4.0.0",
+    "requests>=2.31.0,<3.0.0",
 ]
 
 [project.scripts]

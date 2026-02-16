@@ -1,4 +1,4 @@
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import dayjs from "dayjs";
 import _, { Dictionary } from "lodash";
 import React from "react";

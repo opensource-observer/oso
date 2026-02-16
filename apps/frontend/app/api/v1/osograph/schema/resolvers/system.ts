@@ -12,7 +12,6 @@ import { LegacyInferredTableResolver } from "@/lib/query/resolvers/legacy-table-
 import { DBTableResolver } from "@/lib/query/resolvers/db-table-resolver";
 import { LegacyTableMappingRule } from "@/lib/query/common";
 import { TableResolutionMap } from "@/lib/query/resolver";
-import { MetadataInferredTableResolver } from "@/lib/query/resolvers/metadata-table-resolver";
 import {
   CreateMaterializationSchema,
   FinishRunSchema,
@@ -760,22 +759,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
 
       const supabase = createAdminClient();
 
-      let inferredTableResolver = new LegacyInferredTableResolver();
-
-      // If we know both the dataset name and the org name we don't need to use
-      // the legacy resolver because it the context is different when we have
-      // org/data names. Once the `oso` dataset is added to all orgs as a data
-      // marketplace dataset we can remove the legacy resolver entirely and rely
-      // on the metadata inferred org/data names. Once the `oso` dataset
-      // is added to all orgs as a data marketplace dataset we can remove the
-      // legacy resolver entirely and rely on the metadata inferred resolver for
-      // all cases
-      if (metadata?.orgName && metadata?.datasetName) {
-        logger.info(
-          `Using orgName ${metadata.orgName} and datasetName ${metadata.datasetName} from metadata to resolve tables`,
-        );
-        inferredTableResolver = new MetadataInferredTableResolver();
-      }
+      const inferredTableResolver = new LegacyInferredTableResolver();
 
       const legacyMappingRules: LegacyTableMappingRule[] = [
         (table) => {

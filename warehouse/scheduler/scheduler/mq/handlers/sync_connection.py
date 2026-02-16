@@ -18,7 +18,7 @@ from scheduler.types import (
     RunContext,
     SuccessResponse,
 )
-from scheduler.utils import get_trino_user
+from scheduler.utils import get_warehouse_user
 
 EXCLUDED_SCHEMAS = {"information_schema"}
 MAX_CONCURRENT_QUERIES = 5  # Number of concurrent queries to run
@@ -129,7 +129,9 @@ class SyncConnectionRunRequestHandler(RunHandler[SyncConnectionRunRequest]):
         except Exception as e:
             context.log.error("Failed to get data connection", extra={"error": str(e)})
             return FailedResponse(
-                message="Failed to get data connection", details={"error": str(e)}
+                exception=e,
+                message="Failed to get data connection",
+                details={"error": str(e)},
             )
 
         context.log.info(
@@ -137,7 +139,7 @@ class SyncConnectionRunRequestHandler(RunHandler[SyncConnectionRunRequest]):
             extra={"catalog_name": catalog_name, "org_id": organization.id},
         )
 
-        user = get_trino_user("ro", organization.id, organization.name)
+        user = get_warehouse_user("ro", organization.id, organization.name)
 
         # Use a single Trino client for all queries
         async with consumer_trino.async_get_client(user=user) as client:
@@ -152,6 +154,7 @@ class SyncConnectionRunRequestHandler(RunHandler[SyncConnectionRunRequest]):
             except Exception as e:
                 context.log.error("Failed to get schemas", extra={"error": str(e)})
                 return FailedResponse(
+                    exception=e,
                     message="Failed to get schemas from catalog",
                     details={"error": str(e)},
                 )
@@ -234,6 +237,7 @@ class SyncConnectionRunRequestHandler(RunHandler[SyncConnectionRunRequest]):
                     extra={"error": str(e)},
                 )
                 return FailedResponse(
+                    exception=e,
                     message="Failed to create datasets and materializations",
                     details={"error": str(e)},
                 )

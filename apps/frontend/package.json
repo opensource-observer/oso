@@ -31,8 +31,8 @@
   "dependencies": {
     "@ai-sdk/google": "^1.2.22",
     "@ai-sdk/react": "^1.2.12",
-    "@apollo/client": "^3.13.9",
-    "@apollo/experimental-nextjs-app-support": "^0.12.3",
+    "@apollo/client": "^4.1.4",
+    "@apollo/client-integration-nextjs": "^0.14.4",
     "@apollo/gateway": "^2.11.2",
     "@apollo/sandbox": "^2.7.3",
     "@apollo/server": "^5.4.0",
@@ -123,6 +123,7 @@
     "react-markdown": "^10.1.0",
     "react-use": "^17.6.0",
     "remark-gfm": "^4.0.1",
+    "rxjs": "^7.8.2",
     "sonner": "^2.0.7",
     "sql-formatter": "^15.6.6",
     "stripe": "^18.4.0",

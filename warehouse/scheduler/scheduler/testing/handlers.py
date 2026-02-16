@@ -1,9 +1,11 @@
 import typing as t
 
+import structlog
 from google.protobuf.message import Message
 from oso_core.resources import ResourcesRegistry
 from scheduler.materialization.duckdb import DuckdbMaterializationStrategy
 from scheduler.testing.resources.base import base_testing_resources
+from scheduler.testing.resources.logging import FakeRunLoggerFactory
 from scheduler.types import MessageHandler
 
 T = t.TypeVar("T", bound=Message)
@@ -13,18 +15,28 @@ class MessageHandlerTestHarness(t.Generic[T]):
     def __init__(self, resources: ResourcesRegistry, handler: MessageHandler[T]):
         self.resources = resources
         self.handler = handler
+        self.initialized = False
+
+    def initialize(self):
+        if not self.initialized:
+            resources_context = self.resources.context()
+            resources_context.run(
+                self.handler.initialize,
+            )
+            self.initialized = True
 
     async def send_message(self, message: T):
         # Simulate sending a message to the handler
         resources_context = self.resources.context()
-
-        resources_context.run(
-            self.handler.initialize,
-        )
+        self.initialize()
 
         return await resources_context.run(
             self.handler.handle_message,
-            additional_inject={"message": message},
+            additional_inject={
+                "message": message,
+                "logger": structlog.get_logger("scheduler.testing"),
+                "run_logger_factory": FakeRunLoggerFactory(),
+            },
         )
 
 

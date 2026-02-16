@@ -1,6 +1,5 @@
 import asyncio
 
-import structlog
 from aioprometheus.collectors import Counter, Histogram
 from oso_core.instrumentation.common import MetricsLabeler
 from oso_core.instrumentation.container import MetricsContainer
@@ -25,11 +24,9 @@ from scheduler.types import (
     StepContext,
     SuccessResponse,
 )
-from scheduler.utils import OSOClientTableResolver, ctas_query, get_trino_user
+from scheduler.utils import OSOClientTableResolver, ctas_query, get_warehouse_user
 from sqlglot import exp
 from sqlmesh import EngineAdapter
-
-logger = structlog.getLogger(__name__)
 
 
 def convert_model_to_scheduler_model(org_name: str, dataset_name: str, dataset_id: str):
@@ -101,7 +98,8 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         metrics: MetricsContainer,
     ) -> HandlerResponse:
         # Process the DataModelRunRequest message
-        context.log.info(f"Handling DataModelRunRequest with ID: {message.run_id}")
+
+        context.log.info(f"Handling DataModelRunRequest with ID: {context.run_id}")
 
         # Pull the model using the OSO client
         dataset_and_models = await oso_client.get_data_models(message.dataset_id)
@@ -124,7 +122,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         dataset_name = dataset.node.name
         org_name = dataset.node.organization.name
 
-        user = get_trino_user("rw", context.organization.id, org_name)
+        user = get_warehouse_user("rw", context.organization.id, org_name)
 
         assert isinstance(
             data_model_def,
@@ -169,26 +167,30 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         if len(converted_models) == 0:
             context.log.info("No models to run, skipping evaluation.")
             return SuccessResponse(
-                message=f"No models to run for DataModelRunRequest with ID: {message.run_id}"
+                message=f"No models to run for DataModelRunRequest with ID: {context.run_id}"
             )
 
         async with async_time(
             metrics.histogram("data_model_total_evaluation_duration_ms"), labeler
         ):
-            logger.info("Starting evaluation of selected data models")
-            await self.evaluate_models(
-                context=context,
-                dataset=dataset.node,
-                udm_engine_adapter=udm_engine_adapter,
-                oso_client=oso_client,
-                user=user,
-                converted_models=converted_models,
-                labeler=labeler,
-                metrics=metrics,
-            )
+            context.log.info("Starting evaluation of selected data models")
+            try:
+                await self.evaluate_models(
+                    context=context,
+                    dataset=dataset.node,
+                    udm_engine_adapter=udm_engine_adapter,
+                    oso_client=oso_client,
+                    user=user,
+                    converted_models=converted_models,
+                    labeler=labeler,
+                    metrics=metrics,
+                )
+            except Exception as e:
+                context.log.error(f"Error during dataset evaluation: {e}")
+                raise e
 
         return SuccessResponse(
-            message=f"Processed DataModelRunRequest with ID: {message.run_id}"
+            message=f"Processed DataModelRunRequest with ID: {context.run_id}"
         )
 
     async def evaluate_models(
@@ -210,7 +212,9 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         # tables opportunistically. We will need to completely change the
         # strategy for INCREMENTAL models in the future but this will satisfy
         # versioning in the future for FULL models.
-        logger.debug("Resolving previously materialized warehouse tables...")
+        context.internal_log.debug(
+            "Resolving previously materialized warehouse tables..."
+        )
 
         previous_warehouse_tables = await oso_table_resolver.resolve_tables(
             {model.user_fqn(): model.user_table() for model in converted_models},
@@ -224,12 +228,12 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
         table_resolvers: list[TableResolver] = [oso_table_resolver]
 
-        logger.debug("Opening connection to UDM engine adapter")
+        context.internal_log.debug("Opening connection to UDM engine adapter")
         async with udm_engine_adapter.get_adapter(user=user) as adapter:
-            logger.info("Determining model evaluation order...")
+            context.internal_log.info("Determining model evaluation order...")
             sorter = ModelSorter(converted_models)
             async for model in sorter.ordered_iter():
-                logger.info(f"Evaluating model: {model.name}")
+                context.internal_log.info(f"Evaluating model: {model.name}")
                 async with context.step_context(
                     name=f"evaluate_model_{model.name}",
                     display_name=f"Evaluate Model {model.name}",
@@ -244,18 +248,24 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                             model.user_fqn()
                         )
                         if previous_warehouse_table:
-                            logger.debug(
+                            context.internal_log.debug(
                                 f"Found previous warehouse table for model {model.name}: {previous_warehouse_table}"
                             )
-                        await self.evaluate_single_model(
-                            model=model,
-                            step_context=step_context,
-                            adapter=adapter,
-                            table_resolvers=table_resolvers,
-                            metrics=metrics,
-                            labeler=labeler,
-                            previous_warehouse_table=previous_warehouse_table,
-                        )
+                        try:
+                            await self.evaluate_single_model(
+                                model=model,
+                                step_context=step_context,
+                                adapter=adapter,
+                                table_resolvers=table_resolvers,
+                                metrics=metrics,
+                                labeler=labeler,
+                                previous_warehouse_table=previous_warehouse_table,
+                            )
+                        except Exception as e:
+                            step_context.log.error(
+                                f"Error during model evaluation: {e}"
+                            )
+                            raise e
 
     async def evaluate_single_model(
         self,
@@ -281,7 +291,8 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
         target_table = step_context.generate_destination_table_exp(table_ref)
 
-        logger.info("Writing to target table: %s", target_table)
+        step_context.internal_log.info("Writing to target table: %s", target_table)
+        step_context.log.info("Writing model results to the warehouse.")
         adapter.create_schema(
             f"{target_table.catalog}.{target_table.db}",
             ignore_if_exists=True,
@@ -309,6 +320,10 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         ]
         resolved_query.add_comments(resolved_query_comments, prepend=True)
 
+        step_context.log.info(
+            f"Executing query for model {model.name} on the warehouse"
+        )
+
         await asyncio.to_thread(
             self.make_synchronous_trino_requests,
             adapter,
@@ -324,24 +339,32 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
         # Create the schema for the materialization
         schema: list[DataModelColumnInput] = []
+        columns_logging: list[str] = []
         for name, data_type in columns.items():
             data_type_name = data_type.sql(dialect=adapter.dialect)
-            step_context.log.info(f"Column: {name}, Type: {data_type_name}")
+            columns_logging.append(f"Column: {name}, Type: {data_type_name}")
             schema.append(
                 DataModelColumnInput(
                     name=name,
                     type=data_type_name,
                 )
             )
+        step_context.log.info(
+            f"Resolved columns for model {model.name}: {columns_logging}"
+        )
 
         step_context.log.info(
             f"Creating materialization record for run: {step_context.run.id} and step: {step_context.step_id}"
         )
-        await step_context.create_materialization(
-            table_id=model.table_id,
-            warehouse_fqn=f"{target_table.catalog}.{target_table.db}.{target_table.name}",
-            schema=schema,
-        )
+        try:
+            await step_context.create_materialization(
+                table_id=model.table_id,
+                warehouse_fqn=f"{target_table.catalog}.{target_table.db}.{target_table.name}",
+                schema=schema,
+            )
+        except Exception as e:
+            step_context.log.error(f"Error creating materialization: {e}")
+            raise e
 
         # If we've reached this point everything has been successfully
         # materialized. We can now drop the previous table if it exists.
@@ -353,7 +376,8 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                     exists=True,
                 )
             except Exception as e:
-                step_context.log.warning(
+                # This is a system level log not one for the users
+                step_context.internal_log.warning(
                     f"Failed to drop previous warehouse table "
                     f"{previous_warehouse_table}: {e}"
                 )

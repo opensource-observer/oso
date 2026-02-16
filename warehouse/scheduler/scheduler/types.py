@@ -7,8 +7,10 @@ from graphlib import TopologicalSorter
 import structlog
 from google.protobuf.json_format import Parse
 from google.protobuf.message import Message
+from oso_core.logging import BindableLogger
+from oso_core.logging.types import LogBuffer
 from oso_core.resources import ResourcesContext
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from queryrewriter.rewrite import rewrite_query
 from queryrewriter.types import RewriteResponse, TableResolver
 from scheduler.graphql_client.create_materialization import CreateMaterialization
@@ -24,7 +26,6 @@ from scheduler.graphql_client.input_types import (
     UpdateMetadataInput,
 )
 from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
-from scheduler.logging import BindableLogger
 from sqlglot import exp, parse_one
 from sqlglot.optimizer.qualify_columns import qualify_columns
 from sqlglot.optimizer.scope import build_scope
@@ -370,6 +371,12 @@ class StepContext(abc.ABC):
         """A logger for the message handler context."""
         raise NotImplementedError("log must be implemented by subclasses.")
 
+    @property
+    @abc.abstractmethod
+    def internal_log(self) -> BindableLogger:
+        """An internal logger that is not included in the metadata of the run."""
+        raise NotImplementedError("internal_log must be implemented by subclasses.")
+
     @abc.abstractmethod
     async def create_materialization(
         self, table_id: str, warehouse_fqn: str, schema: list[DataModelColumnInput]
@@ -422,6 +429,12 @@ class RunContext(abc.ABC):
     def log(self) -> BindableLogger:
         """A logger for the message handler context."""
         raise NotImplementedError("log must be implemented by subclasses.")
+
+    @property
+    @abc.abstractmethod
+    def internal_log(self) -> BindableLogger:
+        """An internal logger that is not included in the metadata of the run."""
+        raise NotImplementedError("internal_log must be implemented by subclasses.")
 
     @property
     @abc.abstractmethod
@@ -540,7 +553,12 @@ class SkipResponse(HandlerResponse):
 
 
 class FailedResponse(HandlerResponse):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     message: str = Field(default="Failed to process the message.")
+    exception: Exception | None = Field(
+        default=None, description="The exception that caused the failure, if any."
+    )
     status_code: int = Field(default=500)
     details: dict[str, t.Any] = Field(default_factory=dict)
 
@@ -560,7 +578,9 @@ class MessageHandler(abc.ABC, t.Generic[T]):
     message_type: t.Type[T]
     schema_file_name: str
 
-    async def handle_message(self, message: T, *args, **kwargs) -> HandlerResponse:
+    async def handle_message(
+        self, message: T, logger: BindableLogger, *args, **kwargs
+    ) -> HandlerResponse:
         """A method to handle incoming messages"""
         raise NotImplementedError("handle_message must be implemented by subclasses.")
 
@@ -647,3 +667,48 @@ class GenericMessageQueueService(abc.ABC):
     async def publish_message(self, queue: str, message: Message) -> None:
         """A method to publish a message to the given queue"""
         ...
+
+
+class ConcurrencyLockStore(abc.ABC):
+    """A store to manage locks for messages being processed. This is used to
+    prevent multiple workers from processing the same message at the same time."""
+
+    @abc.abstractmethod
+    async def acquire_lock(self, lock_id: str, ttl_seconds: int) -> bool:
+        """Acquire a lock for the given lock ID. Returns True if the lock was
+        acquired successfully, False otherwise."""
+        raise NotImplementedError("acquire_lock must be implemented by subclasses.")
+
+    @abc.abstractmethod
+    async def renew_lock(self, lock_id: str, ttl_seconds: int) -> bool:
+        """Renew a lock for the given lock ID. Returns True if the lock was
+        renewed successfully, False otherwise."""
+        raise NotImplementedError("renew_lock must be implemented by subclasses.")
+
+    @abc.abstractmethod
+    async def release_lock(self, lock_id: str) -> None:
+        """Release the lock for the given lock ID."""
+        raise NotImplementedError("release_lock must be implemented by subclasses.")
+
+
+class RunLoggerContainer(abc.ABC):
+    @property
+    @abc.abstractmethod
+    def logger(self) -> BindableLogger: ...
+
+    @abc.abstractmethod
+    async def destination_uris(self) -> list[str]: ...
+
+
+class RunLoggerFactory(abc.ABC):
+    @abc.abstractmethod
+    def create_logger_container(self, run_id: str) -> RunLoggerContainer:
+        """Create a logger instance for the given run ID."""
+        raise NotImplementedError("create_logger must be implemented by subclasses.")
+
+
+class DestinationLogBuffer(LogBuffer, abc.ABC):
+    @abc.abstractmethod
+    async def destination_uris(self) -> list[str]:
+        """Get the destination URIs for the log buffer."""
+        raise NotImplementedError("destination_uris must be implemented by subclasses.")

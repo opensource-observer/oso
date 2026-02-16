@@ -30,7 +30,6 @@ fragment DatasetFields on Dataset {
   description
   type
   creatorId
-  isPublic
   createdAt
   updatedAt
 }

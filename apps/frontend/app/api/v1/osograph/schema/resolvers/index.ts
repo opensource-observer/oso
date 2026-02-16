@@ -29,7 +29,7 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   User: userResolvers.User,
   Organization: organizationResolvers.Organization,
   OrganizationMember: organizationResolvers.OrganizationMember,
-  Invitation: userResolvers.Invitation,
+  Invitation: organizationResolvers.Invitation,
 
   Notebook: resourceResolvers.Notebook,
   Dataset: resourceResolvers.Dataset,

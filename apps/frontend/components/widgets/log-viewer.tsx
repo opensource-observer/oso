@@ -36,14 +36,14 @@ import { useAsync } from "react-use";
 
 const LogEntrySchema = z.object({
   event: z.string(),
-  log_level: z.enum(["info", "error", "warning", "debug"]),
+  log_level: z.enum(["info", "error", "warning", "debug", "critical"]),
   timestamp: z.string(),
   extra: z.record(z.unknown()).optional(),
 });
 
 export interface LogEntry {
   event: string;
-  log_level: "info" | "error" | "warning" | "debug";
+  log_level: "info" | "error" | "warning" | "debug" | "critical";
   timestamp: string;
   extra?: Record<string, unknown>;
 }
@@ -97,6 +97,12 @@ const getLogLevelStyles = (level: LogEntry["log_level"]) => {
       text: "text-gray-600",
       border: "border-gray-200",
       icon: Bug,
+    },
+    critical: {
+      bg: "bg-orange-50",
+      text: "text-orange-500",
+      border: "border-orange-200",
+      icon: XCircle,
     },
   };
   return styles[level];
