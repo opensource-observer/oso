@@ -73,7 +73,7 @@ WITH raw_events AS (
     actor_login AS actor_name,
     actor_id::TEXT AS actor_id
   FROM oso.stg_github__comments
-  WHERE event_time BETWEEN @start_dt AND LEAST(@end_dt, @github_events_pre_v20251007_end_date)
+  WHERE event_time BETWEEN @start_dt AND LEAST(@end_dt, CAST(@github_events_pre_v20251007_end_date AS TIMESTAMP))
 
   UNION ALL
 
@@ -87,7 +87,7 @@ WITH raw_events AS (
     actor_login AS actor_name,
     actor_id::TEXT AS actor_id
   FROM oso.stg_github__comments_since_20251007
-  WHERE event_time BETWEEN GREATEST(@start_dt, @github_events_v20251007_start_date) AND @end_dt
+  WHERE event_time BETWEEN GREATEST(@start_dt, CAST(@github_events_v20251007_start_date AS TIMESTAMP)) AND @end_dt
 
   UNION ALL
 
@@ -115,7 +115,7 @@ WITH raw_events AS (
     actor_login AS actor_name,
     actor_id::TEXT AS actor_id
   FROM oso.stg_github__pull_requests
-  WHERE event_time BETWEEN @start_dt AND LEAST(@end_dt, @github_events_pre_v20251007_end_date)
+  WHERE event_time BETWEEN @start_dt AND LEAST(@end_dt, CAST(@github_events_pre_v20251007_end_date AS TIMESTAMP))
 
   UNION ALL
 
@@ -129,7 +129,7 @@ WITH raw_events AS (
     actor_login AS actor_name,
     actor_id::TEXT AS actor_id
   FROM oso.stg_github__pull_requests_since_20251007
-  WHERE event_time BETWEEN GREATEST(@start_dt, @github_events_v20251007_start_date) AND @end_dt
+  WHERE event_time BETWEEN GREATEST(@start_dt, CAST(@github_events_v20251007_start_date AS TIMESTAMP)) AND @end_dt
 
   UNION ALL
 
@@ -143,7 +143,7 @@ WITH raw_events AS (
     actor_login AS actor_name,
     actor_id::TEXT AS actor_id
   FROM oso.stg_github__pull_request_merge_events
-  WHERE event_time BETWEEN @start_dt AND LEAST(@end_dt, @github_events_pre_v20251007_end_date)
+  WHERE event_time BETWEEN @start_dt AND LEAST(@end_dt, CAST(@github_events_pre_v20251007_end_date AS TIMESTAMP))
 
   UNION ALL
 
@@ -157,7 +157,7 @@ WITH raw_events AS (
     actor_login AS actor_name,
     actor_id::TEXT AS actor_id
   FROM oso.stg_github__pull_request_merge_events_since_20251007
-  WHERE event_time BETWEEN GREATEST(@start_dt, @github_events_v20251007_start_date) AND @end_dt
+  WHERE event_time BETWEEN GREATEST(@start_dt, CAST(@github_events_v20251007_start_date AS TIMESTAMP)) AND @end_dt
 
   UNION ALL
 
