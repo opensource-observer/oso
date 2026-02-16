@@ -8,6 +8,7 @@ from scheduler.graphql_client.get_data_ingestion_config import (
 from scheduler.mq.common import RunHandler
 from scheduler.mq.handlers.ingestion import (
     ArchiveIngestionHandler,
+    GraphQLIngestionHandler,
     IngestionHandler,
     RestIngestionHandler,
 )
@@ -95,6 +96,7 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
         handlers: dict[str, IngestionHandler] = {
             "REST": RestIngestionHandler(),
             "ARCHIVE_DIR": ArchiveIngestionHandler(),
+            "GRAPHQL": GraphQLIngestionHandler(),
         }
 
         handler = handlers.get(config.factory_type)

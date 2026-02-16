@@ -55,7 +55,7 @@ class TrinoDLTDestinationResource(DLTDestinationResource):
     ) -> t.AsyncIterator[Destination]:
         from dlt.destinations import sqlalchemy
 
-        async with self._trino.async_get_client(log_override=logger) as conn:
+        async with self._trino.async_get_client(log_override=logger, user=user) as conn:
             cursor = await conn.cursor()
             await cursor.execute(
                 f'CREATE SCHEMA IF NOT EXISTS "{self._catalog}"."{dataset_schema}"'
