@@ -117,7 +117,6 @@ export const UpdateDatasetSchema = z.object({
     .optional(),
   displayName: z.string().optional(),
   description: z.string().optional(),
-  isPublic: z.boolean().optional(),
 });
 
 export const CreateDatasetSchema = z.object({
@@ -131,7 +130,6 @@ export const CreateDatasetSchema = z.object({
     ),
   displayName: z.string().min(1, "Display name is required"),
   description: z.string().optional(),
-  isPublic: z.boolean().optional(),
   type: z.enum(DATASET_TYPES),
 });
 

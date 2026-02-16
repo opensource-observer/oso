@@ -1286,11 +1286,26 @@ export type CreateDataModelRevisionPayload = {
 };
 
 export type CreateDatasetInput = {
+  /** The description of the dataset. */
   description?: InputMaybe<Scalars["String"]["input"]>;
+  /** The display name of the dataset. */
   displayName?: InputMaybe<Scalars["String"]["input"]>;
-  isPublic?: InputMaybe<Scalars["Boolean"]["input"]>;
+  /** The name of the dataset. This must be unique within the organization. */
   name: Scalars["String"]["input"];
+  /** The organization ID the dataset belongs to */
   orgId: Scalars["ID"]["input"];
+  /**
+   * The type of the dataset.
+   *
+   * Types:
+   *   * USER_MODEL: Sometimes called a UDM, this dataset type contains
+   *     user-defined data models.
+   *   * DATA_INGESTION: This dataset type is used for datasets that are ingested
+   *     from external sources using strategies like REST/GraphQL APIs, file
+   *     uploads, etc.
+   *   * STATIC_MODEL: This is used for datasets composed of statically uploaded
+   *     models. Currently only CSV files are supported for static models.
+   */
   type?: InputMaybe<DatasetType>;
 };
 
@@ -1344,13 +1359,25 @@ export type CreateNotebookPayload = {
 export type CreateRunRequestPayload = {
   __typename?: "CreateRunRequestPayload";
   message?: Maybe<Scalars["String"]["output"]>;
+  /**
+   * The run that was created as a result of the run request. The response from the
+   * `*RunRequest` mutations kick off asynchronous processes. It is possible for
+   * the run creation to succeed but for the run to ultimately fail due to errors
+   * encountered during the asynchronous execution. Therefore, the `success` field
+   * in the payload only indicates whether the run request was successfully
+   * created, not whether the run itself was successful. Retrieve the run by
+   * querying for runs within a dataset to check the status and results of the run.
+   */
   run: Run;
   success: Scalars["Boolean"]["output"];
 };
 
 export type CreateStaticModelInput = {
+  /** The ID of the dataset associated with the static model. */
   datasetId: Scalars["ID"]["input"];
+  /** The desired name for the static model (must be unique within the organization). */
   name: Scalars["String"]["input"];
+  /** The ID of the organization to which the static model belongs. */
   orgId: Scalars["ID"]["input"];
 };
 
@@ -1362,12 +1389,23 @@ export type CreateStaticModelPayload = {
 };
 
 export type CreateStaticModelRunRequestInput = {
+  /** The ID of the static model dataset to run. */
   datasetId: Scalars["ID"]["input"];
+  /**
+   * For static model runs, users can optionally specify a list of model IDs to
+   * run. If not provided, all models will be run.
+   */
   selectedModels?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
 export type CreateUserModelRunRequestInput = {
+  /** The ID of the dataset to run. This must be a USER_MODEL dataset. */
   datasetId: Scalars["ID"]["input"];
+  /**
+   * For user model runs, users can optionally specify a list of data model release
+   * IDs to run. If not provided, all models will be run in topological order based
+   * on dependencies.
+   */
   selectedModels?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
@@ -1903,7 +1941,6 @@ export type Dataset = {
   description?: Maybe<Scalars["String"]["output"]>;
   displayName?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
-  isPublic: Scalars["Boolean"]["output"];
   /**
    * The materializations for this dataset. Returns all materializations regardless of their source
    * (data model, static model, or data ingestion).
@@ -3391,6 +3428,12 @@ export type MarshalledOutput = {
   outputName: Scalars["String"]["input"];
 };
 
+/**
+ * The materialization type represents the output of a run step that has
+ * materialized data. For example, for a data model run, each materialization would
+ * represent the output of a model execution. Each materialization is directly
+ * associated with a table in the OSO data catalog.
+ */
 export type Materialization = {
   __typename?: "Materialization";
   createdAt: Scalars["DateTimeISO"]["output"];
@@ -3595,6 +3638,13 @@ export type Mutation = {
   createStaticModel: CreateStaticModelPayload;
   /** Request a run for a STATIC_MODEL */
   createStaticModelRunRequest: CreateRunRequestPayload;
+  /**
+   * Generate a pre-signed upload URL for the static model file. In order to upload
+   * a static model, first create the static model using the `createStaticModel`
+   * mutation, then call this mutation to get the upload URL. The file should be
+   * uploaded to the returned URL using a POST. At this time only CSV files are
+   * supported.
+   */
   createStaticModelUploadUrl: Scalars["String"]["output"];
   /** Request a run for a USER_MODEL dataset */
   createUserModelRunRequest: CreateRunRequestPayload;
@@ -7521,6 +7571,7 @@ export type ResumeBackfillSuccess = {
 
 export type RevokeInvitationInput = {
   invitationId: Scalars["ID"]["input"];
+  orgId: Scalars["ID"]["input"];
 };
 
 export type RevokeInvitationPayload = {
@@ -7561,6 +7612,10 @@ export type Run = PipelineRun &
     hasUnconstrainedRootNodes: Scalars["Boolean"]["output"];
     id: Scalars["ID"]["output"];
     jobName: Scalars["String"]["output"];
+    /**
+     * The logs urls is returned as a presigned url to a cloud storage location. Use
+     * a GET request on this URL to retrieve the logs for the run.
+     */
     logsUrl?: Maybe<Scalars["String"]["output"]>;
     metadata?: Maybe<Scalars["JSON"]["output"]>;
     mode: Scalars["String"]["output"];
@@ -8993,7 +9048,6 @@ export type UpdateDatasetInput = {
   description?: InputMaybe<Scalars["String"]["input"]>;
   displayName?: InputMaybe<Scalars["String"]["input"]>;
   id: Scalars["ID"]["input"];
-  isPublic?: InputMaybe<Scalars["Boolean"]["input"]>;
   name?: InputMaybe<Scalars["String"]["input"]>;
 };
 
@@ -9437,7 +9491,6 @@ export type CreateDatasetMutation = {
       displayName?: string | null;
       description?: string | null;
       type: DatasetType;
-      isPublic: boolean;
     } | null;
   };
 };
@@ -9458,7 +9511,6 @@ export type UpdateDatasetMutation = {
       name: string;
       displayName?: string | null;
       description?: string | null;
-      isPublic: boolean;
     } | null;
   };
 };
@@ -10846,10 +10898,6 @@ export const CreateDatasetDocument = {
                         name: { kind: "Name", value: "description" },
                       },
                       { kind: "Field", name: { kind: "Name", value: "type" } },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "isPublic" },
-                      },
                     ],
                   },
                 },
@@ -10923,10 +10971,6 @@ export const UpdateDatasetDocument = {
                       {
                         kind: "Field",
                         name: { kind: "Name", value: "description" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "isPublic" },
                       },
                     ],
                   },

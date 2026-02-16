@@ -39,7 +39,6 @@ export const datasetMutations: GraphQLResolverModule<GraphQLContext>["Mutation"]
           display_name: validated.displayName,
           description: validated.description,
           created_by: userId,
-          is_public: validated.isPublic ?? false,
           dataset_type: validated.type,
         })
         .select()

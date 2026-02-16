@@ -5,10 +5,13 @@ import {
 } from "@/app/api/v1/osograph/utils/auth";
 import {
   buildConnection,
-  emptyConnection,
   type Connection,
+  emptyConnection,
 } from "@/app/api/v1/osograph/utils/connection";
-import { ServerErrors } from "@/app/api/v1/osograph/utils/errors";
+import {
+  ResourceErrors,
+  ServerErrors,
+} from "@/app/api/v1/osograph/utils/errors";
 import type {
   ConnectionArgs,
   FilterableConnectionArgs,
@@ -33,6 +36,7 @@ import {
   organizationsRowSchema,
   runRowSchema,
 } from "@/lib/types/schema";
+import type { DatasetsRow } from "@/lib/types/schema-types";
 import { z } from "zod";
 
 export function buildConnectionOrEmpty<T>(
@@ -44,6 +48,24 @@ export function buildConnectionOrEmpty<T>(
     return emptyConnection();
   }
   return buildConnection(data, args, count ?? 0);
+}
+
+export async function getDatasetById(
+  datasetId: string,
+  adminClient?: SupabaseAdminClient,
+): Promise<DatasetsRow> {
+  const client = adminClient ?? createAdminClient();
+  const { data: dataset, error: datasetError } = await client
+    .from("datasets")
+    .select("*")
+    .eq("id", datasetId)
+    .single();
+
+  if (datasetError || !dataset) {
+    throw ResourceErrors.notFound("Dataset", datasetId);
+  }
+
+  return dataset;
 }
 
 export async function getUserOrganizationIds(

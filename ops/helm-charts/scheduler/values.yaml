@@ -12,6 +12,8 @@ app:
   serviceAccount:
     create: true
   enableJsonLogs: true
+  posthogApiKey: ""
+  posthogHost: "https://us.i.posthog.com"
   image:
     repo: ghcr.io/opensource-observer/oso
     tag: latest

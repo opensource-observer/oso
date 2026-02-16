@@ -3,7 +3,11 @@ import os
 import typing as t
 
 import structlog
-from oso_core.logging.defaults import configure_structured_logging
+
+from .buffered import BufferedLogger
+from .defaults import configure_structured_logging
+from .proxied import ProxiedBoundLogger
+from .types import BindableLogger, LogBuffer, LogEntry
 
 connected_to_application_logs = False
 
@@ -75,3 +79,15 @@ def setup_module_logging(
 
     logger = logging.getLogger(module_name)
     logger.setLevel(level)  # Adjust the level as needed
+
+
+__all__ = [
+    "BindableLogger",
+    "LogEntry",
+    "LogBuffer",
+    "ProxiedBoundLogger",
+    "BufferedLogger",
+    "add_oso_core_to_current_application_logging",
+    "setup_module_logging",
+    "setup_multiple_modules_logging",
+]

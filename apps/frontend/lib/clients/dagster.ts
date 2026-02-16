@@ -1,10 +1,12 @@
-import { ApolloClient, InMemoryCache } from "@apollo/client";
+import { ApolloClient, HttpLink, InMemoryCache } from "@apollo/client";
 import { DAGSTER_GRAPHQL_URL } from "@/lib/config";
 
 function getDagsterClient() {
   return new ApolloClient({
     cache: new InMemoryCache(),
-    uri: DAGSTER_GRAPHQL_URL,
+    link: new HttpLink({
+      uri: DAGSTER_GRAPHQL_URL,
+    }),
   });
 }
 
