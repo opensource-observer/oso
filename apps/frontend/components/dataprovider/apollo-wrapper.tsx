@@ -6,7 +6,7 @@ import {
   InMemoryCache,
   ApolloClient,
   SSRMultipartLink,
-} from "@apollo/experimental-nextjs-app-support";
+} from "@apollo/client-integration-nextjs";
 import { useSupabaseState } from "@/components/hooks/supabase";
 import { DB_GRAPHQL_URL } from "@/lib/config";
 

@@ -19,6 +19,7 @@ class IngestionHandler(abc.ABC):
         config: dict[str, object],
         dataset_id: str,
         org_id: str,
+        destination_user: str,
         dlt_destination: DLTDestinationResource,
         common_settings: CommonSettings,
     ) -> HandlerResponse:

@@ -1,6 +1,5 @@
 import asyncio
 
-import structlog
 from aioprometheus.collectors import Counter, Histogram
 from oso_core.instrumentation.common import MetricsLabeler
 from oso_core.instrumentation.container import MetricsContainer
@@ -25,11 +24,9 @@ from scheduler.types import (
     StepContext,
     SuccessResponse,
 )
-from scheduler.utils import OSOClientTableResolver, ctas_query, get_trino_user
+from scheduler.utils import OSOClientTableResolver, ctas_query, get_warehouse_user
 from sqlglot import exp
 from sqlmesh import EngineAdapter
-
-logger = structlog.getLogger(__name__)
 
 
 def convert_model_to_scheduler_model(org_name: str, dataset_name: str, dataset_id: str):
@@ -125,7 +122,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         dataset_name = dataset.node.name
         org_name = dataset.node.organization.name
 
-        user = get_trino_user("rw", context.organization.id, org_name)
+        user = get_warehouse_user("rw", context.organization.id, org_name)
 
         assert isinstance(
             data_model_def,
@@ -215,7 +212,9 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         # tables opportunistically. We will need to completely change the
         # strategy for INCREMENTAL models in the future but this will satisfy
         # versioning in the future for FULL models.
-        logger.debug("Resolving previously materialized warehouse tables...")
+        context.internal_log.debug(
+            "Resolving previously materialized warehouse tables..."
+        )
 
         previous_warehouse_tables = await oso_table_resolver.resolve_tables(
             {model.user_fqn(): model.user_table() for model in converted_models},
@@ -229,12 +228,12 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
         table_resolvers: list[TableResolver] = [oso_table_resolver]
 
-        logger.debug("Opening connection to UDM engine adapter")
+        context.internal_log.debug("Opening connection to UDM engine adapter")
         async with udm_engine_adapter.get_adapter(user=user) as adapter:
-            logger.info("Determining model evaluation order...")
+            context.internal_log.info("Determining model evaluation order...")
             sorter = ModelSorter(converted_models)
             async for model in sorter.ordered_iter():
-                logger.info(f"Evaluating model: {model.name}")
+                context.internal_log.info(f"Evaluating model: {model.name}")
                 async with context.step_context(
                     name=f"evaluate_model_{model.name}",
                     display_name=f"Evaluate Model {model.name}",
@@ -249,7 +248,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                             model.user_fqn()
                         )
                         if previous_warehouse_table:
-                            logger.debug(
+                            context.internal_log.debug(
                                 f"Found previous warehouse table for model {model.name}: {previous_warehouse_table}"
                             )
                         try:
@@ -292,7 +291,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
         target_table = step_context.generate_destination_table_exp(table_ref)
 
-        logger.info("Writing to target table: %s", target_table)
+        step_context.internal_log.info("Writing to target table: %s", target_table)
         step_context.log.info("Writing model results to the warehouse.")
         adapter.create_schema(
             f"{target_table.catalog}.{target_table.db}",
@@ -378,7 +377,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                 )
             except Exception as e:
                 # This is a system level log not one for the users
-                logger.warning(
+                step_context.internal_log.warning(
                     f"Failed to drop previous warehouse table "
                     f"{previous_warehouse_table}: {e}"
                 )

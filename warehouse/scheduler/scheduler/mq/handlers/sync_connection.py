@@ -18,7 +18,7 @@ from scheduler.types import (
     RunContext,
     SuccessResponse,
 )
-from scheduler.utils import get_trino_user
+from scheduler.utils import get_warehouse_user
 
 EXCLUDED_SCHEMAS = {"information_schema"}
 MAX_CONCURRENT_QUERIES = 5  # Number of concurrent queries to run
@@ -139,7 +139,7 @@ class SyncConnectionRunRequestHandler(RunHandler[SyncConnectionRunRequest]):
             extra={"catalog_name": catalog_name, "org_id": organization.id},
         )
 
-        user = get_trino_user("ro", organization.id, organization.name)
+        user = get_warehouse_user("ro", organization.id, organization.name)
 
         # Use a single Trino client for all queries
         async with consumer_trino.async_get_client(user=user) as client:

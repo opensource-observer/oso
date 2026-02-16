@@ -8,6 +8,7 @@ from scheduler.graphql_client.get_data_ingestion_config import (
 from scheduler.mq.common import RunHandler
 from scheduler.mq.handlers.ingestion import (
     ArchiveIngestionHandler,
+    GraphQLIngestionHandler,
     IngestionHandler,
     RestIngestionHandler,
 )
@@ -16,6 +17,7 @@ from scheduler.types import (
     HandlerResponse,
     RunContext,
 )
+from scheduler.utils import get_warehouse_user
 
 
 class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
@@ -94,6 +96,7 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
         handlers: dict[str, IngestionHandler] = {
             "REST": RestIngestionHandler(),
             "ARCHIVE_DIR": ArchiveIngestionHandler(),
+            "GRAPHQL": GraphQLIngestionHandler(),
         }
 
         handler = handlers.get(config.factory_type)
@@ -106,6 +109,9 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
                 message=f"Unsupported type: {config.factory_type}",
             )
 
+        warehouse_user = get_warehouse_user(
+            user_type="rw", org_id=org_id, org_name=context.organization.name
+        )
         async with context.step_context(
             name="execute_data_ingestion_pipeline",
             display_name="Execute Data Ingestion Pipeline",
@@ -116,6 +122,7 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
                 config=config.config,
                 dataset_id=dataset_id,
                 org_id=org_id,
+                destination_user=warehouse_user,
                 dlt_destination=dlt_destination,
                 common_settings=common_settings,
             )
