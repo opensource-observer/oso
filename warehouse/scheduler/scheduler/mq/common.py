@@ -4,15 +4,17 @@ Implementations of the run context and step context for message handlers.
 
 import typing as t
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
 
 from aioprometheus.collectors import Counter, Histogram
 from google.protobuf.message import Message as ProtobufMessage
 from oso_core.instrumentation import MetricsContainer
 from oso_core.instrumentation.common import MetricsLabeler
 from oso_core.instrumentation.timing import async_time
+from oso_core.logging import (
+    BindableLogger,
+    ProxiedBoundLogger,
+)
 from oso_core.resources import ResourcesContext
-from oso_dagster.resources.gcs import GCSFileResource
 from posthog import Posthog
 from scheduler.config import CommonSettings
 from scheduler.graphql_client.client import UNSET
@@ -31,20 +33,17 @@ from scheduler.graphql_client.input_types import (
     UpdateMetadataInput,
 )
 from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
-from scheduler.logging import (
-    BindableLogger,
-    BufferedLogger,
-    GCSLogBuffer,
-    ProxiedBoundLogger,
-)
 from scheduler.types import (
     AlreadyLockedMessageResponse,
+    ConcurrencyLockStore,
     FailedResponse,
     HandlerResponse,
     MaterializationStrategy,
     MessageHandler,
     RunContext,
     RunContextView,
+    RunLoggerContainer,
+    RunLoggerFactory,
     SkipResponse,
     StepContext,
     StepFailedException,
@@ -128,36 +127,25 @@ class OSORunContext(RunContext):
         run_id: str,
         materialization_strategy: MaterializationStrategy,
         metrics: MetricsContainer,
-        gcs: "GCSFileResource",
-        gcs_bucket: str,
         internal_logger: BindableLogger,
+        run_logger_factory: RunLoggerFactory,
     ) -> "OSORunContext":
-        gcs_client = gcs.get_client(asynchronous=True)
-        date_prefix = datetime.now(timezone.utc).strftime("%Y/%m/%d")
-
-        log_destination_path = (
-            f"{gcs_bucket}/run-logs/{date_prefix}/{run_id}/logs.jsonl"
+        run_logger_container = run_logger_factory.create_logger_container(run_id)
+        proxied_logger = ProxiedBoundLogger(
+            [internal_logger, run_logger_container.logger]
         )
-        log_buffer = GCSLogBuffer(
-            run_id=run_id,
-            destination_path=log_destination_path,
-            gcs_client=gcs_client,
-        )
-
-        buffered_logger = BufferedLogger(log_buffer, context={"run_id": run_id})
-        proxied_logger = ProxiedBoundLogger([internal_logger, buffered_logger])
         get_run_data = await oso_client.get_run(run_id=run_id)
         run_data = get_run_data.runs.edges[0].node
 
         return cls(
-            run_id,
-            oso_client,
-            run_data,
-            materialization_strategy,
-            proxied_logger,
-            internal_logger,
-            log_buffer,
-            metrics,
+            run_id=run_id,
+            oso_client=oso_client,
+            run_data=run_data,
+            materialization_strategy=materialization_strategy,
+            logger=proxied_logger,
+            internal_logger=internal_logger,
+            metrics=metrics,
+            run_logger_container=run_logger_container,
         )
 
     def __init__(
@@ -168,8 +156,8 @@ class OSORunContext(RunContext):
         materialization_strategy: MaterializationStrategy,
         logger: BindableLogger,
         internal_logger: BindableLogger,
-        log_buffer: GCSLogBuffer,
         metrics: MetricsContainer,
+        run_logger_container: RunLoggerContainer,
     ) -> None:
         self._run_id = run_id
         self._oso_client = oso_client
@@ -177,8 +165,8 @@ class OSORunContext(RunContext):
         self._materialization_strategy = materialization_strategy
         self._logger = logger
         self._internal_logger = internal_logger
-        self._log_buffer = log_buffer
         self._metrics = metrics
+        self._run_logger_container = run_logger_container
 
     @property
     def log(self) -> BindableLogger:
@@ -277,18 +265,21 @@ class OSORunContext(RunContext):
         )
 
         try:
-            await self._log_buffer.flush()
+            destination_uris = await self._run_logger_container.destination_uris()
         except Exception as e:
             self.internal_log.error(
                 f"Failed to upload logs to GCS for run_id {self._run_id}: {e}",
                 exc_info=True,
             )
+            destination_uris = []  # Fallback logs URL
 
         return await self._oso_client.finish_run(
             run_id=self._run_id,
             status=status,
             status_code=status_code,
-            logs_url=self._log_buffer.destination_url,
+            logs_url=destination_uris[0]
+            if destination_uris
+            else "https://example.com/logs",
             metadata=metadata if metadata else UNSET,
         )
 
@@ -331,7 +322,8 @@ class RunHandler(MessageHandler[T]):
         posthog_client: Posthog,
         oso_client: OSOClient,
         common_settings: CommonSettings,
-        gcs: GCSFileResource,
+        concurrency_lock_store: ConcurrencyLockStore,
+        run_logger_factory: RunLoggerFactory,
     ) -> HandlerResponse:
         run_id = getattr(message, "run_id", None)
         if not run_id:
@@ -345,6 +337,17 @@ class RunHandler(MessageHandler[T]):
 
         run_id_str = convert_uuid_bytes_to_str(run_id)
 
+        # check if another worker is already processing this run_id
+        lock_acquired = await concurrency_lock_store.acquire_lock(
+            run_id_str, ttl_seconds=common_settings.concurrency_lock_ttl_seconds
+        )
+
+        if not lock_acquired:
+            logger.warning(
+                f"Run ID {run_id_str} is already being processed by another worker. Acknowledging and skipping.",
+            )
+            return AlreadyLockedMessageResponse()
+
         async with async_time(
             metrics.histogram("run_context_load_duration_ms")
         ) as labeler_ctx:
@@ -353,8 +356,7 @@ class RunHandler(MessageHandler[T]):
                 run_id=run_id_str,
                 materialization_strategy=materialization_strategy,
                 metrics=metrics,
-                gcs=gcs,
-                gcs_bucket=common_settings.run_logs_gcs_bucket,
+                run_logger_factory=run_logger_factory,
                 internal_logger=logger.bind(run_id=run_id_str),
             )
             labeler_ctx.add_labels({"org_id": run_context.organization.name})
@@ -365,9 +367,11 @@ class RunHandler(MessageHandler[T]):
                 "run_id": run_id_str,
                 "org_name": run_context.organization.name,
                 "trigger_type": run_context.trigger_type,
-                "requested_by": run_context.requested_by.email
-                if run_context.requested_by
-                else "unknown",
+                "requested_by": (
+                    run_context.requested_by.email
+                    if run_context.requested_by
+                    else "unknown"
+                ),
             },
         )
 
@@ -460,9 +464,11 @@ class RunHandler(MessageHandler[T]):
             "org_name": run_context.organization.name,
             "trigger_type": run_context.trigger_type,
             "response_type": type(response).__name__,
-            "requested_by": run_context.requested_by.email
-            if run_context.requested_by
-            else "unknown",
+            "requested_by": (
+                run_context.requested_by.email
+                if run_context.requested_by
+                else "unknown"
+            ),
             "status_code": getattr(response, "status_code", "unknown"),
         }
         match response:
