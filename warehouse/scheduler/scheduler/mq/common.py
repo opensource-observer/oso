@@ -2,6 +2,7 @@
 Implementations of the run context and step context for message handlers.
 """
 
+import asyncio
 import typing as t
 from contextlib import asynccontextmanager
 
@@ -348,6 +349,59 @@ class RunHandler(MessageHandler[T]):
             )
             return AlreadyLockedMessageResponse()
 
+        # Run the message handling and continuously renew the ttl on the lock
+        # until it's done.
+        task = asyncio.create_task(
+            self._locked_handle_message(
+                message=message,
+                logger=logger,
+                resources=resources,
+                materialization_strategy=materialization_strategy,
+                metrics=metrics,
+                posthog_client=posthog_client,
+                oso_client=oso_client,
+                run_logger_factory=run_logger_factory,
+                run_id_str=run_id_str,
+            )
+        )
+        try:
+            while True:
+                # Wait until the next renew time or the task to complete,
+                # whichever comes first. If the task completes, return the
+                # result. Otherwise renew the lock and continue waiting.
+                try:
+                    async with asyncio.timeout(
+                        common_settings.concurrency_lock_ttl_seconds / 2
+                    ):
+                        return await task
+                except asyncio.TimeoutError:
+                    renewed = await concurrency_lock_store.renew_lock(
+                        run_id_str,
+                        ttl_seconds=common_settings.concurrency_lock_ttl_seconds,
+                    )
+                    if not renewed:
+                        logger.warning(
+                            f"Failed to renew lock for run ID {run_id_str}. Another worker may have taken over processing. Stopping processing of this message.",
+                        )
+                        task.cancel()
+                        return AlreadyLockedMessageResponse()
+        finally:
+            # Release the lock so that other messages with the same run_id can
+            # be processed in the future assuming this was cancelled.
+            await concurrency_lock_store.release_lock(run_id_str)
+
+    async def _locked_handle_message(
+        self,
+        message: ProtobufMessage,
+        logger: BindableLogger,
+        resources: ResourcesContext,
+        materialization_strategy: MaterializationStrategy,
+        metrics: MetricsContainer,
+        posthog_client: Posthog,
+        oso_client: OSOClient,
+        run_logger_factory: RunLoggerFactory,
+        run_id_str: str,
+    ):
         async with async_time(
             metrics.histogram("run_context_load_duration_ms")
         ) as labeler_ctx:
