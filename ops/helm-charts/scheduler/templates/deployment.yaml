@@ -81,6 +81,9 @@ spec:
           # Set the metrics port
           - name: SCHEDULER_RUN__PORT
             value: "{{ $.Values.app.metricsPort }}"
+          # Set the host so that prometheus can scrape the metrics endpoint
+          - name: SCHEDULER_RUN__HOST
+            value: "0.0.0.0"
           {{- range $key, $value := $.Values.app.envVars }}
           - name: {{ $key }}
             value: {{ $value | quote }}

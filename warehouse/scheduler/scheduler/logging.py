@@ -1,124 +1,103 @@
 import json
 import logging
-import typing as t
 from datetime import datetime, timezone
 from io import StringIO
-from typing import Protocol
 
 import gcsfs
+from oso_core.logging.buffered import BufferedLogger
+from oso_core.logging.types import BindableLogger, LogEntry
+from oso_dagster.resources.gcs import GCSFileResource
+from scheduler.types import DestinationLogBuffer, RunLoggerContainer, RunLoggerFactory
 
-system_logger = logging.getLogger(__name__)
-
-
-class BindableLogger(Protocol):
-    """Protocol for loggers that support structlog's bind() method."""
-
-    def bind(self, **new_values: t.Any) -> "BindableLogger": ...
-
-    @property
-    def bindings(self) -> dict[str, t.Any]: ...
-
-    def debug(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def info(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def warning(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def error(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def critical(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def exception(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
+module_system_logger = logging.getLogger(__name__)
 
 
-class BufferedBoundLogger(BindableLogger):
-    """Logger wrapper that buffers log entries and delegates to an underlying logger."""
+class GCSRunLoggerFactory(RunLoggerFactory):
+    def __init__(self, gcs: GCSFileResource, bucket: str):
+        self._gcs = gcs
+        self._bucket = bucket
 
-    _LOG_METHODS = ("debug", "info", "warning", "error", "critical", "exception")
-
-    def __init__(self, base_logger: BindableLogger, buffer: "GCSLogBufferProcessor"):
-        self._logger = base_logger
-        self._buffer = buffer
-
-        for method_name in self._LOG_METHODS:
-            setattr(self, method_name, self._create_proxy_method(method_name))
-
-    def _create_proxy_method(self, method_name: str):
-        """Create a proxy method that logs to buffer and delegates to underlying logger."""
-
-        def method(event: str | None = None, **kw: t.Any):
-            event_dict = dict(kw)
-            if event is not None:
-                event_dict["event"] = event
-            self._buffer(None, method_name, event_dict)
-            try:
-                getattr(system_logger, method_name)(event, **kw)
-            except Exception:
-                system_logger.fatal("Failed to log to system logger", exc_info=True)
-            try:
-                getattr(self._logger, method_name)(event, **kw)
-            except Exception:
-                system_logger.fatal("Failed to log to underlying logger", exc_info=True)
-            return getattr(self._logger, method_name)(event, **kw)
-
-        return method
-
-    def bind(self, **new_values: t.Any) -> "BufferedBoundLogger":
-        """Bind new values and return a new BufferedBoundLogger with the same buffer."""
-        return BufferedBoundLogger(self._logger.bind(**new_values), self._buffer)
-
-    @property
-    def bindings(self) -> dict[str, t.Any]:
-        """Return the bindings from the underlying logger."""
-        return self._logger.bindings
-
-    def debug(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def info(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def warning(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def error(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def critical(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-    def exception(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
-
-    def __getattr__(self, name: str):
-        return getattr(self._logger, name)
+    def create_logger_container(self, run_id: str) -> RunLoggerContainer:
+        gcs_client = self._gcs.get_client(asynchronous=True)
+        date_prefix = datetime.now(timezone.utc).strftime("%Y/%m/%d")
+        log_destination_path = (
+            f"{self._bucket}/run-logs/{date_prefix}/{run_id}/logs.jsonl"
+        )
+        return BufferedRunLoggerContainer.create_for_gcs(
+            run_id=run_id,
+            gcs_client=gcs_client,
+            destination_path=log_destination_path,
+        )
 
 
-class GCSLogBufferProcessor:
-    def __init__(self, run_id: str, gcs_bucket: str, gcs_client: gcsfs.GCSFileSystem):
-        self.run_id = run_id
-        self.gcs_bucket = gcs_bucket
-        self.gcs_client = gcs_client
-        self.buffer: list[dict] = []
+class BufferedRunLoggerContainer(RunLoggerContainer):
+    @classmethod
+    def create_for_gcs(
+        cls,
+        run_id: str,
+        gcs_client: gcsfs.GCSFileSystem,
+        destination_path: str,
+    ) -> "BufferedRunLoggerContainer":
+        log_buffer = GCSLogBuffer(run_id, gcs_client, destination_path)
+        logger = BufferedLogger(log_buffer, context={"run_id": run_id})
+        return cls(
+            run_id=run_id,
+            logger=logger,
+            log_buffer=log_buffer,
+        )
 
-    def __call__(
+    def __init__(
         self,
-        _logger: t.Any,
-        method_name: str,
-        event_dict: dict[str, t.Any],
-    ) -> None:
-        buffered_event = dict(event_dict)
-        buffered_event["log_level"] = method_name
-        buffered_event["timestamp"] = datetime.now(timezone.utc).isoformat()
-        self.buffer.append(buffered_event)
+        run_id: str,
+        logger: BindableLogger,
+        log_buffer: DestinationLogBuffer,
+    ):
+        self._run_id = run_id
+        self._log_buffer = log_buffer
+        self._logger = logger
 
-    async def flush(self, status: str = "unknown") -> str:
+    @property
+    def logger(self) -> BindableLogger:
+        return self._logger
+
+    async def destination_uris(self) -> list[str]:
+        # Flush logs to ensure all logs are uploaded before retrieving the
+        # destination URI
+        await self._log_buffer.flush()
+
+        return await self._log_buffer.destination_uris()
+
+
+class GCSLogBuffer(DestinationLogBuffer):
+    def __init__(
+        self, run_id: str, gcs_client: gcsfs.GCSFileSystem, destination_path: str
+    ):
+        self.run_id = run_id
+        self.gcs_client = gcs_client
+        self.destination_path = destination_path
+        self.buffer: list[LogEntry] = []
+
+    def add(self, entry: LogEntry) -> None:
+        self.buffer.append(entry)
+
+    async def flush(self) -> None:
         if not self.buffer:
-            system_logger.warning(
+            module_system_logger.warning(
                 "No logs to flush for run", extra={"run_id": self.run_id}
             )
-            return ""
-
-        date_prefix = datetime.now(timezone.utc).strftime("%Y/%m/%d")
-        blob_path = (
-            f"{self.gcs_bucket}/run-logs/{date_prefix}/{self.run_id}/{status}.jsonl"
-        )
+            return None
 
         log_content = StringIO()
         for log_entry in self.buffer:
-            log_content.write(json.dumps(log_entry) + "\n")
+            log_content.write(json.dumps(log_entry.to_dict()) + "\n")
 
         try:
             await self.gcs_client._pipe_file(
-                blob_path, log_content.getvalue().encode("utf-8")
+                self.destination_path, log_content.getvalue().encode("utf-8")
             )
 
-            gcs_url = f"gs://{blob_path}"
-            system_logger.info(
+            gcs_url = f"gs://{self.destination_path}"
+            module_system_logger.info(
                 "Successfully uploaded logs to GCS",
                 extra={
                     "run_id": self.run_id,
@@ -126,9 +105,9 @@ class GCSLogBufferProcessor:
                     "log_count": len(self.buffer),
                 },
             )
-            return gcs_url
+            return None
         except Exception as e:
-            system_logger.error(
+            module_system_logger.error(
                 "Failed to upload logs to GCS",
                 extra={
                     "run_id": self.run_id,
@@ -144,3 +123,6 @@ class GCSLogBufferProcessor:
 
     def get_log_count(self) -> int:
         return len(self.buffer)
+
+    async def destination_uris(self) -> list[str]:
+        return [f"gs://{self.destination_path}"]

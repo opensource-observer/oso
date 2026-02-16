@@ -321,7 +321,6 @@ export type Database = {
           description: string | null;
           display_name: string;
           id: string;
-          is_public: boolean;
           name: string;
           org_id: string;
           updated_at: string;
@@ -334,7 +333,6 @@ export type Database = {
           description?: string | null;
           display_name: string;
           id?: string;
-          is_public?: boolean;
           name: string;
           org_id: string;
           updated_at?: string;
@@ -347,7 +345,6 @@ export type Database = {
           description?: string | null;
           display_name?: string;
           id?: string;
-          is_public?: boolean;
           name?: string;
           org_id?: string;
           updated_at?: string;
@@ -1267,6 +1264,7 @@ export type Database = {
           granted_by: string | null;
           id: string;
           notebook_id: string | null;
+          org_id: string | null;
           permission_level: string;
           revoked_at: string | null;
           static_model_id: string | null;
@@ -1283,6 +1281,7 @@ export type Database = {
           granted_by?: string | null;
           id?: string;
           notebook_id?: string | null;
+          org_id?: string | null;
           permission_level: string;
           revoked_at?: string | null;
           static_model_id?: string | null;
@@ -1299,6 +1298,7 @@ export type Database = {
           granted_by?: string | null;
           id?: string;
           notebook_id?: string | null;
+          org_id?: string | null;
           permission_level?: string;
           revoked_at?: string | null;
           static_model_id?: string | null;
@@ -1353,6 +1353,13 @@ export type Database = {
             columns: ["notebook_id"];
             isOneToOne: false;
             referencedRelation: "notebooks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "resource_permissions_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
             referencedColumns: ["id"];
           },
           {

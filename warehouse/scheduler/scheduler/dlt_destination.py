@@ -14,7 +14,9 @@ class DLTDestinationResource(abc.ABC):
 
     @abc.abstractmethod
     @asynccontextmanager
-    def get_destination(self, *, dataset_schema: str) -> t.AsyncIterator[Destination]:
+    def get_destination(
+        self, *, dataset_schema: str, user: str | None = None
+    ) -> t.AsyncIterator[Destination]:
         """Get a DLT destination configured for the given dataset schema."""
         ...
 
@@ -27,7 +29,7 @@ class DuckDBDLTDestinationResource(DLTDestinationResource):
 
     @asynccontextmanager
     async def get_destination(
-        self, *, dataset_schema: str
+        self, *, dataset_schema: str, user: str | None = None
     ) -> t.AsyncIterator[Destination]:
         from dlt.destinations import duckdb
         from dlt.destinations.impl.duckdb.configuration import DuckDbCredentials
@@ -49,16 +51,16 @@ class TrinoDLTDestinationResource(DLTDestinationResource):
 
     @asynccontextmanager
     async def get_destination(
-        self, *, dataset_schema: str
+        self, *, dataset_schema: str, user: str | None = None
     ) -> t.AsyncIterator[Destination]:
         from dlt.destinations import sqlalchemy
 
-        async with self._trino.async_get_client(log_override=logger) as conn:
+        async with self._trino.async_get_client(log_override=logger, user=user) as conn:
             cursor = await conn.cursor()
             await cursor.execute(
                 f'CREATE SCHEMA IF NOT EXISTS "{self._catalog}"."{dataset_schema}"'
             )
-            user = conn.user or "scheduler"
+            user = user or conn.user or "scheduler"
             credentials = f"trinoso://{user}@{conn.host}:{conn.port}/{self._catalog}/{dataset_schema}"
             yield sqlalchemy(
                 credentials=credentials,
