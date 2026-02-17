@@ -358,7 +358,9 @@ class RunHandler(MessageHandler[T]):
 
         # check if another worker is already processing this run_id
         lock_acquired = await concurrency_lock_store.acquire_lock(
-            run_id, ttl_seconds=common_settings.concurrency_lock_ttl_seconds
+            run_id,
+            ttl_seconds=common_settings.concurrency_lock_ttl_seconds,
+            log_override=logger,
         )
 
         if not lock_acquired:
@@ -400,6 +402,7 @@ class RunHandler(MessageHandler[T]):
                     renewed = await concurrency_lock_store.renew_lock(
                         run_id,
                         ttl_seconds=common_settings.concurrency_lock_ttl_seconds,
+                        log_override=logger,
                     )
                     if not renewed:
                         logger.warning(
@@ -410,7 +413,7 @@ class RunHandler(MessageHandler[T]):
         finally:
             # Release the lock so that other messages with the same run_id can
             # be processed in the future assuming this was cancelled.
-            await concurrency_lock_store.release_lock(run_id)
+            await concurrency_lock_store.release_lock(run_id, log_override=logger)
 
     async def _locked_handle_message(
         self,
