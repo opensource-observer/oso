@@ -353,5 +353,6 @@ def default_resource_registry(common_settings: "CommonSettings") -> ResourcesReg
     registry.add(metrics_factory)
     registry.add(posthog_client_factory)
     registry.add(concurrency_lock_store_factory)
+    registry.add(gcs_run_logger_factory)
 
     return registry
