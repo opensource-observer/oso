@@ -392,7 +392,7 @@ class RunHandler(MessageHandler[T]):
                 # result. Otherwise renew the lock and continue waiting.
                 try:
                     async with asyncio.timeout(
-                        common_settings.concurrency_lock_ttl_seconds / 2
+                        common_settings.concurrency_lock_ttl_seconds / 4.0
                     ):
                         return await task
                 except asyncio.TimeoutError:
@@ -411,9 +411,15 @@ class RunHandler(MessageHandler[T]):
                         task.cancel()
                         return AlreadyLockedMessageResponse()
         finally:
-            # Release the lock so that other messages with the same run_id can
-            # be processed in the future assuming this was cancelled.
-            await concurrency_lock_store.release_lock(run_id, log_override=logger)
+            # Release the lock after some period of time so that other messages
+            # with the same run_id can be processed in the future assuming this
+            # was cancelled. This ensures that any duplicate messages that
+            # arrive while this message is still being finished will be ignored.
+            await concurrency_lock_store.renew_lock(
+                run_id,
+                ttl_seconds=int(common_settings.concurrency_lock_ttl_seconds / 2),
+                log_override=logger,
+            )
 
     async def _locked_handle_message(
         self,
