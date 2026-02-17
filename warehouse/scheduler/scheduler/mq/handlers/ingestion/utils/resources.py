@@ -15,7 +15,7 @@ async def file_from_https(
 ):
     """Stream file from HTTPS and yield records."""
     async with download_to_temp(
-        url, suffix=f".{file_format}", timeout=timeout
+        url, suffix=f".{file_format}", read_timeout=timeout
     ) as temp_path:
         reader = FORMAT_READERS[file_format]
         async for record in reader(temp_path, batch_size):
