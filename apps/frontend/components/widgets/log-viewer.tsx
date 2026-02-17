@@ -36,7 +36,10 @@ import { useAsync } from "react-use";
 
 const LogEntrySchema = z.object({
   event: z.string(),
-  log_level: z.enum(["info", "error", "warning", "debug", "critical"]),
+  log_level: z.preprocess(
+    (val) => (typeof val === "string" ? val.toLowerCase() : val),
+    z.enum(["info", "error", "warning", "debug", "critical"]),
+  ),
   timestamp: z.string(),
   extra: z.record(z.unknown()).optional(),
 });
