@@ -29,7 +29,7 @@ SELECT
   repo_owner_name,
   repo_url,
 
-  FROM_UNIXTIME(TRY_CAST(JSON_EXTRACT_SCALAR(support_item_str, '$.date') AS BIGINT) / 1000) AS received_date,
+  @from_unix_timestamp(TRY_CAST(JSON_EXTRACT_SCALAR(support_item_str, '$.date') AS BIGINT) / 1000) AS received_date,
   JSON_EXTRACT_SCALAR(support_item_str, '$.__typename') AS support_type,
 
   CASE JSON_EXTRACT_SCALAR(support_item_str, '$.__typename')
