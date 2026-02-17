@@ -9,6 +9,7 @@ import {
 import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
 import { UserProfilesRow } from "@/lib/types/schema-types";
 import { getAuthenticatedClient } from "@/app/api/v1/osograph/utils/access-control";
+import { AuthenticationErrors } from "@/app/api/v1/osograph/utils/errors";
 
 /**
  * Type resolvers for User.
@@ -28,7 +29,7 @@ export const userTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       const { client, userId } = getAuthenticatedClient(context);
 
       if (parent.id !== userId) {
-        throw new Error("Cannot query organizations for other users");
+        throw AuthenticationErrors.notAuthorized();
       }
 
       const validatedWhere = args.where
