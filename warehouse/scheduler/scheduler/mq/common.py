@@ -363,7 +363,7 @@ class RunHandler(MessageHandler[T]):
 
         if not lock_acquired:
             logger.warning(
-                f"Run ID {run_id} is already being processed by another worker. Acknowledging and skipping.",
+                f"Run ID {run_id} is already being processed by another worker. Skipping.",
             )
             return AlreadyLockedMessageResponse()
 
