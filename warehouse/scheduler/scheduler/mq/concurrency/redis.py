@@ -20,9 +20,7 @@ class RedisConcurrencyLockStore(ConcurrencyLockStore):
         if existing_lock is not None:
             return False
 
-        await self.redis_client.set(
-            name=lock_id, value="locked", ex=ttl_seconds, nx=True
-        )
+        await self.redis_client.set(name=lock_id, value="1", ex=ttl_seconds, nx=True)
         return True
 
     async def renew_lock(self, lock_id: str, ttl_seconds: int) -> bool:
