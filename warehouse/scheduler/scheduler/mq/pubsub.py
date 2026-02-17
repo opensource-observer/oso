@@ -323,8 +323,10 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                     logger.info("Skipping message processing as per handler response.")
                     raw_message.ack()
                 case FailedResponse():
+                    logger.error("Error processing message. Acking failure")
                     raw_message.ack()
                 case SuccessResponse():
+                    logger.debug("Successful response. Sending Ack to pubsub")
                     raw_message.ack()
                 case _:
                     logger.warning(
