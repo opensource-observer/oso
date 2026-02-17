@@ -149,6 +149,11 @@ class CommonSettings(BaseSettings):
         description="Time-to-live for concurrency locks in seconds",
     )
 
+    message_handling_timeout_seconds: int = Field(
+        default=300,
+        description="Timeout for handling messages in seconds",
+    )
+
     @model_validator(mode="after")
     def handle_generated_config(self):
         if not self.local_duckdb_dir_path:
