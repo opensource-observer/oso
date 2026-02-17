@@ -702,7 +702,9 @@ class RunLoggerContainer(abc.ABC):
 
 class RunLoggerFactory(abc.ABC):
     @abc.abstractmethod
-    def create_logger_container(self, run_id: str) -> RunLoggerContainer:
+    def create_logger_container(
+        self, run_id: str, **kwargs: t.Any
+    ) -> RunLoggerContainer:
         """Create a logger instance for the given run ID."""
         raise NotImplementedError("create_logger must be implemented by subclasses.")
 

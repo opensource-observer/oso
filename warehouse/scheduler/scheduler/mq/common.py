@@ -4,6 +4,7 @@ Implementations of the run context and step context for message handlers.
 
 import asyncio
 import typing as t
+import uuid
 from contextlib import asynccontextmanager
 
 from aioprometheus.collectors import Counter, Histogram
@@ -130,12 +131,15 @@ class OSORunContext(RunContext):
         cls,
         oso_client: OSOClient,
         run_id: str,
+        internal_processing_id: str,
         materialization_strategy: MaterializationStrategy,
         metrics: MetricsContainer,
         internal_logger: BindableLogger,
         run_logger_factory: RunLoggerFactory,
     ) -> "OSORunContext":
-        run_logger_container = run_logger_factory.create_logger_container(run_id)
+        run_logger_container = run_logger_factory.create_logger_container(
+            run_id, internal_processing_id=internal_processing_id
+        )
         proxied_logger = ProxiedBoundLogger(
             [internal_logger, run_logger_container.logger]
         )
@@ -144,6 +148,7 @@ class OSORunContext(RunContext):
 
         return cls(
             run_id=run_id,
+            internal_processing_id=internal_processing_id,
             oso_client=oso_client,
             run_data=run_data,
             materialization_strategy=materialization_strategy,
@@ -156,6 +161,7 @@ class OSORunContext(RunContext):
     def __init__(
         self,
         run_id: str,
+        internal_processing_id: str,
         oso_client: OSOClient,
         run_data: RunCommon,
         materialization_strategy: MaterializationStrategy,
@@ -165,6 +171,7 @@ class OSORunContext(RunContext):
         run_logger_container: RunLoggerContainer,
     ) -> None:
         self._run_id = run_id
+        self._internal_processing_id = internal_processing_id
         self._oso_client = oso_client
         self._run_data = run_data
         self._materialization_strategy = materialization_strategy
@@ -330,26 +337,33 @@ class RunHandler(MessageHandler[T]):
         concurrency_lock_store: ConcurrencyLockStore,
         run_logger_factory: RunLoggerFactory,
     ) -> HandlerResponse:
-        run_id = getattr(message, "run_id", None)
-        if not run_id:
+        run_id_bytes = getattr(message, "run_id", None)
+        internal_processing_id = str(uuid.uuid4())
+
+        # A bit of a hack to bind the internal processing id to the current
+        # logger by mutating the passed in logger. This is because we can't
+        # actually extract the context from a BindableLogger.
+        logger = logger.bind(internal_processing_id=internal_processing_id)
+
+        if not run_id_bytes:
             logger.error(
                 "Message does not contain a run_id; acknowledging and skipping."
             )
             return SkipResponse()
-        if not isinstance(run_id, bytes):
+        if not isinstance(run_id_bytes, bytes):
             logger.error("run_id is not of type bytes; acknowledging and skipping.")
             return SkipResponse()
 
-        run_id_str = convert_uuid_bytes_to_str(run_id)
+        run_id = convert_uuid_bytes_to_str(run_id_bytes)
 
         # check if another worker is already processing this run_id
         lock_acquired = await concurrency_lock_store.acquire_lock(
-            run_id_str, ttl_seconds=common_settings.concurrency_lock_ttl_seconds
+            run_id, ttl_seconds=common_settings.concurrency_lock_ttl_seconds
         )
 
         if not lock_acquired:
             logger.warning(
-                f"Run ID {run_id_str} is already being processed by another worker. Acknowledging and skipping.",
+                f"Run ID {run_id} is already being processed by another worker. Acknowledging and skipping.",
             )
             return AlreadyLockedMessageResponse()
 
@@ -365,7 +379,8 @@ class RunHandler(MessageHandler[T]):
                 posthog_client=posthog_client,
                 oso_client=oso_client,
                 run_logger_factory=run_logger_factory,
-                run_id_str=run_id_str,
+                run_id=run_id,
+                internal_processing_id=internal_processing_id,
             )
         )
         try:
@@ -380,22 +395,22 @@ class RunHandler(MessageHandler[T]):
                         return await task
                 except asyncio.TimeoutError:
                     logger.debug(
-                        "Renewing lock for run ID {run_id_str} while processing message."
+                        f"Renewing lock for run ID {run_id} while processing message."
                     )
                     renewed = await concurrency_lock_store.renew_lock(
-                        run_id_str,
+                        run_id,
                         ttl_seconds=common_settings.concurrency_lock_ttl_seconds,
                     )
                     if not renewed:
                         logger.warning(
-                            f"Failed to renew lock for run ID {run_id_str}. Another worker may have taken over processing. Stopping processing of this message.",
+                            f"Failed to renew lock for run ID {run_id}. Another worker may have taken over processing. Stopping processing of this message.",
                         )
                         task.cancel()
                         return AlreadyLockedMessageResponse()
         finally:
             # Release the lock so that other messages with the same run_id can
             # be processed in the future assuming this was cancelled.
-            await concurrency_lock_store.release_lock(run_id_str)
+            await concurrency_lock_store.release_lock(run_id)
 
     async def _locked_handle_message(
         self,
@@ -407,25 +422,27 @@ class RunHandler(MessageHandler[T]):
         posthog_client: Posthog,
         oso_client: OSOClient,
         run_logger_factory: RunLoggerFactory,
-        run_id_str: str,
+        run_id: str,
+        internal_processing_id: str,
     ):
         async with async_time(
             metrics.histogram("run_context_load_duration_ms")
         ) as labeler_ctx:
             run_context = await OSORunContext.create(
                 oso_client,
-                run_id=run_id_str,
+                run_id=run_id,
+                internal_processing_id=internal_processing_id,
                 materialization_strategy=materialization_strategy,
                 metrics=metrics,
                 run_logger_factory=run_logger_factory,
-                internal_logger=logger.bind(run_id=run_id_str),
+                internal_logger=logger.bind(run_id=run_id),
             )
             labeler_ctx.add_labels({"org_id": run_context.organization.name})
 
         posthog_client.capture(
             "run_message_received",
             properties={
-                "run_id": run_id_str,
+                "run_id": run_id,
                 "org_name": run_context.organization.name,
                 "trigger_type": run_context.trigger_type,
                 "requested_by": (
@@ -439,10 +456,10 @@ class RunHandler(MessageHandler[T]):
         labeler = MetricsLabeler()
         # Try to set the run to running in the database for user's visibility
         try:
-            run_context.log.info(f"Reporting run {run_id_str} as started.")
-            await oso_client.start_run(run_id=run_id_str)
+            run_context.log.info(f"Reporting run {run_id} as started.")
+            await oso_client.start_run(run_id=run_id)
         except Exception as e:
-            logger.error(f"Error starting run {run_id_str}: {e}")
+            logger.error(f"Error starting run {run_id}: {e}")
 
             labeler.set_labels(
                 {
@@ -452,9 +469,9 @@ class RunHandler(MessageHandler[T]):
             )
 
             return await self.report_response(
-                run_id_str=run_id_str,
+                run_id=run_id,
                 run_context=run_context,
-                response=FailedResponse(message=f"Failed to start run {run_id_str}."),
+                response=FailedResponse(message=f"Failed to start run {run_id}."),
                 metrics=metrics,
                 labeler=labeler,
                 posthog_client=posthog_client,
@@ -485,11 +502,11 @@ class RunHandler(MessageHandler[T]):
                 if err.extensions
             ]
             logger.error(
-                f"GraphQL errors for run_id {run_id_str}: {raw_errors or [err.message for err in e.errors]}"
+                f"GraphQL errors for run_id {run_id}: {raw_errors or [err.message for err in e.errors]}"
             )
             response = FailedResponse(
                 exception=e,
-                message=f"Failed to process the message for run_id {run_id_str}.",
+                message=f"Failed to process the message for run_id {run_id}.",
                 details={
                     "graphql_errors": raw_errors or [err.message for err in e.errors]
                 },
@@ -500,22 +517,22 @@ class RunHandler(MessageHandler[T]):
                 if e.extensions
                 else e.message
             )
-            logger.error(f"GraphQL error for run_id {run_id_str}: {raw_error}")
+            logger.error(f"GraphQL error for run_id {run_id}: {raw_error}")
             response = FailedResponse(
                 exception=e,
-                message=f"Failed to process the message for run_id {run_id_str}.",
+                message=f"Failed to process the message for run_id {run_id}.",
                 details={"graphql_error": raw_error},
             )
         except Exception as e:
-            logger.error(f"Error handling run message for run_id {run_id_str}: {e}")
+            logger.error(f"Error handling run message for run_id {run_id}: {e}")
             response = FailedResponse(
                 exception=e,
-                message=f"Failed to process the message for run_id {run_id_str}.",
+                message=f"Failed to process the message for run_id {run_id}.",
             )
 
         try:
             return await self.report_response(
-                run_id_str=run_id_str,
+                run_id=run_id,
                 response=response,
                 run_context=run_context,
                 metrics=metrics,
@@ -524,16 +541,16 @@ class RunHandler(MessageHandler[T]):
                 logger=logger,
             )
         except Exception as e:
-            logger.error(f"Error reporting response for run_id {run_id_str}: {e}")
+            logger.error(f"Error reporting response for run_id {run_id}: {e}")
 
             return FailedResponse(
                 exception=e,
-                message=f"Failed to report the response for run_id {run_id_str}.",
+                message=f"Failed to report the response for run_id {run_id}.",
             )
 
     async def report_response(
         self,
-        run_id_str: str,
+        run_id: str,
         run_context: OSORunContext,
         response: HandlerResponse,
         metrics: MetricsContainer,
@@ -549,7 +566,7 @@ class RunHandler(MessageHandler[T]):
         # Write the response to the database
 
         posthog_properties = {
-            "run_id": run_id_str,
+            "run_id": run_id,
             "org_name": run_context.organization.name,
             "trigger_type": run_context.trigger_type,
             "response_type": type(response).__name__,
@@ -586,7 +603,7 @@ class RunHandler(MessageHandler[T]):
             case FailedResponse(
                 exception=exception, status_code=status_code, details=details
             ):
-                logger.error(f"Failed to process run_id {run_id_str}.")
+                logger.error(f"Failed to process run_id {run_id}.")
                 metrics.counter("run_count_total").inc(
                     labeler.get_labels({"response_type": "failed"}),
                 )
@@ -608,7 +625,7 @@ class RunHandler(MessageHandler[T]):
                 )
                 return response
             case SuccessResponse(status_code=status_code):
-                logger.info(f"Successfully processed run_id {run_id_str}.")
+                logger.info(f"Successfully processed run_id {run_id}.")
                 metrics.counter("run_count_total").inc(
                     labeler.get_labels({"response_type": "success"}),
                 )
@@ -619,7 +636,7 @@ class RunHandler(MessageHandler[T]):
                 return response
             case _:
                 logger.warning(
-                    f"Unhandled response type {type(response)} from run message handler for run_id {run_id_str}."
+                    f"Unhandled response type {type(response)} from run message handler for run_id {run_id}."
                 )
                 metrics.counter("run_count_total").inc(
                     labeler.get_labels({"response_type": "unknown"}),
