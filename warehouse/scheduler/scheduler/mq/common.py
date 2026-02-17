@@ -379,6 +379,9 @@ class RunHandler(MessageHandler[T]):
                     ):
                         return await task
                 except asyncio.TimeoutError:
+                    logger.debug(
+                        "Renewing lock for run ID {run_id_str} while processing message."
+                    )
                     renewed = await concurrency_lock_store.renew_lock(
                         run_id_str,
                         ttl_seconds=common_settings.concurrency_lock_ttl_seconds,
