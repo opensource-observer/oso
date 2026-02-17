@@ -43,6 +43,7 @@ from oso_core.instrumentation import MetricsContainer
 from oso_core.instrumentation.timing import async_time
 from oso_core.resources import ResourcesContext
 from scheduler.types import (
+    AlreadyLockedMessageResponse,
     CancelledResponse,
     FailedResponse,
     GenericMessageQueueService,
@@ -313,6 +314,11 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
 
             response = response_storage.pop_response(handle_id)
             match response:
+                case AlreadyLockedMessageResponse():
+                    logger.info(
+                        "Message processing skipped due to existing lock. Skipping without acknowledgment."
+                    )
+                    raw_message.nack()
                 case SkipResponse():
                     logger.info("Skipping message processing as per handler response.")
                     raw_message.ack()
