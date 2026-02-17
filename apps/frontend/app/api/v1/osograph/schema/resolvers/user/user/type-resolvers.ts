@@ -25,7 +25,11 @@ export const userTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const { client } = getAuthenticatedClient(context);
+      const { client, userId } = getAuthenticatedClient(context);
+
+      if (parent.id !== userId) {
+        throw new Error("Cannot query organizations for other users");
+      }
 
       const validatedWhere = args.where
         ? validateInput(OrganizationWhereSchema, args.where)
