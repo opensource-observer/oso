@@ -22,6 +22,10 @@ from scheduler.graphql_client.client import UNSET
 from scheduler.graphql_client.client import Client as OSOClient
 from scheduler.graphql_client.create_materialization import CreateMaterialization
 from scheduler.graphql_client.enums import RunStatus, StepStatus
+from scheduler.graphql_client.exceptions import (
+    GraphQLClientGraphQLError,
+    GraphQLClientGraphQLMultiError,
+)
 from scheduler.graphql_client.finish_run import FinishRun
 from scheduler.graphql_client.fragments import (
     DatasetCommon,
@@ -471,6 +475,34 @@ class RunHandler(MessageHandler[T]):
                         "context": run_context,
                     },
                 )
+        except GraphQLClientGraphQLMultiError as e:
+            raw_errors = [
+                err.extensions.get("rawErrorMessage", err.message)
+                for err in e.errors
+                if err.extensions
+            ]
+            logger.error(
+                f"GraphQL errors for run_id {run_id_str}: {raw_errors or [err.message for err in e.errors]}"
+            )
+            response = FailedResponse(
+                exception=e,
+                message=f"Failed to process the message for run_id {run_id_str}.",
+                details={
+                    "graphql_errors": raw_errors or [err.message for err in e.errors]
+                },
+            )
+        except GraphQLClientGraphQLError as e:
+            raw_error = (
+                e.extensions.get("rawErrorMessage", e.message)
+                if e.extensions
+                else e.message
+            )
+            logger.error(f"GraphQL error for run_id {run_id_str}: {raw_error}")
+            response = FailedResponse(
+                exception=e,
+                message=f"Failed to process the message for run_id {run_id_str}.",
+                details={"graphql_error": raw_error},
+            )
         except Exception as e:
             logger.error(f"Error handling run message for run_id {run_id_str}: {e}")
             response = FailedResponse(
