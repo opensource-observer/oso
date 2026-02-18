@@ -324,7 +324,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
             completed = False
 
             while time.time() - start_time < timeout:
-                if not ready_event.wait(timeout=8.0):
+                if not ready_event.wait(timeout=3.0):
                     # This is a hammer to ensure the message maintains the ack
                     # deadline we desire.
                     raw_message.modify_ack_deadline(60)
@@ -345,7 +345,8 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                     logger.info(
                         "Message processing skipped due to existing lock. Skipping without acknowledgment."
                     )
-                    raw_message.nack()
+                    # Send no nack to prevent immediate redelivery since we
+                    # are already processing this message with a different handler.
                 case SkipResponse():
                     logger.info("Skipping message processing as per handler response.")
                     raw_message.ack()
