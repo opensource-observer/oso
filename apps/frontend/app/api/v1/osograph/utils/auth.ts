@@ -4,6 +4,7 @@ import {
   OrganizationErrors,
   UserErrors,
 } from "@/app/api/v1/osograph/utils/errors";
+import { logger } from "@/lib/logger";
 import {
   createAdminClient,
   type SupabaseAdminClient,
@@ -52,6 +53,7 @@ export async function requireOrgMembership(
     .single();
 
   if (!membership) {
+    logger.error("User is not a member of the organization", { userId, orgId });
     throw AuthenticationErrors.notAuthorized();
   }
 }
