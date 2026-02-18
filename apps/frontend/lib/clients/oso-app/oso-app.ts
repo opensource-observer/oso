@@ -33,7 +33,12 @@ import {
   animals,
 } from "unique-names-generator";
 import { DatasetType } from "@/lib/types/dataset";
-import { DataConnectionType } from "@/lib/graphql/generated/graphql";
+import {
+  DataConnectionType,
+  PermissionLevel,
+  ResourceType as GraphqlResourceType,
+} from "@/lib/graphql/generated/graphql";
+import type { ResourceType } from "@/app/api/v1/osograph/utils/access-control";
 
 const ADMIN_USER_ROLE = "admin";
 
@@ -1832,10 +1837,10 @@ class OsoAppClient {
    */
   async grantResourcePermission(
     args: Partial<{
-      resourceType: "notebook" | "chat";
+      resourceType: ResourceType;
       resourceId: string;
       targetUserId?: string | null;
-      permissionLevel: "read" | "write" | "admin" | "owner";
+      permissionLevel: "none" | "read" | "write" | "admin" | "owner";
     }>,
   ) {
     const { resourceType, resourceId, permissionLevel } = {
@@ -1846,6 +1851,15 @@ class OsoAppClient {
         "Missing permissionLevel argument",
       ),
     };
+
+    const GRANT_RESOURCE_PERMISSION = gql(`
+      mutation GrantResourcePermission($input: GrantResourcePermissionInput!) {
+        grantResourcePermission(input: $input) {
+          success
+          message
+        }
+      }
+    `);
 
     const targetUserId =
       "targetUserId" in args
@@ -1858,52 +1872,28 @@ class OsoAppClient {
       );
     }
 
-    const user = await this.getUser();
-    const column = resourceType === "notebook" ? "notebook_id" : "chat_id";
-
-    const targetDescription =
-      targetUserId === null ? "public" : `user ${targetUserId}`;
-    console.log(
-      `Granting ${permissionLevel} permission on ${resourceType} ${resourceId} to ${targetDescription} by ${user.id}`,
+    const data = await executeGraphQL(
+      GRANT_RESOURCE_PERMISSION,
+      {
+        input: {
+          resourceType: resourceType.toUpperCase() as GraphqlResourceType,
+          id: resourceId,
+          targetUserId: targetUserId ?? undefined,
+          permissionLevel: permissionLevel.toUpperCase() as PermissionLevel,
+        },
+      },
+      "Failed to grant resource permission",
     );
 
-    const updateQuery = this.supabaseClient
-      .from("resource_permissions")
-      .update({
-        permission_level: permissionLevel,
-        granted_by: user.id,
-        updated_at: new Date().toISOString(),
-      });
+    const payload = data.grantResourcePermission;
 
-    const finalUpdateQuery =
-      targetUserId === null
-        ? updateQuery.is("user_id", null)
-        : updateQuery.eq("user_id", targetUserId);
-
-    const { data: updateData } = await finalUpdateQuery
-      .eq(column, resourceId)
-      .is("revoked_at", null)
-      .select()
-      .throwOnError();
-
-    if (updateData && updateData.length > 0) {
-      console.log("Permission updated successfully:", updateData);
-      return updateData;
+    if (payload.success) {
+      logger.log(
+        `Successfully granted resource permission for ${resourceType} ${resourceId}`,
+      );
     }
 
-    const { data } = await this.supabaseClient
-      .from("resource_permissions")
-      .insert({
-        user_id: targetUserId,
-        permission_level: permissionLevel,
-        granted_by: user.id,
-        [column]: resourceId,
-      })
-      .select()
-      .throwOnError();
-
-    console.log("Permission granted successfully:", data);
-    return data;
+    return payload;
   }
 
   /**
@@ -1911,7 +1901,7 @@ class OsoAppClient {
    */
   async grantPublicPermission(
     args: Partial<{
-      resourceType: "notebook" | "chat";
+      resourceType: ResourceType;
       resourceId: string;
       permissionLevel: "read" | "write" | "admin" | "owner";
     }>,
@@ -1930,39 +1920,15 @@ class OsoAppClient {
    */
   async revokeResourcePermission(
     args: Partial<{
-      resourceType: "notebook" | "chat";
+      resourceType: ResourceType;
       resourceId: string;
       targetUserId?: string | null;
     }>,
   ) {
-    const { resourceType, resourceId } = {
-      resourceType: ensure(args.resourceType, "Missing resourceType argument"),
-      resourceId: ensure(args.resourceId, "Missing resourceId argument"),
-    };
-
-    const targetUserId =
-      "targetUserId" in args
-        ? args.targetUserId
-        : ensure(args.targetUserId, "Missing targetUserId argument");
-
-    if (targetUserId === undefined) {
-      throw new Error(
-        "Please provide a targetUserId explicitly, use null for public permissions",
-      );
-    }
-
-    const column = resourceType === "notebook" ? "notebook_id" : "chat_id";
-
-    const revokeQuery = this.supabaseClient
-      .from("resource_permissions")
-      .update({ revoked_at: new Date().toISOString() });
-
-    const finalRevokeQuery =
-      targetUserId === null
-        ? revokeQuery.is("user_id", null)
-        : revokeQuery.eq("user_id", targetUserId);
-
-    await finalRevokeQuery.eq(column, resourceId).throwOnError();
+    return this.grantResourcePermission({
+      ...args,
+      permissionLevel: "none",
+    });
   }
 
   /**
@@ -1970,7 +1936,7 @@ class OsoAppClient {
    */
   async revokePublicPermission(
     args: Partial<{
-      resourceType: "notebook" | "chat";
+      resourceType: ResourceType;
       resourceId: string;
     }>,
   ) {

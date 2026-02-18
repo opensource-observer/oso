@@ -153,6 +153,8 @@ RunSubscriberFn = t.Callable[
     None,
 ]
 
+ACK_DEADLINE_SECONDS = 60
+
 
 class GCPPubSubMessageQueueService(GenericMessageQueueService):
     def __init__(
@@ -323,11 +325,21 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
             start_time = time.time()
             completed = False
 
+            # We force the pubsub library to stop using lease management and
+            # we will handle it ourselves (for some reason google's lib can't be
+            # trusted to do it well enough). This method doesn't drop the
+            # message just the lease management, so we can manage the lease
+            # manually without interference from the library.
+            raw_message.drop()
+
+            # We set an initial ack deadline to give us some time to process the message
+            raw_message.modify_ack_deadline(ACK_DEADLINE_SECONDS)
+
             while time.time() - start_time < timeout:
-                if not ready_event.wait(timeout=8.0):
+                if not ready_event.wait(timeout=ACK_DEADLINE_SECONDS / 4):
                     # This is a hammer to ensure the message maintains the ack
                     # deadline we desire.
-                    raw_message.modify_ack_deadline(60)
+                    raw_message.modify_ack_deadline(ACK_DEADLINE_SECONDS)
                 else:
                     completed = True
                     break
@@ -345,7 +357,8 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                     logger.info(
                         "Message processing skipped due to existing lock. Skipping without acknowledgment."
                     )
-                    raw_message.nack()
+                    # Send no nack to prevent immediate redelivery since we
+                    # are already processing this message with a different handler.
                 case SkipResponse():
                     logger.info("Skipping message processing as per handler response.")
                     raw_message.ack()

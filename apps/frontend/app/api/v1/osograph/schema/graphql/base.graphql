@@ -37,6 +37,28 @@ enum DatasetType {
 }
 
 """
+Permission levels for resource access control
+"""
+enum PermissionLevel {
+  """
+  No access - used to revoke permissions
+  """
+  NONE
+  """
+  Read-only access
+  """
+  READ
+  """
+  Read and write access
+  """
+  WRITE
+  """
+  Can manage permissions for other users
+  """
+  ADMIN
+}
+
+"""
 Cursor-based pagination information
 """
 type PageInfo {

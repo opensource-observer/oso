@@ -6,6 +6,7 @@ import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
 import { AuthenticationErrors } from "@/app/api/v1/osograph/utils/errors";
 import type { Database } from "@/lib/types/supabase";
+import { logger } from "@/lib/logger";
 
 /**
  * Table names from Supabase schema.
@@ -123,6 +124,10 @@ function validateAndReturnResourceAccess(
       permissionLevel: permissionLevel as Exclude<PermissionLevel, "none">,
     };
   }
+  logger.error("Permission level insufficient", {
+    permissionLevel,
+    requiredPermission,
+  });
   throw AuthenticationErrors.notAuthorized();
 }
 
@@ -139,6 +144,7 @@ function validateAndReturnResourceAccess(
  */
 export function getSystemClient(context: GraphQLContext): SupabaseAdminClient {
   if (!context.systemCredentials) {
+    logger.error("System credentials missing in context");
     throw AuthenticationErrors.notAuthorized();
   }
   return createAdminClient();
@@ -214,6 +220,10 @@ export async function getOrgScopedClient(
     .single();
 
   if (!membership) {
+    logger.error("User is not a member of organization", {
+      userId: user.userId,
+      orgId,
+    });
     throw AuthenticationErrors.notAuthorized();
   }
 
@@ -237,7 +247,7 @@ interface ResourceConfig<T extends keyof Tables> {
  * Maps resource types to their corresponding database table and column names.
  * Type-safe: permissionColumn must be a valid column in resource_permissions.
  */
-const RESOURCE_CONFIG: {
+export const RESOURCE_CONFIG: {
   notebook: ResourceConfig<"notebooks">;
   chat: ResourceConfig<"chat_history">;
   dataset: ResourceConfig<"datasets">;
@@ -324,6 +334,7 @@ export async function getOrgResourceClient(
     .single();
 
   if (!resource) {
+    logger.error("Resource not found", { resourceType, resourceId });
     throw AuthenticationErrors.notAuthorized();
   }
 
@@ -387,5 +398,10 @@ export async function getOrgResourceClient(
     return validateAndReturnResourceAccess(publicLevel, requiredPermission);
   }
 
+  logger.error("User lacks permission to access resource", {
+    userId: user.userId,
+    resourceType,
+    resourceId,
+  });
   throw AuthenticationErrors.notAuthorized();
 }
