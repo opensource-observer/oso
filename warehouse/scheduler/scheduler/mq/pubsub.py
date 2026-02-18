@@ -28,6 +28,7 @@ needed.
 import asyncio
 import functools
 import logging
+import time
 import typing as t
 import uuid
 from dataclasses import dataclass
@@ -314,7 +315,24 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
             # time but we should instead be watching the metrics of the async
             # workers as that's a more reliable measure of failure. We will need
             # to figure out how to support very long running jobs here.
-            if not ready_event.wait(timeout=timeout):
+
+            # Hacky leasing mechanism to ensure we keep this message leased
+            # because the built in pub/sub ack deadline extension doesn't seem
+            # to work well with our processing model.
+
+            start_time = time.time()
+            completed = False
+
+            while time.time() - start_time < timeout:
+                if not ready_event.wait(timeout=8.0):
+                    # This is a hammer to ensure the message maintains the ack
+                    # deadline we desire.
+                    raw_message.modify_ack_deadline(60)
+                else:
+                    completed = True
+                    break
+
+            if not completed:
                 logger.error(
                     f"Timeout waiting for message processing for message ID: {raw_message.message_id}"
                 )
