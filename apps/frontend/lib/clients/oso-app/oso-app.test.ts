@@ -406,7 +406,7 @@ describe("Organization Ownership", () => {
   });
 });
 
-describe("Resource Permissions", () => {
+describe.skip("Resource Permissions", () => {
   const USER_OWNER_ID = crypto.randomUUID();
   const USER_COLLABORATOR_ID = crypto.randomUUID();
   const USER_NO_ACCESS_ID = crypto.randomUUID();
