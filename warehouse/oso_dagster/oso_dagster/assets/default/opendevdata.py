@@ -1,4 +1,5 @@
 import requests
+from dagster import RetryPolicy
 from google.cloud.bigquery import SourceFormat
 from oso_dagster.config import DagsterConfig
 from oso_dagster.factories import early_resources_asset_factory
@@ -7,8 +8,31 @@ from oso_dagster.factories.archive2bq import (
     create_archive2bq_asset,
 )
 
+MAX_RETRY_COUNT = 10
+
 MANIFEST_URL = "https://data.opendevdata.org/manifest.json"
 DATASET_ID = "opendevdata"
+
+K8S_CONFIG = {
+    "merge_behavior": "SHALLOW",
+    "container_config": {
+        "resources": {
+            "requests": {"cpu": "500m", "memory": "2048Mi"},
+            "limits": {"memory": "4096Mi"},
+        }
+    },
+    "pod_spec_config": {
+        "node_selector": {"pool_type": "spot"},
+        "tolerations": [
+            {
+                "key": "pool_type",
+                "operator": "Equal",
+                "value": "spot",
+                "effect": "NoSchedule",
+            }
+        ],
+    },
+}
 
 
 def _fetch_manifest() -> dict:
@@ -25,9 +49,11 @@ def opendevdata(global_config: DagsterConfig):
     resources = manifest["dataset"]["resources"]
 
     source_urls = [
-        r["path"]
-        if r["path"].startswith("http")
-        else f"https://data.opendevdata.org{r['path']}"
+        (
+            r["path"]
+            if r["path"].startswith("http")
+            else f"https://data.opendevdata.org{r['path']}"
+        )
         for r in resources
     ]
 
@@ -40,11 +66,16 @@ def opendevdata(global_config: DagsterConfig):
             source_format=SourceFormat.PARQUET,
             staging_bucket=global_config.gcs_bucket,
             skip_uncompression=True,
+            sequential=True,
             deps=[],
             asset_kwargs={
                 "tags": {
                     "opensource.observer/source": "weekly",
                 },
+                "op_tags": {
+                    "dagster-k8s/config": K8S_CONFIG,
+                },
+                "retry_policy": RetryPolicy(max_retries=MAX_RETRY_COUNT),
             },
         )
     )
