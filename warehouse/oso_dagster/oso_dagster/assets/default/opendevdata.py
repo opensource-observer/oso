@@ -1,4 +1,5 @@
 import requests
+from dagster import RetryPolicy
 from google.cloud.bigquery import SourceFormat
 from oso_dagster.config import DagsterConfig
 from oso_dagster.factories import early_resources_asset_factory
@@ -6,6 +7,8 @@ from oso_dagster.factories.archive2bq import (
     Archive2BqAssetConfig,
     create_archive2bq_asset,
 )
+
+MAX_RETRY_COUNT = 10
 
 MANIFEST_URL = "https://data.opendevdata.org/manifest.json"
 DATASET_ID = "opendevdata"
@@ -72,6 +75,7 @@ def opendevdata(global_config: DagsterConfig):
                 "op_tags": {
                     "dagster-k8s/config": K8S_CONFIG,
                 },
+                "retry_policy": RetryPolicy(max_retries=MAX_RETRY_COUNT),
             },
         )
     )
