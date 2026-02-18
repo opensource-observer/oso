@@ -145,7 +145,7 @@ class CommonSettings(BaseSettings):
     )
 
     concurrency_lock_ttl_seconds: int = Field(
-        default=600,
+        default=120,
         description="Time-to-live for concurrency locks in seconds",
     )
 
