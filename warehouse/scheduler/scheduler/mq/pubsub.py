@@ -325,7 +325,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
             start_time = time.time()
             completed = False
 
-            # We force the pubsub library to stop using lease management and as
+            # We force the pubsub library to stop using lease management and
             # we will handle it ourselves (for some reason google's lib can't be
             # trusted to do it well enough). This method doesn't drop the
             # message just the lease management, so we can manage the lease
