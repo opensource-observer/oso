@@ -1,3 +1,4 @@
+import re
 import typing as t
 from dataclasses import dataclass
 
@@ -10,6 +11,18 @@ from google.cloud.bigquery.schema import SchemaField
 from google.cloud.exceptions import NotFound, PreconditionFailed
 
 from .retry import retry
+
+
+def sanitize_column_name(name: str) -> str:
+    """Sanitize column name for BigQuery.
+
+    BigQuery column names must contain only letters, numbers, and underscores,
+    be at most 300 characters long, and start with a letter or underscore.
+    """
+    sanitized = re.sub(r"[^a-zA-Z0-9_]", "_", name)
+    if sanitized and not (sanitized[0].isalpha() or sanitized[0] == "_"):
+        sanitized = f"_{sanitized}"
+    return re.sub(r"_+", "_", sanitized[:300]).rstrip("_")
 
 
 # Configuration for a BigQuery Dataset

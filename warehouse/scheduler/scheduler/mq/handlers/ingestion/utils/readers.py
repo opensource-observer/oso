@@ -10,7 +10,7 @@ async def read_parquet_batches(path: str, batch_size: int) -> AsyncIterator[dict
     """Stream parquet from disk in batches."""
     parquet_file = pq.ParquetFile(path)
     for batch in parquet_file.iter_batches(batch_size=batch_size):
-        for record in batch.to_pandas().to_dict(orient="records"):
+        for record in batch.to_pylist():
             yield record
 
 

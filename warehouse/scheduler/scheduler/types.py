@@ -674,19 +674,25 @@ class ConcurrencyLockStore(abc.ABC):
     prevent multiple workers from processing the same message at the same time."""
 
     @abc.abstractmethod
-    async def acquire_lock(self, lock_id: str, ttl_seconds: int) -> bool:
+    async def acquire_lock(
+        self, lock_id: str, ttl_seconds: int, log_override: BindableLogger | None = None
+    ) -> bool:
         """Acquire a lock for the given lock ID. Returns True if the lock was
         acquired successfully, False otherwise."""
         raise NotImplementedError("acquire_lock must be implemented by subclasses.")
 
     @abc.abstractmethod
-    async def renew_lock(self, lock_id: str, ttl_seconds: int) -> bool:
+    async def renew_lock(
+        self, lock_id: str, ttl_seconds: int, log_override: BindableLogger | None = None
+    ) -> bool:
         """Renew a lock for the given lock ID. Returns True if the lock was
         renewed successfully, False otherwise."""
         raise NotImplementedError("renew_lock must be implemented by subclasses.")
 
     @abc.abstractmethod
-    async def release_lock(self, lock_id: str) -> None:
+    async def release_lock(
+        self, lock_id: str, log_override: BindableLogger | None = None
+    ) -> None:
         """Release the lock for the given lock ID."""
         raise NotImplementedError("release_lock must be implemented by subclasses.")
 
@@ -702,7 +708,9 @@ class RunLoggerContainer(abc.ABC):
 
 class RunLoggerFactory(abc.ABC):
     @abc.abstractmethod
-    def create_logger_container(self, run_id: str) -> RunLoggerContainer:
+    def create_logger_container(
+        self, run_id: str, **kwargs: t.Any
+    ) -> RunLoggerContainer:
         """Create a logger instance for the given run ID."""
         raise NotImplementedError("create_logger must be implemented by subclasses.")
 

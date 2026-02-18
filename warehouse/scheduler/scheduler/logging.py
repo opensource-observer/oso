@@ -1,5 +1,6 @@
 import json
 import logging
+import typing as t
 from datetime import datetime, timezone
 from io import StringIO
 
@@ -17,7 +18,9 @@ class GCSRunLoggerFactory(RunLoggerFactory):
         self._gcs = gcs
         self._bucket = bucket
 
-    def create_logger_container(self, run_id: str) -> RunLoggerContainer:
+    def create_logger_container(
+        self, run_id: str, **kwargs: t.Any
+    ) -> RunLoggerContainer:
         gcs_client = self._gcs.get_client(asynchronous=True)
         date_prefix = datetime.now(timezone.utc).strftime("%Y/%m/%d")
         log_destination_path = (
@@ -27,6 +30,7 @@ class GCSRunLoggerFactory(RunLoggerFactory):
             run_id=run_id,
             gcs_client=gcs_client,
             destination_path=log_destination_path,
+            **kwargs,
         )
 
 
@@ -37,9 +41,10 @@ class BufferedRunLoggerContainer(RunLoggerContainer):
         run_id: str,
         gcs_client: gcsfs.GCSFileSystem,
         destination_path: str,
+        **kwargs: t.Any,
     ) -> "BufferedRunLoggerContainer":
         log_buffer = GCSLogBuffer(run_id, gcs_client, destination_path)
-        logger = BufferedLogger(log_buffer, context={"run_id": run_id})
+        logger = BufferedLogger(log_buffer, context={"run_id": run_id, **kwargs})
         return cls(
             run_id=run_id,
             logger=logger,
