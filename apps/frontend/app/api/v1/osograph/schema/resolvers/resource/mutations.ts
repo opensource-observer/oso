@@ -100,6 +100,15 @@ export const resourceMutations: GraphQLResolverModule<GraphQLContext>["Mutation"
             .insert(insertData);
 
           if (insertError) {
+            if (insertError.code === "23505") {
+              logger.warn("Permission already exists, skipping insert:", {
+                insertData,
+              });
+              return {
+                success: true,
+                message: "Permission already exists",
+              };
+            }
             logger.error("Failed to grant resource permission:", insertError);
             throw ServerErrors.database(
               `Failed to grant resource permission: ${insertError.message}`,
