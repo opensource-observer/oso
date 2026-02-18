@@ -1,3 +1,5 @@
+import typing as t
+
 import structlog
 from oso_core.logging import BindableLogger
 from scheduler.types import RunLoggerContainer, RunLoggerFactory
@@ -16,5 +18,5 @@ class FakeRunLoggerContainer(RunLoggerContainer):
 
 
 class FakeRunLoggerFactory(RunLoggerFactory):
-    def create_logger_container(self, run_id: str):
+    def create_logger_container(self, run_id: str, **kwargs: t.Any):
         return FakeRunLoggerContainer(run_id)

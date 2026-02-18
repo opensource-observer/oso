@@ -145,8 +145,13 @@ class CommonSettings(BaseSettings):
     )
 
     concurrency_lock_ttl_seconds: int = Field(
-        default=120,
+        default=600,
         description="Time-to-live for concurrency locks in seconds",
+    )
+
+    message_handling_timeout_seconds: int = Field(
+        default=300,
+        description="Timeout for handling messages in seconds",
     )
 
     @model_validator(mode="after")

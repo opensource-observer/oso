@@ -28,6 +28,7 @@ needed.
 import asyncio
 import functools
 import logging
+import time
 import typing as t
 import uuid
 from dataclasses import dataclass
@@ -42,7 +43,9 @@ from janus import AsyncQueue, Queue, SyncQueue
 from oso_core.instrumentation import MetricsContainer
 from oso_core.instrumentation.timing import async_time
 from oso_core.resources import ResourcesContext
+from scheduler.config import CommonSettings
 from scheduler.types import (
+    AlreadyLockedMessageResponse,
     CancelledResponse,
     FailedResponse,
     GenericMessageQueueService,
@@ -204,6 +207,10 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
 
         handler = self.initialize_queue_handler(self.resources, queue)
 
+        common_settings = t.cast(
+            CommonSettings, self.resources.resolve("common_settings")
+        )
+
         metrics = self._metrics
 
         # We create the queue, event, and response storage here and not as some
@@ -218,6 +225,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
             queue=queue,
             handler=handler,
             close_event=close_event,
+            message_handling_timeout=common_settings.message_handling_timeout_seconds,
         )
 
         # Just a counter for logging purposes
@@ -263,9 +271,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
             message_queue.close()
 
     def _create_message_callback(
-        self,
-        queue: str,
-        handler: MessageHandler[t.Any],
+        self, queue: str, handler: MessageHandler[t.Any], timeout: float
     ) -> InternalCallback:
         """Creates a message callback function for GCP Pub/Sub messages. That
         has no internal reference to `self` as this will be used in a different
@@ -304,7 +310,29 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                 )
             )
 
-            if not ready_event.wait(timeout=300):
+            # Hack for now, we likely need some kind of heartbeating mechanism
+            # or something to refresh this value. For now, we set it to a long
+            # time but we should instead be watching the metrics of the async
+            # workers as that's a more reliable measure of failure. We will need
+            # to figure out how to support very long running jobs here.
+
+            # Hacky leasing mechanism to ensure we keep this message leased
+            # because the built in pub/sub ack deadline extension doesn't seem
+            # to work well with our processing model.
+
+            start_time = time.time()
+            completed = False
+
+            while time.time() - start_time < timeout:
+                if not ready_event.wait(timeout=8.0):
+                    # This is a hammer to ensure the message maintains the ack
+                    # deadline we desire.
+                    raw_message.modify_ack_deadline(60)
+                else:
+                    completed = True
+                    break
+
+            if not completed:
                 logger.error(
                     f"Timeout waiting for message processing for message ID: {raw_message.message_id}"
                 )
@@ -313,12 +341,19 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
 
             response = response_storage.pop_response(handle_id)
             match response:
+                case AlreadyLockedMessageResponse():
+                    logger.info(
+                        "Message processing skipped due to existing lock. Skipping without acknowledgment."
+                    )
+                    raw_message.nack()
                 case SkipResponse():
                     logger.info("Skipping message processing as per handler response.")
                     raw_message.ack()
                 case FailedResponse():
+                    logger.error("Error processing message. Acking failure")
                     raw_message.ack()
                 case SuccessResponse():
+                    logger.debug("Successful response. Sending Ack to pubsub")
                     raw_message.ack()
                 case _:
                     logger.warning(
@@ -335,10 +370,13 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         queue: str,
         handler: MessageHandler[t.Any],
         close_event: Event,
+        message_handling_timeout: float,
     ) -> asyncio.Task[None]:
         # We declare the function here and avoid capturing `self` in the closure
 
-        callback = self._create_message_callback(queue, handler)
+        callback = self._create_message_callback(
+            queue, handler, message_handling_timeout
+        )
 
         # Listen for messages on the message queue
         gcp_subscriber_thread = asyncio.create_task(
@@ -390,6 +428,8 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                         labeler.add_labels({"status": "skipped"})
                     case CancelledResponse():
                         labeler.add_labels({"status": "cancelled"})
+                    case AlreadyLockedMessageResponse():
+                        labeler.add_labels({"status": "locked"})
 
             logger.debug(f"Finished processing queued message #{message_number}")
             await self.record_response(response_storage, queued_message, response)
@@ -433,6 +473,10 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
             case CancelledResponse():
                 metrics.counter("pubsub_messages_processed_total").inc(
                     {"status": "cancelled"}
+                )
+            case AlreadyLockedMessageResponse():
+                metrics.counter("pubsub_messages_processed_total").inc(
+                    {"status": "locked"}
                 )
 
     async def _get_from_queue_or_timeout(

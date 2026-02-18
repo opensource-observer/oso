@@ -1,3 +1,5 @@
+import json
+from functools import reduce
 from typing import Any, Dict, List
 
 import dlt
@@ -11,10 +13,27 @@ from oso_dagster.factories.graphql import (
     RetryConfig,
     graphql_factory,
 )
+from oso_dagster.utils.bq import sanitize_column_name
 
 DRIPS_REST_API = "https://rpgf-api.drips.network"
 DRIPS_GRAPHQL_API = "https://drips-multichain-api-staging.up.railway.app/graphql"
 FIL_RPGF_3_ROUND_ID = "a4d12d71-37a2-45c7-b823-3389637ec03c"
+
+
+def sanitize_dict_keys(obj: Any) -> Any:
+    """Recursively sanitize all dictionary keys for BigQuery compatibility."""
+    if isinstance(obj, dict):
+        return {sanitize_column_name(k): sanitize_dict_keys(v) for k, v in obj.items()}
+
+    if isinstance(obj, list):
+        return [sanitize_dict_keys(item) for item in obj]
+
+    return obj
+
+
+def compose(*functions):
+    """Compose functions right-to-left"""
+    return reduce(lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
 
 
 def fetch_applications_rest(
@@ -93,7 +112,10 @@ def applications_df(context: AssetExecutionContext) -> pl.DataFrame:
     context.log.info(
         f"Successfully processed {len(data)} applications with dripsAccountId"
     )
-    return pl.DataFrame(data)
+
+    sanitized_data = sanitize_dict_keys(data)
+
+    return pl.DataFrame(sanitized_data)
 
 
 applications_df_key = applications_df.key
@@ -110,6 +132,18 @@ def project_details_by_account_id(
         project["applicationId"] = data["id"]
         return project
 
+    def stringify_columns(result: Dict[str, Any]) -> Dict[str, Any]:
+        """Stringify complex fields into strings to match seed data schema."""
+        fields_to_stringify = ["source", "account", "chainData"]
+
+        stringified = result.copy()
+
+        for field in fields_to_stringify:
+            if field in stringified and stringified[field] is not None:
+                stringified[field] = json.dumps(stringified[field])
+
+        return stringified
+
     config = GraphQLResourceConfig(
         name=f"project_{data['id'].replace('-', '_')}",
         endpoint=DRIPS_GRAPHQL_API,
@@ -122,7 +156,7 @@ def project_details_by_account_id(
                 "value": ["FILECOIN"],
             },
         },
-        transform_fn=add_metadata,
+        transform_fn=compose(stringify_columns, add_metadata),
         max_depth=5,
         retry=RetryConfig(
             max_retries=3,
