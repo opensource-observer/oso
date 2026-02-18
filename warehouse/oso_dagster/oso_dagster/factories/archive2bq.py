@@ -1,4 +1,5 @@
 import csv
+import itertools
 import json
 import os
 import shutil
@@ -6,7 +7,7 @@ import tempfile
 import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, TypeAlias, Union, cast
+from typing import Callable, Dict, Iterator, List, Optional, TypeAlias, Union, cast
 
 import pyarrow.parquet as pq
 from dagster import AssetExecutionContext, MaterializeResult, asset
@@ -89,6 +90,8 @@ class Archive2BqAssetConfig:
     deps: AssetDeps
     # Combine all files into a single table (works for JSONL and CSV)
     combine_files: bool = False
+    # Process files one at a time (download → GCS → BQ → delete → repeat)
+    sequential: bool = False
     # Dagster remaining args
     asset_kwargs: dict = field(default_factory=lambda: {})
 
@@ -477,6 +480,31 @@ def delete_gcs_files(
     )
 
 
+def iter_url_files(
+    url: str,
+    asset_config: "Archive2BqAssetConfig",
+    bigquery: BigQueryResource,
+    gcs: GCSResource,
+    context: AssetExecutionContext,
+) -> Iterator[str]:
+    """
+    Downloads a single URL, uploads each file to GCS/BQ, then deletes the tempdir.
+    Yields the table name (stem) for each file processed.
+    """
+    tempdir = extract_to_tempdir([url], asset_config.skip_uncompression)
+    try:
+        files = get_list_of_files(
+            tempdir, asset_config.filter_fn, asset_config.max_depth
+        )
+        for file in files:
+            upload_file_to_bq(
+                bigquery, gcs, context, asset_config, file, context.run_id
+            )
+            yield os.path.splitext(os.path.basename(file))[0]
+    finally:
+        cleanup_tempdir(tempdir)
+
+
 def create_archive2bq_asset(
     asset_config: Archive2BqAssetConfig,
 ) -> AssetFactoryResponse:
@@ -501,6 +529,11 @@ def create_archive2bq_asset(
     ]:
         raise ValueError(f"Unsupported source format: {asset_config.source_format}")
 
+    if asset_config.sequential and asset_config.combine_files:
+        raise ValueError(
+            "sequential=True and combine_files=True are mutually exclusive"
+        )
+
     @asset(
         name=asset_config.asset_name,
         key_prefix=asset_config.key_prefix,
@@ -522,63 +555,69 @@ def create_archive2bq_asset(
         else:
             urls = [asset_config.source_url]
 
-        tempdir = extract_to_tempdir(urls, asset_config.skip_uncompression)
-
-        context.log.info(
-            f"Archive2Bq: Extracted {asset_config.source_url} to {tempdir}"
-        )
-
-        files = get_list_of_files(
-            tempdir,
-            asset_config.filter_fn,
-            asset_config.max_depth,
-        )
-
-        context.log.info(
-            f"Archive2Bq: Found {len(files)} valid files: {', '.join(files)}"
-        )
-
-        if len(files) == 0:
-            cleanup_tempdir(tempdir)
-            raise ValueError("No valid files found in the archive")
-
-        all_files = sorted(
-            [os.path.splitext(os.path.basename(file))[0] for file in files]
-        )
-
-        if len(all_files) != len(set(all_files)):
-            cleanup_tempdir(tempdir)
-            raise ValueError("Files must have unique names")
-
         create_dataset_if_not_exists(context, bigquery, asset_config.dataset_id)
 
-        if (
-            asset_config.combine_files
-            and asset_config.source_format in COMBINE_STRATEGIES
-        ):
-            combine_fn, ext = COMBINE_STRATEGIES[asset_config.source_format]
-            combined_path = os.path.join(tempdir, f"{asset_config.asset_name}{ext}")
-            combine_fn(files, combined_path)
-            files_to_process = [combined_path]
+        if asset_config.sequential:
+            all_tables = list(
+                itertools.chain.from_iterable(
+                    iter_url_files(url, asset_config, bigquery, gcs, context)
+                    for url in urls
+                )
+            )
         else:
-            files_to_process = files
+            tempdir = extract_to_tempdir(urls, asset_config.skip_uncompression)
 
-        for file in files_to_process:
-            upload_file_to_bq(
-                bigquery, gcs, context, asset_config, file, context.run_id
+            context.log.info(
+                f"Archive2Bq: Extracted {asset_config.source_url} to {tempdir}"
             )
 
-        cleanup_tempdir(tempdir)
+            files = get_list_of_files(
+                tempdir,
+                asset_config.filter_fn,
+                asset_config.max_depth,
+            )
+
+            context.log.info(
+                f"Archive2Bq: Found {len(files)} valid files: {', '.join(files)}"
+            )
+
+            if len(files) == 0:
+                cleanup_tempdir(tempdir)
+                raise ValueError("No valid files found in the archive")
+
+            all_tables = sorted(
+                [os.path.splitext(os.path.basename(file))[0] for file in files]
+            )
+
+            if len(all_tables) != len(set(all_tables)):
+                cleanup_tempdir(tempdir)
+                raise ValueError("Files must have unique names")
+
+            if (
+                asset_config.combine_files
+                and asset_config.source_format in COMBINE_STRATEGIES
+            ):
+                combine_fn, ext = COMBINE_STRATEGIES[asset_config.source_format]
+                combined_path = os.path.join(tempdir, f"{asset_config.asset_name}{ext}")
+                combine_fn(files, combined_path)
+                files_to_process = [combined_path]
+            else:
+                files_to_process = files
+
+            for file in files_to_process:
+                upload_file_to_bq(
+                    bigquery, gcs, context, asset_config, file, context.run_id
+                )
+
+            cleanup_tempdir(tempdir)
+
         delete_gcs_files(gcs, asset_config, context.run_id)
 
         return MaterializeResult(
             metadata={
                 "success": True,
                 "asset": asset_config.asset_name,
-                "datasets": [
-                    f"{asset_config.dataset_id}.{os.path.basename(file)}"
-                    for file in files
-                ],
+                "tables": all_tables,
             }
         )
 
