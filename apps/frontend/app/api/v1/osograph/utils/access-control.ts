@@ -247,7 +247,7 @@ interface ResourceConfig<T extends keyof Tables> {
  * Maps resource types to their corresponding database table and column names.
  * Type-safe: permissionColumn must be a valid column in resource_permissions.
  */
-const RESOURCE_CONFIG: {
+export const RESOURCE_CONFIG: {
   notebook: ResourceConfig<"notebooks">;
   chat: ResourceConfig<"chat_history">;
   dataset: ResourceConfig<"datasets">;

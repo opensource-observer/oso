@@ -8,6 +8,10 @@ import {
   DYNAMIC_CONNECTOR_VALUES_REGEX,
 } from "@/lib/types/dynamic-connector";
 import { logger } from "@/lib/logger";
+import {
+  PermissionLevel,
+  ResourceType,
+} from "@/app/api/v1/osograph/utils/access-control";
 
 const NAME_REGEX = /^[a-z][a-z0-9_]*$/;
 const MAX_PREVIEW_SIZE_MB = 1 * 1024 * 1024;
@@ -117,6 +121,26 @@ export const UpdateDatasetSchema = z.object({
     .optional(),
   displayName: z.string().optional(),
   description: z.string().optional(),
+});
+
+export const GrantResourcePermissionSchema = z.object({
+  id: z.string().uuid("Invalid resource ID"),
+  resourceType: z
+    .enum(["NOTEBOOK", "DATASET"], {
+      errorMap: () => ({
+        message: "Resource type must be NOTEBOOK or DATASET",
+      }),
+    })
+    .transform((val) => val.toLowerCase() as ResourceType),
+  permissionLevel: z
+    .enum(["NONE", "READ", "WRITE", "ADMIN"], {
+      errorMap: () => ({
+        message: "Permission level must be NONE, READ, WRITE, or ADMIN",
+      }),
+    })
+    .transform((val) => val.toLowerCase() as PermissionLevel),
+  targetUserId: z.string().uuid("Invalid user ID").optional(),
+  targetOrgId: z.string().uuid("Invalid organization ID").optional(),
 });
 
 export const CreateDatasetSchema = z.object({

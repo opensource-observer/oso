@@ -7,6 +7,7 @@ import { staticModelResolvers } from "@/app/api/v1/osograph/schema/resolvers/res
 import { dataIngestionResolvers } from "@/app/api/v1/osograph/schema/resolvers/resource/data-ingestion";
 import { dataConnectionResolvers } from "@/app/api/v1/osograph/schema/resolvers/resource/data-connection";
 import { modelContextResolvers } from "@/app/api/v1/osograph/schema/resolvers/resource/model-context";
+import { resourceMutations } from "@/app/api/v1/osograph/schema/resolvers/resource/mutations";
 
 /**
  * Resource-scoped resolvers.
@@ -22,6 +23,7 @@ export const resourceResolvers: GraphQLResolverModule<GraphQLContext> = {
     ...dataConnectionResolvers.Query,
   },
   Mutation: {
+    ...resourceMutations,
     ...notebookResolvers.Mutation,
     ...datasetResolvers.Mutation,
     ...dataModelResolvers.Mutation,
