@@ -21,6 +21,9 @@ from google.cloud.bigquery import (
 from oso_dagster.factories.common import AssetDeps, AssetFactoryResponse, GenericAsset
 from oso_dagster.utils.gcs import batch_delete_folder
 
+# User agent for HTTP requests to identify ourselves. Some servers require this.
+OSO_USER_AGENT = "oso_dagster/1.0 (oso.xyz)"
+
 # The folder in the GCS bucket where we will stage the data
 GCS_BUCKET_DIRECTORY = "archive2bq"
 GCS_PROTOCOL = "gs://"
@@ -124,7 +127,8 @@ def extract_to_tempdir(
         if not source_url:
             continue
 
-        with urllib.request.urlopen(source_url) as response:
+        req = urllib.request.Request(source_url, headers={"User-Agent": OSO_USER_AGENT})
+        with urllib.request.urlopen(req) as response:
             file_name = os.path.basename(source_url)
             file_path = os.path.join(tempdir, file_name)
             with open(file_path, "wb") as f:

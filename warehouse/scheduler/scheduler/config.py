@@ -124,6 +124,11 @@ class CommonSettings(BaseSettings):
         description="The base URL for the Marimo service",
     )
 
+    enable_run_logs_upload: bool = Field(
+        default=False,
+        description="Whether to upload run logs to GCS",
+    )
+
     run_logs_gcs_bucket: str = Field(
         default="oso-run-logs",
         description="GCS bucket for storing run logs",
@@ -137,6 +142,16 @@ class CommonSettings(BaseSettings):
     posthog_host: str = Field(
         default="https://us.i.posthog.com",
         description="Host URL for PostHog analytics",
+    )
+
+    concurrency_lock_ttl_seconds: int = Field(
+        default=600,
+        description="Time-to-live for concurrency locks in seconds",
+    )
+
+    message_handling_timeout_seconds: int = Field(
+        default=300,
+        description="Timeout for handling messages in seconds",
     )
 
     @model_validator(mode="after")
@@ -157,6 +172,7 @@ class CommonSettings(BaseSettings):
             self.emulator_enabled = True
         if self.env == "production":
             self.trino_enabled = True
+            self.enable_run_logs_upload = True
 
             assert self.upload_filesystem_access_key_id != "", (
                 "upload_filesystem_access_key_id must be set in production"

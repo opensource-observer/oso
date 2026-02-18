@@ -29,6 +29,7 @@ from scheduler.dlt_destination import (
     TrinoDLTDestinationResource,
 )
 from scheduler.graphql_client.client import Client as OSOClient
+from scheduler.logging import GCSRunLoggerFactory
 from scheduler.materialization.duckdb import DuckdbMaterializationStrategy
 from scheduler.materialization.trino import TrinoMaterializationStrategy
 from scheduler.mq.handlers.data_ingestion import DataIngestionRunRequestHandler
@@ -40,9 +41,11 @@ from scheduler.mq.handlers.sync_connection import SyncConnectionRunRequestHandle
 from scheduler.mq.pubsub import GCPPubSubMessageQueueService
 from scheduler.testing.client import FakeUDMClient
 from scheduler.types import (
+    ConcurrencyLockStore,
     GenericMessageQueueService,
     MaterializationStrategy,
     MessageHandlerRegistry,
+    RunLoggerFactory,
     UserDefinedModelStateClient,
 )
 
@@ -287,6 +290,48 @@ def posthog_client_factory(common_settings: "CommonSettings"):
     return posthog
 
 
+@resource_factory("concurrency_lock_store")
+def concurrency_lock_store_factory(
+    common_settings: "CommonSettings",
+) -> ConcurrencyLockStore:
+    """Factory function to create a concurrency lock store resource."""
+    if common_settings.redis_host:
+        from redis.asyncio import Redis
+        from scheduler.mq.concurrency.redis import RedisConcurrencyLockStore
+
+        return RedisConcurrencyLockStore(
+            redis_client=Redis(
+                host=common_settings.redis_host,
+                port=common_settings.redis_port,
+            )
+        )
+    else:
+        from scheduler.mq.concurrency.inmem import InMemoryConcurrencyLockStore
+
+        return InMemoryConcurrencyLockStore()
+
+
+@resource_factory("run_logger_factory")
+def gcs_run_logger_factory(
+    common_settings: "CommonSettings", resources: ResourcesContext
+) -> RunLoggerFactory:
+    """Factory function to create a buffered logger resource."""
+
+    if not common_settings.enable_run_logs_upload:
+        logger.info("Run logs upload is disabled. Using FakeRunLoggerFactory.")
+        from scheduler.testing.resources.logging import FakeRunLoggerFactory
+
+        return FakeRunLoggerFactory()
+
+    gcs = resources.resolve("gcs")
+    assert isinstance(gcs, GCSFileResource), "GCS resource must be a GCSFileResource"
+
+    return GCSRunLoggerFactory(
+        gcs=gcs,
+        bucket=common_settings.run_logs_gcs_bucket,
+    )
+
+
 def default_resource_registry(common_settings: "CommonSettings") -> ResourcesRegistry:
     registry = ResourcesRegistry()
     registry.add_singleton("common_settings", common_settings)
@@ -307,5 +352,7 @@ def default_resource_registry(common_settings: "CommonSettings") -> ResourcesReg
     registry.add(upload_filesystem_credentials_factory)
     registry.add(metrics_factory)
     registry.add(posthog_client_factory)
+    registry.add(concurrency_lock_store_factory)
+    registry.add(gcs_run_logger_factory)
 
     return registry
