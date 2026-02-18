@@ -1,0 +1,47 @@
+"""
+Resource types that support permission-based access control
+"""
+enum ResourceType {
+  CHAT
+  NOTEBOOK
+  DATASET
+}
+
+"""
+Input for granting resource permissions
+"""
+input GrantResourcePermissionInput {
+  """
+  The resource ID to grant permission for
+  """
+  id: ID!
+  """
+  The type of resource (notebook, dataset, etc.)
+  """
+  resourceType: ResourceType!
+  """
+  The permission level to grant (NONE, READ, WRITE, ADMIN, OWNER)
+  """
+  permissionLevel: PermissionLevel!
+  """
+  Optional: Target user ID to grant permission to.
+  If null, the permission applies to organizations or is public.
+  """
+  targetUserId: ID
+  """
+  Optional: Target organization ID to grant permission to.
+  If both targetUserId and targetOrgId are null, the permission is public.
+  """
+  targetOrgId: ID
+}
+
+extend type Mutation {
+  """
+  Grant or revoke resource permissions.
+  - To make a resource public: set permissionLevel and leave both targetUserId and targetOrgId as null
+  - To grant to a specific user: set targetUserId
+  - To grant to a specific organization: set targetOrgId
+  - To revoke public access: set permissionLevel to NONE with both targets as null
+  """
+  grantResourcePermission(input: GrantResourcePermissionInput!): SimplePayload!
+}

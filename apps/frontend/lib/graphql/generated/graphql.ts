@@ -2624,6 +2624,26 @@ export type FreshnessStatusInfo = {
   freshnessStatusMetadata?: Maybe<AssetHealthFreshnessMeta>;
 };
 
+/** Input for granting resource permissions */
+export type GrantResourcePermissionInput = {
+  /** The resource ID to grant permission for */
+  id: Scalars["ID"]["input"];
+  /** The permission level to grant (NONE, READ, WRITE, ADMIN, OWNER) */
+  permissionLevel: PermissionLevel;
+  /** The type of resource (notebook, dataset, etc.) */
+  resourceType: ResourceType;
+  /**
+   * Optional: Target organization ID to grant permission to.
+   * If both targetUserId and targetOrgId are null, the permission is public.
+   */
+  targetOrgId?: InputMaybe<Scalars["ID"]["input"]>;
+  /**
+   * Optional: Target user ID to grant permission to.
+   * If null, the permission applies to organizations or is public.
+   */
+  targetUserId?: InputMaybe<Scalars["ID"]["input"]>;
+};
+
 export type Graph = SolidContainer & {
   __typename?: "Graph";
   description?: Maybe<Scalars["String"]["output"]>;
@@ -3675,6 +3695,14 @@ export type Mutation = {
   freeConcurrencySlots: Scalars["Boolean"]["output"];
   /** Frees the concurrency slots occupied by a specific run. */
   freeConcurrencySlotsForRun: Scalars["Boolean"]["output"];
+  /**
+   * Grant or revoke resource permissions.
+   * - To make a resource public: set permissionLevel and leave both targetUserId and targetOrgId as null
+   * - To grant to a specific user: set targetUserId
+   * - To grant to a specific organization: set targetOrgId
+   * - To revoke public access: set permissionLevel to NONE with both targets as null
+   */
+  grantResourcePermission: SimplePayload;
   /** Launches multiple job runs. */
   launchMultipleRuns: LaunchMultipleRunsResultOrError;
   /** Launches a set of partition backfill runs. */
@@ -3943,6 +3971,11 @@ export type MutationFreeConcurrencySlotsArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationFreeConcurrencySlotsForRunArgs = {
   runId: Scalars["String"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationGrantResourcePermissionArgs = {
+  input: GrantResourcePermissionInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -5928,6 +5961,18 @@ export type Permission = {
   value: Scalars["Boolean"]["output"];
 };
 
+/** Permission levels for resource access control */
+export enum PermissionLevel {
+  /** Can manage permissions for other users */
+  Admin = "ADMIN",
+  /** No access - used to revoke permissions */
+  None = "NONE",
+  /** Read-only access */
+  Read = "READ",
+  /** Read and write access */
+  Write = "WRITE",
+}
+
 export type Pipeline = IPipelineSnapshot &
   SolidContainer & {
     __typename?: "Pipeline";
@@ -7552,6 +7597,13 @@ export type ResourceSelector = {
   repositoryName: Scalars["String"]["input"];
   resourceName: Scalars["String"]["input"];
 };
+
+/** Resource types that support permission-based access control */
+export enum ResourceType {
+  Chat = "CHAT",
+  Dataset = "DATASET",
+  Notebook = "NOTEBOOK",
+}
 
 export type ResourcesOrError =
   | InvalidSubsetError
@@ -9461,6 +9513,19 @@ export type SyncDataConnectionMutation = {
   };
 };
 
+export type GrantResourcePermissionMutationVariables = Exact<{
+  input: GrantResourcePermissionInput;
+}>;
+
+export type GrantResourcePermissionMutation = {
+  __typename?: "Mutation";
+  grantResourcePermission: {
+    __typename?: "SimplePayload";
+    success: boolean;
+    message?: string | null;
+  };
+};
+
 export type SavePreviewMutationVariables = Exact<{
   input: SaveNotebookPreviewInput;
 }>;
@@ -10784,6 +10849,61 @@ export const SyncDataConnectionDocument = {
 } as unknown as DocumentNode<
   SyncDataConnectionMutation,
   SyncDataConnectionMutationVariables
+>;
+export const GrantResourcePermissionDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "GrantResourcePermission" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "GrantResourcePermissionInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "grantResourcePermission" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  GrantResourcePermissionMutation,
+  GrantResourcePermissionMutationVariables
 >;
 export const SavePreviewDocument = {
   kind: "Document",
