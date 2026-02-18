@@ -7600,7 +7600,6 @@ export type ResourceSelector = {
 
 /** Resource types that support permission-based access control */
 export enum ResourceType {
-  Chat = "CHAT",
   Dataset = "DATASET",
   Notebook = "NOTEBOOK",
 }
