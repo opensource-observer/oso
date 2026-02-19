@@ -1,6 +1,7 @@
 """Provides SQLMesh engine adapters as a resource for Dagster assets"""
 
 import logging
+import os
 import typing as t
 from contextlib import asynccontextmanager
 
@@ -102,4 +103,6 @@ class TrinoEngineAdapterResource(UserDefinedModelEngineAdapterResource):
                     catalog=conn.catalog,
                     http_scheme=self.http_scheme,
                 )
-                yield connection_config.create_engine_adapter()
+                yield connection_config.create_engine_adapter(
+                    concurrent_tasks=os.cpu_count() or 2
+                )
