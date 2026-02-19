@@ -418,7 +418,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
         context_logger.debug(
             f"Successfully created table for model {model_fqn} evaluation",
-            warehouse_fqn=target_table,
+            warehouse_fqn=target_table.sql(dialect=adapter.dialect),
         )
         adapter.replace_query(
             table_name=target_table,
@@ -426,5 +426,5 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         )
         context_logger.debug(
             f"Successfully replaced table for model {model_fqn} evaluation",
-            warehouse_fqn=target_table,
+            warehouse_fqn=target_table.sql(dialect=adapter.dialect),
         )
