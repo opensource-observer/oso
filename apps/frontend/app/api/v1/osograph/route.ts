@@ -63,6 +63,7 @@ const newResolverHandler = startServerAndCreateNextHandler<NextRequest>(
         authCache: {
           orgMemberships: new Map(),
           resourcePermissions: new Map(),
+          orgIds: new Map(),
         },
       } satisfies GraphQLContext;
     },
@@ -82,6 +83,7 @@ const oldResolverHandler = startServerAndCreateNextHandler<NextRequest>(
         authCache: {
           orgMemberships: new Map(),
           resourcePermissions: new Map(),
+          orgIds: new Map(),
         },
       } satisfies GraphQLContext;
     },
