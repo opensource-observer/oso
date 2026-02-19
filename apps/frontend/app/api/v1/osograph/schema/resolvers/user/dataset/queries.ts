@@ -2,7 +2,6 @@ import { getAuthenticatedClient } from "@/app/api/v1/osograph/utils/access-contr
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import type { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
-import { getUserOrganizationIds } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import {
   queryWithPagination,
   type ExplicitClientQueryOptions,
@@ -15,8 +14,7 @@ export const datasetQueries: GraphQLResolverModule<GraphQLContext>["Query"] = {
     args: FilterableConnectionArgs,
     context: GraphQLContext,
   ) => {
-    const { client, userId } = getAuthenticatedClient(context);
-    const orgIds = await getUserOrganizationIds(userId, client);
+    const { client, orgIds } = await getAuthenticatedClient(context);
 
     const options: ExplicitClientQueryOptions<"datasets"> = {
       client,

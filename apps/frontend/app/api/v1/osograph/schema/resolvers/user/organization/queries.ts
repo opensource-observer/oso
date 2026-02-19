@@ -4,8 +4,8 @@ import type { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { getUserOrganizationsConnection } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import {
-  validateInput,
   OrganizationWhereSchema,
+  validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
 
@@ -16,7 +16,7 @@ export const organizationQueries: GraphQLResolverModule<GraphQLContext>["Query"]
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const { client, userId } = getAuthenticatedClient(context);
+      const { client, userId, orgIds } = await getAuthenticatedClient(context);
 
       const validatedWhere = args.where
         ? validateInput(OrganizationWhereSchema, args.where)
@@ -26,10 +26,12 @@ export const organizationQueries: GraphQLResolverModule<GraphQLContext>["Query"]
         ? parseWhereClause(validatedWhere)
         : undefined;
 
-      if (predicate) {
-        return getUserOrganizationsConnection(userId, args, predicate, client);
-      } else {
-        return getUserOrganizationsConnection(userId, args, undefined, client);
-      }
+      return getUserOrganizationsConnection(
+        userId,
+        args,
+        predicate,
+        client,
+        orgIds,
+      );
     },
   };
