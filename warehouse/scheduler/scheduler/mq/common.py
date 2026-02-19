@@ -137,8 +137,10 @@ class OSORunContext(RunContext):
         internal_logger: BindableLogger,
         run_logger_factory: RunLoggerFactory,
     ) -> "OSORunContext":
+        logging_context = internal_logger._context
+        logging_context.pop("run_id", None)
         run_logger_container = run_logger_factory.create_logger_container(
-            run_id, internal_processing_id=internal_processing_id
+            run_id, **logging_context
         )
         proxied_logger = ProxiedBoundLogger(
             [internal_logger, run_logger_container.logger]

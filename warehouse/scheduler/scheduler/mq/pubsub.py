@@ -44,6 +44,7 @@ from google.protobuf.message import Message as ProtobufMessage
 from janus import AsyncQueue, Queue, SyncQueue
 from oso_core.instrumentation import MetricsContainer
 from oso_core.instrumentation.timing import async_time
+from oso_core.logging.types import BindableLogger
 from oso_core.resources import ResourcesContext
 from scheduler.config import CommonSettings
 from scheduler.types import (
@@ -58,7 +59,7 @@ from scheduler.types import (
     SuccessResponse,
 )
 
-logger = logging.getLogger(__name__)
+module_logger = logging.getLogger(__name__)
 
 
 class ResponseStorage:
@@ -84,12 +85,14 @@ class QueuedPubSubMessage:
     processing."""
 
     handle_id: str
+    message_id: str
     message: Message
     event_queue: PythonQueue[QueuedMessageEvent]
 
 
 InternalCallback = t.Callable[
-    [SyncQueue[QueuedPubSubMessage], ResponseStorage, int, Message], None
+    [SyncQueue[QueuedPubSubMessage], ResponseStorage, int, BindableLogger, Message],
+    None,
 ]
 
 
@@ -99,6 +102,7 @@ def run_subscriber(
     project_id: str,
     queue: str,
     ack_deadline_seconds: int,
+    logger: BindableLogger,
     callback: InternalCallback,
     close_event: Event,
 ) -> None:
@@ -124,26 +128,30 @@ def run_subscriber(
     subscription_path = subscriber.subscription_path(project_id, queue)
 
     partial_callback = functools.partial(
-        callback, sync_message_queue, response_storage, ack_deadline_seconds
+        callback,
+        sync_message_queue,
+        response_storage,
+        ack_deadline_seconds,
+        logger.bind(thread="_gcp_callback"),
     )
     streaming_pull_future = subscriber.subscribe(
         subscription_path, callback=partial_callback
     )
-    logger.info(f"Listening for messages on {subscription_path}...")
+    module_logger.info(f"Listening for messages on {subscription_path}...")
 
     with subscriber:
         while True:
             try:
-                logger.debug("Waiting for messages...")
+                module_logger.debug("Waiting for messages...")
                 streaming_pull_future.result(timeout=10)
             except TimeoutError:
-                logger.debug("Timeout reached, checking for close event.")
+                module_logger.debug("Timeout reached, checking for close event.")
                 if close_event.is_set():
-                    logger.info("GCP Pub/Sub listener is shutting down cleanly")
+                    module_logger.info("GCP Pub/Sub listener is shutting down cleanly")
                     streaming_pull_future.cancel()
                     return
             except Exception as e:
-                logger.error(
+                module_logger.error(
                     f"Listening for messages on {subscription_path} threw an exception: {e}."
                 )
                 streaming_pull_future.cancel()
@@ -156,6 +164,7 @@ RunSubscriberFn = t.Callable[
         str,
         str,
         int,
+        BindableLogger,
         InternalCallback,
         Event,
     ],
@@ -221,6 +230,9 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         )
 
         metrics = self._metrics
+        logger: BindableLogger = structlog.get_logger(
+            f"scheduler.{handler.topic}"
+        ).bind(thread="main")
 
         # We create the queue, event, and response storage here and not as some
         # class state because they exist only in the context of this "run_loop"
@@ -235,6 +247,12 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
             handler=handler,
             close_event=close_event,
             common_settings=common_settings,
+            # Not sure if this actually creates a different instance for the
+            # thread but we want to know if the logger is in the subscriber
+            # thread or not for debugging purposes
+            logger=structlog.get_logger(f"scheduler.{handler.topic}").bind(
+                thread="_gcp_subscriber"
+            ),
         )
 
         # Just a counter for logging purposes
@@ -266,6 +284,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                         response_storage,
                         handler,
                         queued_message,
+                        logger.bind(gcp_message_id=queued_message.message_id),
                     )
                 )
         except (asyncio.CancelledError, KeyboardInterrupt):
@@ -281,7 +300,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
             message_queue.close()
 
     def _create_message_callback(
-        self, queue: str, handler: MessageHandler[t.Any], timeout: float
+        self, queue: str, handler: MessageHandler[t.Any]
     ) -> InternalCallback:
         """Creates a message callback function for GCP Pub/Sub messages. That
         has no internal reference to `self` as this will be used in a different
@@ -293,9 +312,12 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
             message_queue: SyncQueue[QueuedPubSubMessage],
             response_storage: ResponseStorage,
             ack_deadline_seconds: int,
+            logger: BindableLogger,
             raw_message: Message,
         ) -> None:
             logger.info("Received message: {}".format(raw_message.message_id))
+
+            logger = logger.bind(gcp_message_id=str(raw_message.message_id))
 
             # Get the message serialization type.
             encoding = raw_message.attributes.get("googclient_schemaencoding")
@@ -318,6 +340,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
             message_queue.put(
                 QueuedPubSubMessage(
                     handle_id=handle_id,
+                    message_id=str(raw_message.message_id),
                     message=message,
                     event_queue=event_queue,
                 )
@@ -387,12 +410,14 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         response_storage: ResponseStorage,
         queue: str,
         handler: MessageHandler[t.Any],
+        logger: BindableLogger,
         close_event: Event,
     ) -> asyncio.Task[None]:
         # We declare the function here and avoid capturing `self` in the closure
 
         callback = self._create_message_callback(
-            queue, handler, common_settings.message_handling_timeout_seconds
+            queue,
+            handler,
         )
 
         ack_deadline_seconds = int(
@@ -409,6 +434,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                 self._project_id,
                 queue,
                 ack_deadline_seconds,
+                logger,
                 callback,
                 close_event,
             )
@@ -423,10 +449,9 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         response_storage: ResponseStorage,
         handler: MessageHandler,
         queued_message: QueuedPubSubMessage,
+        logger: BindableLogger,
     ) -> None:
         metrics.gauge("pubsub_messages_active").inc({})
-
-        logger = structlog.get_logger(f"scheduler.{handler.topic}")
 
         try:
             logger.debug(
@@ -437,7 +462,10 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                 metrics.histogram("pubsub_message_handling_duration_ms")
             ) as labeler:
                 response = await self._handle_message_with_heartbeat(
-                    common_settings, handler, queued_message
+                    common_settings,
+                    logger,
+                    handler,
+                    queued_message,
                 )
                 match response:
                     case SuccessResponse():
@@ -467,6 +495,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
     async def _handle_message_with_heartbeat(
         self,
         common_settings: CommonSettings,
+        logger: BindableLogger,
         handler: MessageHandler,
         queued_message: QueuedPubSubMessage,
     ) -> HandlerResponse:
@@ -501,7 +530,19 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                 f"Message processing task did not complete within the timeout of {common_settings.message_handling_timeout_seconds} seconds."
             )
             handle_message_task.cancel()
-        return await handle_message_task
+
+        try:
+            async with asyncio.timeout(
+                common_settings.message_cancellation_timeout_seconds
+            ):
+                return await handle_message_task
+        except asyncio.TimeoutError:
+            logger.error(
+                "Fatal: message processing task was likely cancelled but did not finish within the cancellation timeout. Returning FailedResponse."
+            )
+            return FailedResponse(
+                message="Message processing timed out, was cancelled, but failed to response. Forcibly exiting."
+            )
 
     async def record_response(
         self,
@@ -560,4 +601,6 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         # Publish the message
         future = publisher.publish(topic_path, message_data)
         message_id = future.result()
-        logger.info(f"Published message to {queue} with message ID: {message_id}")
+        module_logger.info(
+            f"Published message to {queue} with message ID: {message_id}"
+        )

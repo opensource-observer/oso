@@ -17,6 +17,7 @@ from google.cloud.pubsub_v1.subscriber.message import Message as PubSubMessage
 from google.protobuf.message import Message
 from janus import Queue, SyncQueue, SyncQueueEmpty
 from oso_core.instrumentation.container import MetricsContainer
+from oso_core.logging.types import BindableLogger
 from oso_core.resources import ResourcesRegistry
 from osoprotobufs.data_model_pb2 import DataModelRunRequest
 from scheduler.mq.common import RunHandler
@@ -123,6 +124,7 @@ def run_subscriber_factory(
         _project_id: str,
         _queue: str,
         ack_deadline_seconds: int,
+        logger: BindableLogger,
         callback: InternalCallback,
         close_event: Event,
     ):
@@ -154,6 +156,7 @@ def run_subscriber_factory(
                     message_queue,
                     response_storage,
                     60,  # ack deadline seconds
+                    logger,
                     t.cast(PubSubMessage, item),
                 )
 

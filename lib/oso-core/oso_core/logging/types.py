@@ -7,6 +7,9 @@ from datetime import datetime
 class BindableLogger(t.Protocol):
     """Protocol for loggers that support structlog's bind() method."""
 
+    @property
+    def _context(self) -> dict[str, t.Any]: ...
+
     def bind(self, **new_values: t.Any) -> "BindableLogger": ...
 
     def debug(self, event: str, *args: t.Any, **kw: t.Any) -> None: ...

@@ -162,6 +162,10 @@ class CommonSettings(BaseSettings):
         default=3,
         description="Buffer factor to multiply the heartbeat interval by to determine the Pub/Sub ack deadline",
     )
+    message_cancellation_timeout_seconds: float = Field(
+        default=30,
+        description="Timeout to wait for message handling tasks to finish after cancellation before forcibly returning a FailedResponse",
+    )
 
     @model_validator(mode="after")
     def handle_generated_config(self):
