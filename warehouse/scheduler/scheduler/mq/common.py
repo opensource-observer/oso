@@ -448,6 +448,11 @@ class RunHandler(MessageHandler[T]):
             try:
                 async with asyncio.timeout(1):
                     await renew_task
+            except asyncio.CancelledError:
+                # Fully expected, but we set a timeout just in case to avoid any
+                # potential hangs. Log just in case it takes longer than
+                # expected.
+                pass
             except asyncio.TimeoutError:
                 logger.error(
                     "Cancellation of renewal task timed out, it may still be running in the background."
