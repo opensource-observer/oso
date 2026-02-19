@@ -442,6 +442,13 @@ export async function getOrgResourceClient(
     .single();
 
   if (userPermission) {
+    if (isCrossOrgApiToken) {
+      logger.error("Cross-org API token user-permission access denied", {
+        tokenOrgId: orgScope.orgId,
+        resourceOrgId: resource.org_id,
+      });
+      throw AuthenticationErrors.notAuthorized();
+    }
     const userLevel = userPermission.permission_level as PermissionLevel;
     context.authCache.resourcePermissions.set(cacheKey, userLevel);
     return validateAndReturnResourceAccess(userLevel, requiredPermission);
