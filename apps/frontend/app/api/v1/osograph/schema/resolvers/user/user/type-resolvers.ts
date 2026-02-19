@@ -26,7 +26,7 @@ export const userTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const { client, userId } = getAuthenticatedClient(context);
+      const { client, userId, orgIds } = await getAuthenticatedClient(context);
 
       if (parent.id !== userId) {
         throw AuthenticationErrors.notAuthorized();
@@ -41,6 +41,7 @@ export const userTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
         args,
         validatedWhere ? parseWhereClause(validatedWhere) : {},
         client,
+        orgIds,
       );
     },
   },

@@ -8,6 +8,8 @@ export type AuthCache = {
   orgMemberships: Map<string, string>;
   /** Maps "userId:resourceType:resourceId" to the user's permission level on that resource */
   resourcePermissions: Map<string, string>;
+  /** Maps userId to the user's organization IDs */
+  orgIds: Map<string, string[]>;
 };
 
 export type GraphQLContext = {
