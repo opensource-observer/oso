@@ -122,6 +122,7 @@ def run_subscriber_factory(
         response_storage: ResponseStorage,
         _project_id: str,
         _queue: str,
+        ack_deadline_seconds: int,
         callback: InternalCallback,
         close_event: Event,
     ):
@@ -152,6 +153,7 @@ def run_subscriber_factory(
                     callback,
                     message_queue,
                     response_storage,
+                    60,  # ack deadline seconds
                     t.cast(PubSubMessage, item),
                 )
 

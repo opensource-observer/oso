@@ -41,5 +41,5 @@ def cli():
     setup_module_logging("dlt")
     setup_module_logging("google", level=1000)
     setup_module_logging("google.cloud", level=1000)
-    setup_module_logging("google.cloud.pubsub_v1", level=logging.DEBUG)
+    setup_module_logging("google.cloud.pubsub_v1", level=logging.INFO)
     CliApp.run(SchedulerCLI, sys.argv[1:])
