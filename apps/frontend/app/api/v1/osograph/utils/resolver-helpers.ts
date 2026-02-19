@@ -68,11 +68,12 @@ export async function getDatasetById(
   return dataset;
 }
 
+/** @deprecated - use `getAuthenticatedClient(context).orgIds` instead for proper org scoping */
 export async function getUserOrganizationIds(
   userId: string,
   adminClient: SupabaseAdminClient,
 ): Promise<string[]>;
-/** @deprecated - use `getUserOrganizationIds` with extra client parameter */
+/** @deprecated - use `getAuthenticatedClient(context).orgIds` instead for proper org scoping */
 export async function getUserOrganizationIds(userId: string): Promise<string[]>;
 export async function getUserOrganizationIds(
   userId: string,
@@ -92,16 +93,11 @@ export async function getUserOrganizationIds(
 export async function getUserOrganizationsConnection(
   userId: string,
   args: FilterableConnectionArgs,
-  additionalPredicate: Partial<QueryPredicate<"organizations">>,
+  additionalPredicate: Partial<QueryPredicate<"organizations">> | undefined,
   adminClient: SupabaseAdminClient,
+  allowedOrgIds: string[],
 ): Promise<Connection<z.infer<typeof organizationsRowSchema>>>;
-export async function getUserOrganizationsConnection(
-  userId: string,
-  args: FilterableConnectionArgs,
-  additionalPredicate: undefined,
-  adminClient: SupabaseAdminClient,
-): Promise<Connection<z.infer<typeof organizationsRowSchema>>>;
-/** @deprecated - use `getUserOrganizationsConnection` with extra client parameter */
+/** @deprecated - use overload with `adminClient` and `allowedOrgIds` from `getAuthenticatedClient(context).orgIds` */
 export async function getUserOrganizationsConnection(
   userId: string,
   args: FilterableConnectionArgs,
@@ -112,6 +108,7 @@ export async function getUserOrganizationsConnection(
   args: FilterableConnectionArgs,
   additionalPredicate?: Partial<QueryPredicate<"organizations">>,
   adminClient?: SupabaseAdminClient,
+  allowedOrgIds?: string[],
 ) {
   const supabase = adminClient ?? createAdminClient();
 
@@ -120,6 +117,10 @@ export async function getUserOrganizationsConnection(
       eq: [{ key: "user_id", value: userId }],
       is: [{ key: "deleted_at", value: null }],
     };
+
+  if (allowedOrgIds) {
+    membershipPredicate.in = [{ key: "org_id", value: allowedOrgIds }];
+  }
 
   const {
     data: memberships,
@@ -172,13 +173,7 @@ export async function getUserOrganizationsConnection(
 export async function getUserInvitationsConnection(
   email: string | null | undefined,
   args: ConnectionArgs,
-  additionalPredicate: Partial<QueryPredicate<"invitations">>,
-  adminClient: SupabaseAdminClient,
-): Promise<Connection<z.infer<typeof invitationsRowSchema>>>;
-export async function getUserInvitationsConnection(
-  email: string | null | undefined,
-  args: ConnectionArgs,
-  additionalPredicate: undefined,
+  additionalPredicate: Partial<QueryPredicate<"invitations">> | undefined,
   adminClient: SupabaseAdminClient,
 ): Promise<Connection<z.infer<typeof invitationsRowSchema>>>;
 /** @deprecated - use `getUserInvitationsConnection` with extra client parameter */
