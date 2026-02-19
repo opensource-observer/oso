@@ -24,6 +24,7 @@ import {
 import { Connection } from "@/app/api/v1/osograph/utils/connection";
 import { getMaterializations } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { generateTableId } from "@/app/api/v1/osograph/utils/model";
+import { DatasetIsSubscribedArgs } from "@/lib/graphql/generated/graphql";
 
 /**
  * These types represent intermediate resolver objects for GraphQL union type handling.
@@ -49,6 +50,29 @@ export const datasetTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
     creatorId: (parent: DatasetsRow) => parent.created_by,
     orgId: (parent: DatasetsRow) => parent.org_id,
     type: (parent: DatasetsRow) => parent.dataset_type,
+
+    isSubscribed: async (
+      parent: DatasetsRow,
+      args: DatasetIsSubscribedArgs,
+      context: GraphQLContext,
+    ) => {
+      const { client } = await getOrgResourceClient(
+        context,
+        "dataset",
+        parent.id,
+        "read",
+      );
+
+      const { data } = await client
+        .from("resource_permissions")
+        .select("id")
+        .eq("dataset_id", parent.id)
+        .eq("org_id", args.orgId)
+        .is("user_id", null)
+        .is("revoked_at", null)
+        .maybeSingle();
+      return !!data;
+    },
 
     creator: async (
       parent: DatasetsRow,

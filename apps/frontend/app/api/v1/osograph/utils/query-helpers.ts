@@ -30,6 +30,7 @@ import {
 } from "@/app/api/v1/osograph/utils/query-builder";
 import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
 import type { z } from "zod";
+import { ResourceConfig } from "@/app/api/v1/osograph/utils/access-control";
 
 export type TableWithOrgId = Extract<
   ValidTableName,
@@ -44,6 +45,7 @@ interface BaseQueryOptions<TTable extends TableWithOrgId> {
   errorMessage?: string;
   basePredicate?: Partial<QueryPredicate<TTable>>;
   orderBy?: OrderBy<TTable>;
+  resourceConfig?: ResourceConfig<TTable>;
 }
 
 export interface ExplicitClientQueryOptions<TTable extends TableWithOrgId>
@@ -110,10 +112,18 @@ async function queryWithExplicitClient<TTable extends TableWithOrgId>(
       return emptyConnection<TableRow<TTable>>();
     }
 
-    orgIdPredicate = {
-      // @ts-expect-error - TS can't correlate that org_id exists on all TableWithOrgId tables
-      in: [{ key: "org_id", value: normalizedOrgIds }],
-    };
+    if (!options.resourceConfig) {
+      orgIdPredicate = {
+        // @ts-expect-error - TS can't correlate that org_id exists on all TableWithOrgId tables
+        in: [{ key: "org_id", value: normalizedOrgIds }],
+      };
+    } else {
+      orgIdPredicate = {
+        or: [
+          `org_id.in.(${normalizedOrgIds.join(",")}),permission.not.is.null`,
+        ],
+      };
+    }
   }
 
   const orderBy = options.orderBy;
@@ -133,7 +143,7 @@ async function queryWithExplicitClient<TTable extends TableWithOrgId>(
     supabase,
     options.tableName,
     predicate,
-    (query) => {
+    (query: any) => {
       query = orderBy
         ? query.order(orderBy.key, {
             ascending: orderBy.ascending ?? false,
@@ -141,7 +151,10 @@ async function queryWithExplicitClient<TTable extends TableWithOrgId>(
         : query;
       return maybeAddQueryPagination(query, args);
     },
-    args.single,
+    {
+      single: args.single,
+      includeResourcePermissions: !!options.resourceConfig,
+    },
   );
 
   if (error) {
@@ -169,10 +182,16 @@ async function queryWithImplicitClient<TTable extends TableWithOrgId>(
       return emptyConnection<TableRow<TTable>>();
     }
 
-    orgIdPredicate = {
-      // @ts-expect-error - TS can't correlate that org_id exists on all TableWithOrgId tables
-      in: [{ key: "org_id", value: orgIds }],
-    };
+    if (!options.resourceConfig) {
+      orgIdPredicate = {
+        // @ts-expect-error - TS can't correlate that org_id exists on all TableWithOrgId tables
+        in: [{ key: "org_id", value: orgIds }],
+      };
+    } else {
+      orgIdPredicate = {
+        or: [`org_id.in.(${orgIds.join(",")}),permission.not.is.null`],
+      };
+    }
   }
 
   const orderBy = options.orderBy;
@@ -193,7 +212,7 @@ async function queryWithImplicitClient<TTable extends TableWithOrgId>(
     supabase,
     options.tableName,
     predicate,
-    (query) => {
+    (query: any) => {
       query = orderBy
         ? query.order(orderBy.key, {
             ascending: orderBy.ascending ?? false,
@@ -201,7 +220,10 @@ async function queryWithImplicitClient<TTable extends TableWithOrgId>(
         : query;
       return maybeAddQueryPagination(query, args);
     },
-    args.single,
+    {
+      single: args.single,
+      includeResourcePermissions: !!options.resourceConfig,
+    },
   );
 
   if (error) {

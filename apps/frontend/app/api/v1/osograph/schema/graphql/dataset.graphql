@@ -41,6 +41,11 @@ type Dataset {
   ): MaterializationConnection!
 
   typeDefinition: DatasetTypeDefinition!
+
+  """
+  Whether the current user's organization is subscribed to this dataset.
+  """
+  isSubscribed(orgId: ID!): Boolean!
 }
 
 union DatasetTypeDefinition =
@@ -160,6 +165,18 @@ extend type Query {
     single: Boolean
     where: JSON
   ): DatasetConnection!
+
+  """
+  Browse public datasets available in the marketplace.
+  Supports search by name, display_name, or organization name, and filtering by dataset type.
+  """
+  marketplaceDatasets(
+    orgId: ID!
+    first: Int = 25
+    after: String
+    search: String
+    datasetType: DatasetType
+  ): DatasetConnection!
 }
 
 extend type Mutation {
@@ -177,6 +194,26 @@ extend type Mutation {
   Delete a dataset
   """
   deleteDataset(id: ID!): SimplePayload!
+
+  """
+  Subscribe an organization to a public dataset in the marketplace.
+  """
+  subscribeToDataset(input: SubscribeToDatasetInput!): SimplePayload!
+
+  """
+  Unsubscribe an organization from a marketplace dataset.
+  """
+  unsubscribeFromDataset(input: UnsubscribeFromDatasetInput!): SimplePayload!
+}
+
+input SubscribeToDatasetInput {
+  datasetId: ID!
+  orgId: ID!
+}
+
+input UnsubscribeFromDatasetInput {
+  datasetId: ID!
+  orgId: ID!
 }
 
 input CreateDatasetInput {

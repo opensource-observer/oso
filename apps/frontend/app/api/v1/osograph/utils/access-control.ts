@@ -44,7 +44,7 @@ export function getOrgScope(context: GraphQLContext): OrgScope {
 /**
  * Table names from Supabase schema.
  */
-type Tables = Database["public"]["Tables"];
+type Tables = Database["public"]["Tables"] & Database["public"]["Views"];
 
 /**
  * Extract column names from a table's Row type.
@@ -285,7 +285,7 @@ export async function getOrgScopedClient(
  * - The database table where the resource lives
  * - The column in resource_permissions that references this resource
  */
-interface ResourceConfig<T extends keyof Tables> {
+export interface ResourceConfig<T extends keyof Tables> {
   table: T;
   permissionColumn: ResourcePermissionColumn;
 }
@@ -450,25 +450,32 @@ export async function getOrgResourceClient(
     return validateAndReturnResourceAccess("read", requiredPermission);
   }
 
-  const { data: publicPermission } = await client
+  const publicPermission = await getResourcePublicPermission(
+    resourceId,
+    resourceType,
+    client,
+  );
+
+  context.authCache.resourcePermissions.set(cacheKey, publicPermission);
+  return validateAndReturnResourceAccess(publicPermission, requiredPermission);
+}
+
+export async function getResourcePublicPermission(
+  resourceId: string,
+  resourceType: ResourceType,
+  adminClient: SupabaseAdminClient,
+): Promise<PermissionLevel> {
+  const config = RESOURCE_CONFIG[resourceType];
+  const { data: publicPermission } = await adminClient
     .from("resource_permissions")
     .select("permission_level")
+    .is("org_id", null)
     .is("user_id", null)
     .eq(config.permissionColumn, resourceId)
     .is("revoked_at", null)
-    .single();
+    .maybeSingle();
 
-  if (publicPermission) {
-    const publicLevel = publicPermission.permission_level as PermissionLevel;
-    context.authCache.resourcePermissions.set(cacheKey, publicLevel);
-    return validateAndReturnResourceAccess(publicLevel, requiredPermission);
-  }
-
-  logger.error("Resource access denied", {
-    userId: user.userId,
-    resourceType,
-    resourceId,
-    isCrossOrgApiToken,
-  });
-  throw AuthenticationErrors.notAuthorized();
+  return publicPermission
+    ? (publicPermission.permission_level as PermissionLevel)
+    : "none";
 }

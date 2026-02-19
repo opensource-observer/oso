@@ -11,7 +11,10 @@ import {
   DatasetWhereSchema,
   DataConnectionWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
-import { getOrgScopedClient } from "@/app/api/v1/osograph/utils/access-control";
+import {
+  getOrgScopedClient,
+  RESOURCE_CONFIG,
+} from "@/app/api/v1/osograph/utils/access-control";
 import {
   buildConnection,
   emptyConnection,
@@ -101,8 +104,13 @@ export const organizationTypeResolvers: GraphQLResolverModule<GraphQLContext> =
           tableName: "datasets",
           whereSchema: DatasetWhereSchema,
           basePredicate: {
-            is: [{ key: "deleted_at", value: null }],
+            is: [
+              { key: "deleted_at", value: null },
+              { key: "permission.revoked_at", value: null },
+            ],
+            eq: [{ key: "permission.org_id", value: parent.id }],
           },
+          resourceConfig: RESOURCE_CONFIG["dataset"],
         };
 
         return queryWithPagination(args, context, options);
