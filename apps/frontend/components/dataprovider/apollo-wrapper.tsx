@@ -10,10 +10,9 @@ import {
 import { useSupabaseState } from "@/components/hooks/supabase";
 import { DB_GRAPHQL_URL } from "@/lib/config";
 
-function ApolloWrapper({ children }: React.PropsWithChildren) {
+function WarehouseApolloWrapper({ children }: React.PropsWithChildren) {
   const supabaseState = useSupabaseState();
   const makeLink = () => {
-    //console.log(userToken);
     const httpLink = new HttpLink({
       uri: DB_GRAPHQL_URL,
       headers:
@@ -50,4 +49,4 @@ function ApolloWrapper({ children }: React.PropsWithChildren) {
   );
 }
 
-export { ApolloWrapper };
+export { WarehouseApolloWrapper };
