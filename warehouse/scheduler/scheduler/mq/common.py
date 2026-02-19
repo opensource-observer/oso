@@ -386,16 +386,12 @@ class RunHandler(MessageHandler[T]):
             )
         )
         try:
-            while True:
-                # Wait until the next renew time or the task to complete,
-                # whichever comes first. If the task completes, return the
-                # result. Otherwise renew the lock and continue waiting.
-                done, _pending = await asyncio.wait(
-                    [task],
-                    timeout=common_settings.concurrency_lock_ttl_seconds / 4.0,
-                )
-                if done:
-                    return done.pop().result()
+            timeout_seconds = common_settings.concurrency_lock_ttl_seconds / 4.0
+            done, pending = await asyncio.wait(
+                [task],
+                timeout=timeout_seconds,
+            )
+            while len(pending) > 0:
                 logger.debug(
                     f"Renewing lock for run ID {run_id} while processing message."
                 )
@@ -410,6 +406,21 @@ class RunHandler(MessageHandler[T]):
                     )
                     task.cancel()
                     return AlreadyLockedMessageResponse()
+
+                # Wait until the next renew time or the task to complete,
+                # whichever comes first. If the task completes, return the
+                # result. Otherwise renew the lock and continue waiting.
+                done, pending = await asyncio.wait(
+                    [task],
+                    timeout=timeout_seconds,
+                )
+            if task not in done:
+                logger.warning(
+                    f"Task for run ID {run_id} is still not done after waiting. This should not happen, but cancelling the task just in case to prevent it from running indefinitely."
+                )
+                task.cancel()
+                return AlreadyLockedMessageResponse()
+            return await task
         finally:
             # Release the lock after some period of time so that other messages
             # with the same run_id can be processed in the future assuming this
