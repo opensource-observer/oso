@@ -184,6 +184,22 @@ export function getSystemClient(context: GraphQLContext): SupabaseAdminClient {
 }
 
 /**
+ * Returns the user's organization IDs, using the request-scoped cache
+ */
+async function getOrCacheUserOrgIds(
+  context: GraphQLContext,
+  userId: string,
+  client: SupabaseAdminClient,
+): Promise<string[]> {
+  const cached = context.authCache.orgIds.get(userId);
+  if (cached) return cached;
+
+  const orgIds = await getUserOrganizationIds(userId, client);
+  context.authCache.orgIds.set(userId, orgIds);
+  return orgIds;
+}
+
+/**
  * Result returned by getAuthenticatedClient containing the client,
  * user's ID, and org IDs scoped by token type.
  */
@@ -216,7 +232,7 @@ export async function getAuthenticatedClient(
   const orgIds =
     orgScope.type === "api_token"
       ? [orgScope.orgId]
-      : await getUserOrganizationIds(user.userId, client);
+      : await getOrCacheUserOrgIds(context, user.userId, client);
 
   return { client, userId: user.userId, orgIds, orgScope };
 }
@@ -250,36 +266,16 @@ export async function getOrgScopedClient(
     throw AuthenticationErrors.notAuthorized();
   }
 
-  const cacheKey = `${user.userId}:${orgId}`;
-
-  const cachedRole = context.authCache.orgMemberships.get(cacheKey);
-  if (cachedRole) {
-    return {
-      client: createAdminClient(),
-      orgRole: cachedRole as OrgRole,
-      userId: user.userId,
-    };
-  }
-
   const client = createAdminClient();
-  const { data: membership } = await client
-    .from("users_by_organization")
-    .select("user_role")
-    .eq("user_id", user.userId)
-    .eq("org_id", orgId)
-    .is("deleted_at", null)
-    .single();
+  const orgRole = await getOrgRoleCached(client, context, user.userId, orgId);
 
-  if (!membership) {
+  if (!orgRole) {
     logger.error("User is not a member of organization", {
       userId: user.userId,
       orgId,
     });
     throw AuthenticationErrors.notAuthorized();
   }
-
-  const orgRole = membership.user_role as OrgRole;
-  context.authCache.orgMemberships.set(cacheKey, orgRole);
 
   return { client, orgRole, userId: user.userId };
 }
@@ -433,25 +429,20 @@ export async function getOrgResourceClient(
     return { client, permissionLevel };
   }
 
-  const { data: userPermission } = await client
-    .from("resource_permissions")
-    .select("permission_level")
-    .eq("user_id", user.userId)
-    .eq(config.permissionColumn, resourceId)
-    .is("revoked_at", null)
-    .single();
+  if (!isCrossOrgApiToken) {
+    const { data: userPermission } = await client
+      .from("resource_permissions")
+      .select("permission_level")
+      .eq("user_id", user.userId)
+      .eq(config.permissionColumn, resourceId)
+      .is("revoked_at", null)
+      .single();
 
-  if (userPermission) {
-    if (isCrossOrgApiToken) {
-      logger.error("Cross-org API token user-permission access denied", {
-        tokenOrgId: orgScope.orgId,
-        resourceOrgId: resource.org_id,
-      });
-      throw AuthenticationErrors.notAuthorized();
+    if (userPermission) {
+      const userLevel = userPermission.permission_level as PermissionLevel;
+      context.authCache.resourcePermissions.set(cacheKey, userLevel);
+      return validateAndReturnResourceAccess(userLevel, requiredPermission);
     }
-    const userLevel = userPermission.permission_level as PermissionLevel;
-    context.authCache.resourcePermissions.set(cacheKey, userLevel);
-    return validateAndReturnResourceAccess(userLevel, requiredPermission);
   }
 
   if (orgRole === "member") {
