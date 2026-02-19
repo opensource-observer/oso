@@ -194,7 +194,7 @@ export async function buildQuery<TTable extends ValidTableName>(
     }
   }
 
-  const result = hook?.(query as TQuery) ?? query;
+  const result = (hook?.(query as TQuery) ?? query) as TQuery;
   if (options?.single) {
     const finalResult = await result.single();
     return {
@@ -203,7 +203,7 @@ export async function buildQuery<TTable extends ValidTableName>(
     };
   }
 
-  return await (result as TQuery);
+  return await result;
 }
 
 export function mergePredicates<T extends ValidTableName>(
