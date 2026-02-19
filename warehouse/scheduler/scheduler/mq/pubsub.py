@@ -453,6 +453,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
     ) -> None:
         metrics.gauge("pubsub_messages_active").inc({})
 
+        response = None
         try:
             logger.debug(
                 f"Processing queued message #{message_number} {queued_message}",
@@ -480,16 +481,16 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                         labeler.add_labels({"status": "locked"})
 
             logger.debug(f"Finished processing queued message #{message_number}")
-            await self.record_response(response_storage, queued_message, response)
-            response_storage.store_response(queued_message.handle_id, response)
-            queued_message.event_queue.put("completed")
+
         except Exception as e:
             logger.error(f"Error processing queued message #{message_number}: {e}")
-            response_storage.store_response(
-                queued_message.handle_id, FailedResponse(exception=e, message=str(e))
-            )
-            queued_message.event_queue.put("completed")
+            response = FailedResponse(exception=e, message=str(e))
         finally:
+            if not response:
+                response = FailedResponse(
+                    message="Fatal: message processing failed without exception"
+                )
+            await self.record_response(response_storage, queued_message, response)
             metrics.gauge("pubsub_messages_active").dec({})
 
     async def _handle_message_with_heartbeat(
