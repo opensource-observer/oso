@@ -386,30 +386,41 @@ class RunHandler(MessageHandler[T]):
             )
         )
         try:
-            while True:
+            timeout_seconds = common_settings.concurrency_lock_ttl_seconds / 4.0
+            done, pending = await asyncio.wait(
+                [task],
+                timeout=timeout_seconds,
+            )
+            while len(pending) > 0:
+                logger.debug(
+                    f"Renewing lock for run ID {run_id} while processing message."
+                )
+                renewed = await concurrency_lock_store.renew_lock(
+                    run_id,
+                    ttl_seconds=common_settings.concurrency_lock_ttl_seconds,
+                    log_override=logger,
+                )
+                if not renewed:
+                    logger.warning(
+                        f"Failed to renew lock for run ID {run_id}. Another worker may have taken over processing. Stopping processing of this message.",
+                    )
+                    task.cancel()
+                    return AlreadyLockedMessageResponse()
+
                 # Wait until the next renew time or the task to complete,
                 # whichever comes first. If the task completes, return the
                 # result. Otherwise renew the lock and continue waiting.
-                try:
-                    async with asyncio.timeout(
-                        common_settings.concurrency_lock_ttl_seconds / 4.0
-                    ):
-                        return await task
-                except asyncio.TimeoutError:
-                    logger.debug(
-                        f"Renewing lock for run ID {run_id} while processing message."
-                    )
-                    renewed = await concurrency_lock_store.renew_lock(
-                        run_id,
-                        ttl_seconds=common_settings.concurrency_lock_ttl_seconds,
-                        log_override=logger,
-                    )
-                    if not renewed:
-                        logger.warning(
-                            f"Failed to renew lock for run ID {run_id}. Another worker may have taken over processing. Stopping processing of this message.",
-                        )
-                        task.cancel()
-                        return AlreadyLockedMessageResponse()
+                done, pending = await asyncio.wait(
+                    [task],
+                    timeout=timeout_seconds,
+                )
+            if task not in done:
+                logger.warning(
+                    f"Task for run ID {run_id} is still not done after waiting. This should not happen, but cancelling the task just in case to prevent it from running indefinitely."
+                )
+                task.cancel()
+                return AlreadyLockedMessageResponse()
+            return await task
         finally:
             # Release the lock after some period of time so that other messages
             # with the same run_id can be processed in the future assuming this
