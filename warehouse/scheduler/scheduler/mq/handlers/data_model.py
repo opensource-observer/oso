@@ -405,11 +405,6 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
         create_query = ctas_query(resolved_query)
 
-        context_logger.debug(
-            "CTAS query for model evaluation:",
-            query=create_query.sql(dialect=adapter.dialect),
-        )
-
         adapter.ctas(
             table_name=target_table,
             query_or_df=create_query,
@@ -417,7 +412,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         )
 
         context_logger.debug(
-            f"Successfully created table for model {model_fqn} evaluation",
+            f"Successfully created warehouse table for model {model_fqn} evaluation",
             warehouse_fqn=target_table.sql(dialect=adapter.dialect),
         )
         adapter.replace_query(
@@ -425,6 +420,6 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
             query_or_df=resolved_query,
         )
         context_logger.debug(
-            f"Successfully replaced table for model {model_fqn} evaluation",
+            f"Successfully replaced warehouse table for model {model_fqn} evaluation",
             warehouse_fqn=target_table.sql(dialect=adapter.dialect),
         )
