@@ -445,6 +445,13 @@ class RunHandler(MessageHandler[T]):
             yield lock_acquired, renew_task
         finally:
             renew_task.cancel()
+            try:
+                async with asyncio.timeout(1):
+                    await renew_task
+            except asyncio.TimeoutError:
+                logger.error(
+                    "Cancellation of renewal task timed out, it may still be running in the background."
+                )
 
             # We always renew the lock to half the normal ttl at the end to
             # ensure that any potential post processing or eventual consistency
