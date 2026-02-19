@@ -149,9 +149,22 @@ class CommonSettings(BaseSettings):
         description="Time-to-live for concurrency locks in seconds",
     )
 
-    message_handling_timeout_seconds: int = Field(
+    message_handling_timeout_seconds: float = Field(
         default=300,
         description="Timeout for handling messages in seconds",
+    )
+
+    message_handling_heartbeat_interval_seconds: float = Field(
+        default=15,
+        description="Interval for sending heartbeats while handling messages in seconds",
+    )
+    message_handling_heartbeat_buffer_factor: int = Field(
+        default=3,
+        description="Buffer factor to multiply the heartbeat interval by to determine the Pub/Sub ack deadline",
+    )
+    message_cancellation_timeout_seconds: float = Field(
+        default=30,
+        description="Timeout to wait for message handling tasks to finish after cancellation before forcibly returning a FailedResponse",
     )
 
     @model_validator(mode="after")

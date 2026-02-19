@@ -8,7 +8,11 @@ from oso_core.logging.types import BindableLogger, LogBuffer, LogEntry
 class BufferedLogger(BindableLogger):
     def __init__(self, buffer: LogBuffer, context: dict[str, t.Any] | None = None):
         self._buffer = buffer
-        self._context = context or {}
+        self._inner_context = context or {}
+
+    @property
+    def _context(self) -> dict[str, t.Any]:
+        return self._inner_context
 
     def bind(self, **new_values: t.Any) -> "BufferedLogger":
         new_context = self._context.copy()

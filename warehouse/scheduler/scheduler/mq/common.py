@@ -137,8 +137,10 @@ class OSORunContext(RunContext):
         internal_logger: BindableLogger,
         run_logger_factory: RunLoggerFactory,
     ) -> "OSORunContext":
+        logging_context = internal_logger._context
+        logging_context.pop("run_id", None)
         run_logger_container = run_logger_factory.create_logger_container(
-            run_id, internal_processing_id=internal_processing_id
+            run_id, **logging_context
         )
         proxied_logger = ProxiedBoundLogger(
             [internal_logger, run_logger_container.logger]
@@ -356,45 +358,72 @@ class RunHandler(MessageHandler[T]):
 
         run_id = convert_uuid_bytes_to_str(run_id_bytes)
 
-        # check if another worker is already processing this run_id
-        lock_acquired = await concurrency_lock_store.acquire_lock(
-            run_id,
-            ttl_seconds=common_settings.concurrency_lock_ttl_seconds,
-            log_override=logger,
-        )
-
-        if not lock_acquired:
-            logger.warning(
-                f"Run ID {run_id} is already being processed by another worker. Skipping.",
-            )
-            return AlreadyLockedMessageResponse()
-
-        # Run the message handling and continuously renew the ttl on the lock
-        # until it's done.
-        task = asyncio.create_task(
-            self._locked_handle_message(
-                message=message,
-                logger=logger,
-                resources=resources,
-                materialization_strategy=materialization_strategy,
-                metrics=metrics,
-                posthog_client=posthog_client,
-                oso_client=oso_client,
-                run_logger_factory=run_logger_factory,
-                run_id=run_id,
-                internal_processing_id=internal_processing_id,
-            )
-        )
-        try:
-            timeout_seconds = common_settings.concurrency_lock_ttl_seconds / 4.0
-            done, pending = await asyncio.wait(
-                [task],
-                timeout=timeout_seconds,
-            )
-            while len(pending) > 0:
-                logger.debug(
-                    f"Renewing lock for run ID {run_id} while processing message."
+        async with self.worker_run_lock(
+            run_id, concurrency_lock_store, logger, common_settings
+        ) as (lock_acquired, renew_task):
+            if not lock_acquired:
+                logger.warning(
+                    f"Run ID {run_id} is already being processed by another worker. Skipping.",
                 )
+                return AlreadyLockedMessageResponse()
+
+            message_handling_task = asyncio.create_task(
+                self._handle_run_message(
+                    message=message,
+                    logger=logger,
+                    resources=resources,
+                    materialization_strategy=materialization_strategy,
+                    metrics=metrics,
+                    posthog_client=posthog_client,
+                    oso_client=oso_client,
+                    run_logger_factory=run_logger_factory,
+                    run_id=run_id,
+                    internal_processing_id=internal_processing_id,
+                )
+            )
+            try:
+                done, pending = await asyncio.wait(
+                    [message_handling_task, renew_task],
+                    return_when=asyncio.FIRST_COMPLETED,
+                    timeout=common_settings.message_handling_timeout_seconds,
+                )
+            except asyncio.CancelledError:
+                logger.warning(
+                    "Message handling was cancelled. Cancelling the message handling task and renewal task."
+                )
+                message_handling_task.cancel()
+                renew_task.cancel()
+                return await message_handling_task
+            if message_handling_task in pending:
+                logger.error(
+                    f"Message processing task did not complete within the timeout of {common_settings.message_handling_timeout_seconds} seconds. Cancelling the task."
+                )
+                message_handling_task.cancel()
+                return FailedResponse(message="Message processing timed out.")
+            if renew_task in done:
+                logger.error(
+                    "Fatal: Auto concurrency lock renewal task completed before message handling task. This should not happen as the renew task is supposed to run indefinitely until cancelled. An unexpected issue occurred."
+                )
+                # We can continue processing the message, but we should log this as it may indicate an issue with the concurrency lock store.
+                raise RuntimeError(
+                    "Concurrency lock renewal task completed unexpectedly."
+                )
+
+            return await message_handling_task
+
+    @asynccontextmanager
+    async def worker_run_lock(
+        self,
+        run_id: str,
+        concurrency_lock_store: ConcurrencyLockStore,
+        logger: BindableLogger,
+        common_settings: CommonSettings,
+    ) -> t.AsyncIterator[t.Tuple[bool, asyncio.Task]]:
+        """Context manager that acquires a lock for the given run_id and releases it after the block is done."""
+
+        async def renew_lock_periodically():
+            while True:
+                await asyncio.sleep(common_settings.concurrency_lock_ttl_seconds / 4.0)
                 renewed = await concurrency_lock_store.renew_lock(
                     run_id,
                     ttl_seconds=common_settings.concurrency_lock_ttl_seconds,
@@ -404,35 +433,41 @@ class RunHandler(MessageHandler[T]):
                     logger.warning(
                         f"Failed to renew lock for run ID {run_id}. Another worker may have taken over processing. Stopping processing of this message.",
                     )
-                    task.cancel()
-                    return AlreadyLockedMessageResponse()
+                    break
 
-                # Wait until the next renew time or the task to complete,
-                # whichever comes first. If the task completes, return the
-                # result. Otherwise renew the lock and continue waiting.
-                done, pending = await asyncio.wait(
-                    [task],
-                    timeout=timeout_seconds,
-                )
-            if task not in done:
-                logger.warning(
-                    f"Task for run ID {run_id} is still not done after waiting. This should not happen, but cancelling the task just in case to prevent it from running indefinitely."
-                )
-                task.cancel()
-                return AlreadyLockedMessageResponse()
-            return await task
+        lock_acquired = await concurrency_lock_store.acquire_lock(
+            run_id,
+            ttl_seconds=common_settings.concurrency_lock_ttl_seconds,
+            log_override=logger,
+        )
+        renew_task = asyncio.create_task(renew_lock_periodically())
+        try:
+            yield lock_acquired, renew_task
         finally:
-            # Release the lock after some period of time so that other messages
-            # with the same run_id can be processed in the future assuming this
-            # was cancelled. This ensures that any duplicate messages that
-            # arrive while this message is still being finished will be ignored.
+            renew_task.cancel()
+            try:
+                async with asyncio.timeout(1):
+                    await renew_task
+            except asyncio.CancelledError:
+                # Fully expected, but we set a timeout just in case to avoid any
+                # potential hangs. Log just in case it takes longer than
+                # expected.
+                pass
+            except asyncio.TimeoutError:
+                logger.error(
+                    "Cancellation of renewal task timed out, it may still be running in the background."
+                )
+
+            # We always renew the lock to half the normal ttl at the end to
+            # ensure that any potential post processing or eventual consistency
+            # is covered by the lock.
             await concurrency_lock_store.renew_lock(
                 run_id,
                 ttl_seconds=int(common_settings.concurrency_lock_ttl_seconds / 2),
                 log_override=logger,
             )
 
-    async def _locked_handle_message(
+    async def _handle_run_message(
         self,
         message: ProtobufMessage,
         logger: BindableLogger,
@@ -444,7 +479,10 @@ class RunHandler(MessageHandler[T]):
         run_logger_factory: RunLoggerFactory,
         run_id: str,
         internal_processing_id: str,
-    ):
+    ) -> HandlerResponse:
+        internal_logger = logger.bind(
+            run_id=run_id, internal_processing_id=internal_processing_id
+        )
         async with async_time(
             metrics.histogram("run_context_load_duration_ms")
         ) as labeler_ctx:
@@ -455,7 +493,7 @@ class RunHandler(MessageHandler[T]):
                 materialization_strategy=materialization_strategy,
                 metrics=metrics,
                 run_logger_factory=run_logger_factory,
-                internal_logger=logger.bind(run_id=run_id),
+                internal_logger=internal_logger,
             )
             labeler_ctx.add_labels({"org_id": run_context.organization.name})
 
@@ -479,7 +517,9 @@ class RunHandler(MessageHandler[T]):
             run_context.log.info(f"Reporting run {run_id} as started.")
             await oso_client.start_run(run_id=run_id)
         except Exception as e:
-            logger.error(f"Error starting run {run_id}: {e}")
+            run_context.log.error(
+                f"Error starting run {run_id}", exc_info=True, exception=e
+            )
 
             labeler.set_labels(
                 {
@@ -495,7 +535,7 @@ class RunHandler(MessageHandler[T]):
                 metrics=metrics,
                 labeler=labeler,
                 posthog_client=posthog_client,
-                logger=logger,
+                logger=internal_logger,
             )
 
         labeler.set_labels(
@@ -504,69 +544,108 @@ class RunHandler(MessageHandler[T]):
                 "trigger_type": run_context.trigger_type,
             }
         )
+        response: HandlerResponse | None = None
         try:
-            async with async_time(
-                metrics.histogram("run_message_handling_duration_ms"), labeler
-            ):
-                response = await resources.run(
-                    self.handle_run_message,
-                    additional_inject={
-                        "message": message,
-                        "context": run_context,
+            response = await self._execute_subclass_handle_run_message(
+                metrics=metrics,
+                resources=resources,
+                message=message,
+                run_context=run_context,
+                logger=internal_logger,
+                labeler=labeler,
+            )
+        except Exception as e:
+            response = await self._convert_exception_into_response(e, internal_logger)
+        except asyncio.CancelledError:
+            response = FailedResponse(message="Run cancelled during message handling.")
+        finally:
+            if response is None:
+                response = FailedResponse(
+                    message="Run message handling completed without a response."
+                )
+            try:
+                return await self.report_response(
+                    run_id=run_id,
+                    response=response,
+                    run_context=run_context,
+                    metrics=metrics,
+                    labeler=labeler,
+                    posthog_client=posthog_client,
+                    logger=internal_logger,
+                )
+            except Exception as e:
+                # This is a very exceptional case and we should likely alert if we
+                # get this.
+                internal_logger.error(
+                    f"Fatal: Error reporting response for run_id {run_id}",
+                    exc_info=True,
+                    exception=e,
+                )
+
+                return FailedResponse(
+                    exception=e,
+                    message=f"Failed to report the response for run_id {run_id}.",
+                )
+
+    async def _convert_exception_into_response(
+        self, exception: Exception, logger: BindableLogger
+    ) -> FailedResponse:
+        match exception:
+            case GraphQLClientGraphQLMultiError(errors=errors):
+                raw_errors = [
+                    err.extensions.get("rawErrorMessage", err.message)
+                    for err in errors
+                    if err.extensions
+                ]
+                logger.error(
+                    f"GraphQL errors: {raw_errors or [err.message for err in errors]}"
+                )
+                return FailedResponse(
+                    exception=exception,
+                    message="Failed to process the message due to GraphQL errors.",
+                    details={
+                        "graphql_errors": raw_errors or [err.message for err in errors]
                     },
                 )
-        except GraphQLClientGraphQLMultiError as e:
-            raw_errors = [
-                err.extensions.get("rawErrorMessage", err.message)
-                for err in e.errors
-                if err.extensions
-            ]
-            logger.error(
-                f"GraphQL errors for run_id {run_id}: {raw_errors or [err.message for err in e.errors]}"
-            )
-            response = FailedResponse(
-                exception=e,
-                message=f"Failed to process the message for run_id {run_id}.",
-                details={
-                    "graphql_errors": raw_errors or [err.message for err in e.errors]
+            case GraphQLClientGraphQLError(message=message, extensions=extensions):
+                raw_error = (
+                    extensions.get("rawErrorMessage", message)
+                    if extensions
+                    else message
+                )
+                logger.error(f"GraphQL error: {raw_error}")
+                return FailedResponse(
+                    exception=exception,
+                    message="Failed to process the message due to a GraphQL error.",
+                    details={"graphql_errors": [raw_error]},
+                )
+            case _:
+                logger.error(f"Error: {exception}")
+                return FailedResponse(
+                    exception=exception,
+                    message="Failed to process the message due to an unexpected error.",
+                )
+
+    async def _execute_subclass_handle_run_message(
+        self,
+        resources: ResourcesContext,
+        message: ProtobufMessage,
+        run_context: OSORunContext,
+        logger: BindableLogger,
+        labeler: MetricsLabeler,
+        metrics: MetricsContainer,
+    ) -> HandlerResponse:
+        async with async_time(
+            metrics.histogram("run_message_handling_duration_ms"), labeler
+        ):
+            response = await resources.run(
+                self.handle_run_message,
+                additional_inject={
+                    "message": message,
+                    "context": run_context,
                 },
             )
-        except GraphQLClientGraphQLError as e:
-            raw_error = (
-                e.extensions.get("rawErrorMessage", e.message)
-                if e.extensions
-                else e.message
-            )
-            logger.error(f"GraphQL error for run_id {run_id}: {raw_error}")
-            response = FailedResponse(
-                exception=e,
-                message=f"Failed to process the message for run_id {run_id}.",
-                details={"graphql_error": raw_error},
-            )
-        except Exception as e:
-            logger.error(f"Error handling run message for run_id {run_id}: {e}")
-            response = FailedResponse(
-                exception=e,
-                message=f"Failed to process the message for run_id {run_id}.",
-            )
-
-        try:
-            return await self.report_response(
-                run_id=run_id,
-                response=response,
-                run_context=run_context,
-                metrics=metrics,
-                labeler=labeler,
-                posthog_client=posthog_client,
-                logger=logger,
-            )
-        except Exception as e:
-            logger.error(f"Error reporting response for run_id {run_id}: {e}")
-
-            return FailedResponse(
-                exception=e,
-                message=f"Failed to report the response for run_id {run_id}.",
-            )
+            return response
 
     async def report_response(
         self,
