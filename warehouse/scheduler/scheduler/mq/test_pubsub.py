@@ -19,7 +19,8 @@ from janus import Queue, SyncQueue, SyncQueueEmpty
 from oso_core.instrumentation.container import MetricsContainer
 from oso_core.logging.types import BindableLogger
 from oso_core.resources import ResourcesRegistry
-from osoprotobufs.data_model_pb2 import DataModelRunRequest
+from osoprotobufs.test_message_pb2 import TestMessageRunRequest
+from scheduler.config import CommonSettings
 from scheduler.mq.common import RunHandler
 from scheduler.mq.pubsub import (
     GCPPubSubMessageQueueService,
@@ -29,8 +30,10 @@ from scheduler.mq.pubsub import (
     RunSubscriberFn,
 )
 from scheduler.testing.resources.base import base_testing_resources
+from scheduler.testing.resources.logging import FakeRunLoggerFactory
 from scheduler.testing.uuids import generate_uuid_as_bytes
 from scheduler.types import MessageHandlerRegistry, SuccessResponse
+from scheduler.utils import convert_uuid_bytes_to_str
 
 T = t.TypeVar("T", bound=Message)
 
@@ -55,7 +58,9 @@ class FakePubSubMessage:
 
     @property
     def attributes(self) -> dict[str, str]:
-        return {}
+        return {
+            "googclient_schemaencoding": "BINARY",
+        }
 
     @property
     def data(self) -> bytes:
@@ -66,6 +71,12 @@ class FakePubSubMessage:
 
     def nack(self):
         self.nack_count += 1
+
+    def drop(self, *args, **kwargs):
+        pass
+
+    def modify_ack_deadline(self, *args, **kwargs):
+        pass
 
 
 @dataclass
@@ -82,13 +93,21 @@ class ControllableSubscriber:
     ):
         """Send a message to the subscriber."""
         loop_task = asyncio.create_task(self.pubsub_mq_service.start(queue))
+        logger.info("Waiting for subscriber to start...")
         async with asyncio.timeout(timeout):
             await self.test_input_queue.async_q.put(message)
 
         try:
+            logger.info("Waiting for message to be processed...")
             async with asyncio.timeout(timeout):
-                yield await self.test_ack_queue.async_q.get()
+                result = await self.test_ack_queue.async_q.get()
+                logger.info(f"Message processed with result: {result}")
+                yield result
+        except asyncio.TimeoutError:
+            logger.error("Timeout waiting for message to be processed")
+            raise
         finally:
+            logger.info("Killing subscriber loop task...")
             loop_task.cancel()
             await loop_task
 
@@ -161,7 +180,7 @@ def run_subscriber_factory(
                 )
 
                 try:
-                    future.result(timeout=10)
+                    future.result(timeout=100)
                     if item.ack_count > 0:
                         test_ack_queue.put(True)
                     elif item.nack_count > 0:
@@ -192,6 +211,10 @@ def controllable_subscriber(
         "materialization_strategy",
         materialization_strategy,
     )
+    base_resources.add_singleton(
+        "run_logger_factory",
+        FakeRunLoggerFactory(),
+    )
 
     return ControllableSubscriber(
         test_input_queue=test_input_queue,
@@ -204,18 +227,24 @@ def controllable_subscriber(
     )
 
 
-class FakeRunHandler(RunHandler[DataModelRunRequest]):
-    topic = "fake_topic"
-    message_type = DataModelRunRequest
-    schema_file_name = "data-model.proto"
+class FakeRunHandler(RunHandler[TestMessageRunRequest]):
+    topic = "test_topic"
+    message_type = TestMessageRunRequest 
+    schema_file_name = "test-message.proto"
 
     async def handle_run_message(
         self,
-        message: DataModelRunRequest,
+        message: TestMessageRunRequest,
         **kwargs,
     ):
+        logger.info(f"Sleeping for {message.sleep_seconds} seconds to simulate work...")
+        logger.info(f"Message __dict__ : {message.run_id}")
+        await asyncio.sleep(message.sleep_seconds)
+
+        run_id = convert_uuid_bytes_to_str(message.run_id)
+
         return SuccessResponse(
-            message=f"Handled message with run_id: {message.run_id.decode()}",
+            message=f"Handled message with run_id: {run_id}",
         )
 
 
@@ -237,15 +266,42 @@ async def test_gcp_pubsub_scheduler_receives_message(
 ):
     """Test that a message published to a GCP Pub/Sub topic is received by the scheduler."""
 
-    data_model_run_request = DataModelRunRequest(
+    test_message_run_request = TestMessageRunRequest(
         run_id=generate_uuid_as_bytes(),
+        sleep_seconds=0,
     )
 
-    fake_message = FakePubSubMessage(data=data_model_run_request.SerializeToString())
+    fake_message = FakePubSubMessage(data=test_message_run_request.SerializeToString())
 
     async with controllable_subscriber.send_message(
-        queue="fake_topic",
+        queue="test_topic",
         message=fake_message,
         timeout=3,
     ) as acked:
         assert acked is True
+
+@pytest.mark.asyncio
+async def test_gcp_pubsub_scheduler_times_out_processing(
+    controllable_subscriber: ControllableSubscriber, base_resources: ResourcesRegistry
+):
+    """Test that a message published to a GCP Pub/Sub topic is received by the scheduler."""
+
+    common_settings = base_resources.context().resolve_with_type(
+        "common_settings", CommonSettings
+    )
+    common_settings.message_handling_timeout_seconds = 1
+
+
+    test_message_run_request = TestMessageRunRequest(
+        run_id=generate_uuid_as_bytes(),
+        sleep_seconds=60,
+    )
+
+    fake_message = FakePubSubMessage(data=test_message_run_request.SerializeToString())
+
+    async with controllable_subscriber.send_message(
+        queue="test_topic",
+        message=fake_message,
+        timeout=1000,
+    ) as acked:
+        assert acked is False

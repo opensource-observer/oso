@@ -9,18 +9,15 @@ import polars as pl
 import pytest
 from scheduler.testing.client import FakeUDMClient
 from sqlmesh.core.engine_adapter.duckdb import DuckDBEngineAdapter
+from oso_core.logging import configure_structured_logging, setup_module_logging
 
 logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_debug_logging_for_tests() -> None:
-    root_logger = logging.getLogger(__name__.split(".")[0])
-    root_logger.setLevel(logging.DEBUG)
-    sqlmesh_logger = logging.getLogger("sqlmesh")
-    sqlmesh_logger.setLevel(logging.DEBUG)
-
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    configure_structured_logging()
+    setup_module_logging(__name__.split(".")[0])
 
 
 @pytest.fixture(autouse=True, scope="function")

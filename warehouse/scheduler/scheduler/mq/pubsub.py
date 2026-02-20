@@ -241,6 +241,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         message_queue: Queue[QueuedPubSubMessage] = Queue()
         response_storage = ResponseStorage()
 
+        logger.debug("Starting GCP Pub/Sub subscriber thread...")
         gcp_subscriber_thread = self._start_subscriber_thread(
             message_queue=message_queue,
             response_storage=response_storage,
@@ -262,9 +263,11 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         try:
             # Start the loop to process messages from the janus.Queue
             while True:
+                logger.debug("hi????")
                 queued_message = await self._get_from_queue_or_timeout(
                     message_queue.async_q, timeout=10
                 )
+                logger.debug("shi???")
                 if not queued_message:
                     # Check if the subscriber thread is still running
                     if gcp_subscriber_thread.done():
@@ -273,6 +276,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                         )
                         break
                     continue
+                logger.debug("Received message from queue")
 
                 message_count += 1
                 metrics.counter("pubsub_messages_received_total").inc({})
@@ -330,6 +334,9 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                 message = handler.parse_json_message(raw_message.data)
                 logger.debug(f"Received JSON message on {queue}: {message}")
             else:
+                logger.warning(
+                    f"Received message with unknown encoding '{encoding}' on {queue}."
+                )
                 raw_message.ack()
                 return
 
@@ -513,6 +520,9 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
 
         message_handling_deadline_time = (
             time.time() + common_settings.message_handling_timeout_seconds
+        )
+        logger.debug(
+            f"Started message handling task with deadline at {message_handling_deadline_time}"
         )
         # Send heartbeats to the callback to keep the Pub/Sub message lease
         # alive while processing
