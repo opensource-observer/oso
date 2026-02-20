@@ -1,0 +1,700 @@
+test_int_events__github_unified_basic:
+  model: oso.int_events__github_unified
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-02
+  inputs:
+    oso.int_ddp__commits_deduped:
+      rows:
+      - repository_id: 101
+        sha: "abc123def"
+        created_at: "2024-01-01 10:00:00"
+        repository_name: "owner/repo"
+        actor_id: 555
+        actor_login: "user1"
+        author_email: "u1@mail"
+    oso.stg_github__releases:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__comments:
+      rows:
+      - repository_id: 101
+        id: "c1"
+        type: "ISSUE_COMMENT"
+        event_time: "2024-01-01 11:00:00"
+        repository_name: "owner/repo"
+        actor_id: 555
+        actor_login: "user1"
+    oso.stg_github__comments_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__issues:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_requests:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_requests_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_request_merge_events:
+      rows:
+      - repository_id: 101
+        id: "ev1"
+        type: "PULL_REQUEST_MERGED"
+        event_time: "2024-01-01 12:00:00"
+        repository_name: "owner/repo"
+        actor_id: 555
+        actor_login: "user1"
+    oso.stg_github__pull_request_merge_events_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__stars_and_forks:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+  outputs:
+    query:
+      rows:
+      - time: "2024-01-01 10:00:00"
+        to_artifact_name: "repo"
+        to_artifact_namespace: "owner"
+        to_artifact_source_id: "101"
+        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
+        from_artifact_name: "user1"
+        from_artifact_namespace: "user1"
+        from_artifact_source_id: "555"
+        from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
+        event_type: "COMMIT_CODE"
+        event_source_id: "abc123def"
+        event_source: "GITHUB"
+        amount: 1.0
+      - time: "2024-01-01 11:00:00"
+        to_artifact_name: "repo"
+        to_artifact_namespace: "owner"
+        to_artifact_source_id: "101"
+        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
+        from_artifact_name: "user1"
+        from_artifact_namespace: "user1"
+        from_artifact_source_id: "555"
+        from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
+        event_type: "ISSUE_COMMENT"
+        event_source_id: "c1"
+        event_source: "GITHUB"
+        amount: 1.0
+      - time: "2024-01-01 12:00:00"
+        to_artifact_name: "repo"
+        to_artifact_namespace: "owner"
+        to_artifact_source_id: "101"
+        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
+        from_artifact_name: "user1"
+        from_artifact_namespace: "user1"
+        from_artifact_source_id: "555"
+        from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
+        event_type: "PULL_REQUEST_MERGED"
+        event_source_id: "ev1"
+        event_source: "GITHUB"
+        amount: 1.0
+
+test_int_events__github_unified_malformed_repo_filtered:
+  model: oso.int_events__github_unified
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-02
+  inputs:
+    oso.int_ddp__commits_deduped:
+      rows:
+      - repository_id: 101
+        sha: "abc123def"
+        created_at: "2024-01-01 10:00:00"
+        repository_name: "owner/repo"
+        actor_id: 555
+        actor_login: "user1"
+        author_email: "u1@mail"
+      # Malformed repo name without '/' — should be filtered out by STRPOS
+      - repository_id: 200
+        sha: "bad000bad"
+        created_at: "2024-01-01 10:30:00"
+        repository_name: "noslashrepo"
+        actor_id: 600
+        actor_login: "baduser"
+        author_email: "bad@mail"
+    oso.stg_github__releases:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__comments:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__comments_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__issues:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_requests:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_requests_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_request_merge_events:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_request_merge_events_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__stars_and_forks:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+  outputs:
+    query:
+      # Only the valid "owner/repo" row should appear; "noslashrepo" is filtered
+      rows:
+      - time: "2024-01-01 10:00:00"
+        to_artifact_name: "repo"
+        to_artifact_namespace: "owner"
+        to_artifact_source_id: "101"
+        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
+        from_artifact_name: "user1"
+        from_artifact_namespace: "user1"
+        from_artifact_source_id: "555"
+        from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
+        event_type: "COMMIT_CODE"
+        event_source_id: "abc123def"
+        event_source: "GITHUB"
+        amount: 1.0
+
+test_int_events__github_unified_null_actor_login_fallback:
+  model: oso.int_events__github_unified
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-02
+  inputs:
+    oso.int_ddp__commits_deduped:
+      rows:
+      # actor_login is null — COALESCE should fall back to author_email
+      - repository_id: 101
+        sha: "nulllogin1"
+        created_at: "2024-01-01 09:00:00"
+        repository_name: "owner/repo"
+        actor_id: ~
+        actor_login: ~
+        author_email: "u1@mail"
+    oso.stg_github__releases:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__comments:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__comments_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__issues:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_requests:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_requests_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_request_merge_events:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_request_merge_events_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__stars_and_forks:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+  outputs:
+    query:
+      rows:
+      - time: "2024-01-01 09:00:00"
+        to_artifact_name: "repo"
+        to_artifact_namespace: "owner"
+        to_artifact_source_id: "101"
+        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
+        # actor_login is null, so COALESCE uses author_email for actor_name
+        # CASE also uses author_email for actor_id since actor_login IS NULL
+        from_artifact_name: "u1@mail"
+        from_artifact_namespace: "u1@mail"
+        from_artifact_source_id: "u1@mail"
+        from_artifact_id: "82b038781c7a2668b2356dc1e9ff28ce1d9188e6342383c46544c8498960be93"
+        event_type: "COMMIT_CODE"
+        event_source_id: "nulllogin1"
+        event_source: "GITHUB"
+        amount: 1.0
+
+test_int_events__github_unified_historical_and_new_overlap:
+  model: oso.int_events__github_unified
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-02
+  inputs:
+    oso.int_ddp__commits_deduped:
+      columns:
+        repository_id: bigint
+        sha: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+        author_email: text
+      rows: []
+    oso.stg_github__releases:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__comments:
+      rows:
+      # Two identical comments in the historical table.
+      # UNION ALL (within the same SELECT) preserves duplicate rows.
+      - repository_id: 101
+        id: "overlap1"
+        type: "ISSUE_COMMENT"
+        event_time: "2024-01-01 15:00:00"
+        repository_name: "owner/repo"
+        actor_id: 555
+        actor_login: "user1"
+      - repository_id: 101
+        id: "overlap1"
+        type: "ISSUE_COMMENT"
+        event_time: "2024-01-01 15:00:00"
+        repository_name: "owner/repo"
+        actor_id: 555
+        actor_login: "user1"
+    oso.stg_github__comments_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__issues:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_requests:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_requests_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_request_merge_events:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_request_merge_events_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__stars_and_forks:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+  outputs:
+    query:
+      # Duplicate rows in input are preserved — the model does not deduplicate.
+      rows:
+      - time: "2024-01-01 15:00:00"
+        to_artifact_name: "repo"
+        to_artifact_namespace: "owner"
+        to_artifact_source_id: "101"
+        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
+        from_artifact_name: "user1"
+        from_artifact_namespace: "user1"
+        from_artifact_source_id: "555"
+        from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
+        event_type: "ISSUE_COMMENT"
+        event_source_id: "overlap1"
+        event_source: "GITHUB"
+        amount: 1.0
+      - time: "2024-01-01 15:00:00"
+        to_artifact_name: "repo"
+        to_artifact_namespace: "owner"
+        to_artifact_source_id: "101"
+        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
+        from_artifact_name: "user1"
+        from_artifact_namespace: "user1"
+        from_artifact_source_id: "555"
+        from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
+        event_type: "ISSUE_COMMENT"
+        event_source_id: "overlap1"
+        event_source: "GITHUB"
+        amount: 1.0
+
+test_int_events__github_unified_stars_and_releases:
+  model: oso.int_events__github_unified
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-02
+  inputs:
+    oso.int_ddp__commits_deduped:
+      columns:
+        repository_id: bigint
+        sha: text
+        created_at: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+        author_email: text
+      rows: []
+    oso.stg_github__releases:
+      rows:
+      - repository_id: 101
+        id: "rel1"
+        type: "RELEASE_PUBLISHED"
+        created_at: "2024-01-01 08:00:00"
+        repository_name: "owner/repo"
+        actor_id: 555
+        actor_login: "user1"
+    oso.stg_github__comments:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__comments_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__issues:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_requests:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_requests_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_request_merge_events:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__pull_request_merge_events_since_20251007:
+      columns:
+        repository_id: bigint
+        id: text
+        type: text
+        event_time: timestamp
+        repository_name: text
+        actor_id: bigint
+        actor_login: text
+      rows: []
+    oso.stg_github__stars_and_forks:
+      rows:
+      - repository_id: 101
+        id: "star1"
+        type: "STARRED"
+        created_at: "2024-01-01 20:00:00"
+        repository_name: "owner/repo"
+        actor_id: 777
+        actor_login: "user3"
+      - repository_id: 101
+        id: "fork1"
+        type: "FORKED"
+        created_at: "2024-01-01 21:00:00"
+        repository_name: "owner/repo"
+        actor_id: 777
+        actor_login: "user3"
+  outputs:
+    query:
+      rows:
+      - time: "2024-01-01 08:00:00"
+        to_artifact_name: "repo"
+        to_artifact_namespace: "owner"
+        to_artifact_source_id: "101"
+        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
+        from_artifact_name: "user1"
+        from_artifact_namespace: "user1"
+        from_artifact_source_id: "555"
+        from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
+        event_type: "RELEASE_PUBLISHED"
+        event_source_id: "rel1"
+        event_source: "GITHUB"
+        amount: 1.0
+      - time: "2024-01-01 20:00:00"
+        to_artifact_name: "repo"
+        to_artifact_namespace: "owner"
+        to_artifact_source_id: "101"
+        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
+        from_artifact_name: "user3"
+        from_artifact_namespace: "user3"
+        from_artifact_source_id: "777"
+        from_artifact_id: "b899924d11f826736da0953c0f031f6fe240310ac50ac3e7965498a4a8402345"
+        event_type: "STARRED"
+        event_source_id: "star1"
+        event_source: "GITHUB"
+        amount: 1.0
+      - time: "2024-01-01 21:00:00"
+        to_artifact_name: "repo"
+        to_artifact_namespace: "owner"
+        to_artifact_source_id: "101"
+        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
+        from_artifact_name: "user3"
+        from_artifact_namespace: "user3"
+        from_artifact_source_id: "777"
+        from_artifact_id: "b899924d11f826736da0953c0f031f6fe240310ac50ac3e7965498a4a8402345"
+        event_type: "FORKED"
+        event_source_id: "fork1"
+        event_source: "GITHUB"
+        amount: 1.0

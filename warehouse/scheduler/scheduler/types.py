@@ -7,6 +7,8 @@ from graphlib import TopologicalSorter
 import structlog
 from google.protobuf.json_format import Parse
 from google.protobuf.message import Message
+from oso_core.logging import BindableLogger
+from oso_core.logging.types import LogBuffer
 from oso_core.resources import ResourcesContext
 from pydantic import BaseModel, ConfigDict, Field
 from queryrewriter.rewrite import rewrite_query
@@ -24,7 +26,6 @@ from scheduler.graphql_client.input_types import (
     UpdateMetadataInput,
 )
 from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
-from scheduler.logging import BindableLogger
 from sqlglot import exp, parse_one
 from sqlglot.optimizer.qualify_columns import qualify_columns
 from sqlglot.optimizer.scope import build_scope
@@ -666,3 +667,56 @@ class GenericMessageQueueService(abc.ABC):
     async def publish_message(self, queue: str, message: Message) -> None:
         """A method to publish a message to the given queue"""
         ...
+
+
+class ConcurrencyLockStore(abc.ABC):
+    """A store to manage locks for messages being processed. This is used to
+    prevent multiple workers from processing the same message at the same time."""
+
+    @abc.abstractmethod
+    async def acquire_lock(
+        self, lock_id: str, ttl_seconds: int, log_override: BindableLogger | None = None
+    ) -> bool:
+        """Acquire a lock for the given lock ID. Returns True if the lock was
+        acquired successfully, False otherwise."""
+        raise NotImplementedError("acquire_lock must be implemented by subclasses.")
+
+    @abc.abstractmethod
+    async def renew_lock(
+        self, lock_id: str, ttl_seconds: int, log_override: BindableLogger | None = None
+    ) -> bool:
+        """Renew a lock for the given lock ID. Returns True if the lock was
+        renewed successfully, False otherwise."""
+        raise NotImplementedError("renew_lock must be implemented by subclasses.")
+
+    @abc.abstractmethod
+    async def release_lock(
+        self, lock_id: str, log_override: BindableLogger | None = None
+    ) -> None:
+        """Release the lock for the given lock ID."""
+        raise NotImplementedError("release_lock must be implemented by subclasses.")
+
+
+class RunLoggerContainer(abc.ABC):
+    @property
+    @abc.abstractmethod
+    def logger(self) -> BindableLogger: ...
+
+    @abc.abstractmethod
+    async def destination_uris(self) -> list[str]: ...
+
+
+class RunLoggerFactory(abc.ABC):
+    @abc.abstractmethod
+    def create_logger_container(
+        self, run_id: str, **kwargs: t.Any
+    ) -> RunLoggerContainer:
+        """Create a logger instance for the given run ID."""
+        raise NotImplementedError("create_logger must be implemented by subclasses.")
+
+
+class DestinationLogBuffer(LogBuffer, abc.ABC):
+    @abc.abstractmethod
+    async def destination_uris(self) -> list[str]:
+        """Get the destination URIs for the log buffer."""
+        raise NotImplementedError("destination_uris must be implemented by subclasses.")

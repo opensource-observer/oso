@@ -7,7 +7,6 @@ import {
 import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { StaticModelWhereSchema } from "@/app/api/v1/osograph/utils/validation";
 import { getAuthenticatedClient } from "@/app/api/v1/osograph/utils/access-control";
-import { getUserOrganizationIds } from "@/app/api/v1/osograph/utils/resolver-helpers";
 
 export const staticModelQueries: GraphQLResolverModule<GraphQLContext>["Query"] =
   {
@@ -16,8 +15,7 @@ export const staticModelQueries: GraphQLResolverModule<GraphQLContext>["Query"] 
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const { client, userId } = getAuthenticatedClient(context);
-      const orgIds = await getUserOrganizationIds(userId, client);
+      const { client, orgIds } = await getAuthenticatedClient(context);
 
       const options: ExplicitClientQueryOptions<"static_model"> = {
         client,

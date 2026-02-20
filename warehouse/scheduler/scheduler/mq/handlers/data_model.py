@@ -1,9 +1,11 @@
 import asyncio
 
+import structlog
 from aioprometheus.collectors import Counter, Histogram
 from oso_core.instrumentation.common import MetricsLabeler
 from oso_core.instrumentation.container import MetricsContainer
 from oso_core.instrumentation.timing import async_time
+from oso_core.logging.types import BindableLogger
 from oso_dagster.resources.udm_engine_adapter import (
     UserDefinedModelEngineAdapterResource,
 )
@@ -27,6 +29,8 @@ from scheduler.types import (
 from scheduler.utils import OSOClientTableResolver, ctas_query, get_warehouse_user
 from sqlglot import exp
 from sqlmesh import EngineAdapter
+
+module_logger = structlog.get_logger(__name__)
 
 
 def convert_model_to_scheduler_model(org_name: str, dataset_name: str, dataset_id: str):
@@ -326,9 +330,11 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
         await asyncio.to_thread(
             self.make_synchronous_trino_requests,
+            model.user_fqn(),
             adapter,
             resolved_query,
             target_table,
+            step_context.log,
         )
 
         step_context.log.info(
@@ -383,11 +389,20 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                 )
 
     def make_synchronous_trino_requests(
-        self, adapter: EngineAdapter, resolved_query: exp.Query, target_table: exp.Table
+        self,
+        model_fqn: str,
+        adapter: EngineAdapter,
+        resolved_query: exp.Query,
+        target_table: exp.Table,
+        context_logger: BindableLogger,
     ):
         """Queries to the engine adapter are made using the synchronous client.
         This method will be wrapped with asyncio.to_thread to ensure we don't
         block the main event loop."""
+        context_logger.info(
+            "Making synchronous requests to the engine adapter for model evaluation"
+        )
+
         create_query = ctas_query(resolved_query)
 
         adapter.ctas(
@@ -395,7 +410,16 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
             query_or_df=create_query,
             exists=True,
         )
+
+        context_logger.debug(
+            f"Successfully created warehouse table for model {model_fqn} evaluation",
+            warehouse_fqn=target_table.sql(dialect=adapter.dialect),
+        )
         adapter.replace_query(
             table_name=target_table,
             query_or_df=resolved_query,
+        )
+        context_logger.debug(
+            f"Successfully replaced warehouse table for model {model_fqn} evaluation",
+            warehouse_fqn=target_table.sql(dialect=adapter.dialect),
         )

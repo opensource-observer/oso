@@ -8,7 +8,7 @@ spec:
         images:
           - name: ghcr.io/opensource-observer/oso
             newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-            newTag: deploy-20260215000123-9da1e0c # {"$imagepolicy": "flux-system:oso:tag"}
+            newTag: deploy-20260220145049-4b552e2 # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     app:
       resources:
@@ -17,11 +17,23 @@ spec:
           memory: "768Mi"
       queues:
         - name: "data_model_run_requests"
+          envVars:
+            SCHEDULER_MESSAGE_HANDLING_TIMEOUT_SECONDS: "3600"
         - name: "data_ingestion_run_requests"
+          envVars:
+            SCHEDULER_MESSAGE_HANDLING_TIMEOUT_SECONDS: "7200"
         - name: "query_run_requests"
+          envVars:
+            SCHEDULER_MESSAGE_HANDLING_TIMEOUT_SECONDS: "300"
         - name: "static_model_run_requests"
+          envVars:
+            SCHEDULER_MESSAGE_HANDLING_TIMEOUT_SECONDS: "1800"
         - name: "publish_notebook_run_requests"
+          envVars:
+            SCHEDULER_MESSAGE_HANDLING_TIMEOUT_SECONDS: "1800"
         - name: "sync_connection_run_requests"
+          envVars:
+            SCHEDULER_MESSAGE_HANDLING_TIMEOUT_SECONDS: "7200"
       name: "oso-scheduler"
       # This only needs to appear in one of the scheduler instances for now. We
       # should likely combine these into a single scheduler chart at some point.

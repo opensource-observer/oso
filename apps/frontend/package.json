@@ -34,7 +34,7 @@
     "@ai-sdk/react": "^1.2.12",
     "@apollo/client": "^4.1.4",
     "@apollo/client-integration-nextjs": "^0.14.4",
-    "@apollo/gateway": "^2.11.2",
+    "@apollo/gateway": "^2.13.0",
     "@apollo/sandbox": "^2.7.3",
     "@apollo/server": "^5.4.0",
     "@apollo/subgraph": "^2.11.2",

@@ -9,6 +9,7 @@ import {
 import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
 import { UserProfilesRow } from "@/lib/types/schema-types";
 import { getAuthenticatedClient } from "@/app/api/v1/osograph/utils/access-control";
+import { AuthenticationErrors } from "@/app/api/v1/osograph/utils/errors";
 
 /**
  * Type resolvers for User.
@@ -25,7 +26,11 @@ export const userTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const { client } = getAuthenticatedClient(context);
+      const { client, userId, orgIds } = await getAuthenticatedClient(context);
+
+      if (parent.id !== userId) {
+        throw AuthenticationErrors.notAuthorized();
+      }
 
       const validatedWhere = args.where
         ? validateInput(OrganizationWhereSchema, args.where)
@@ -36,6 +41,7 @@ export const userTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
         args,
         validatedWhere ? parseWhereClause(validatedWhere) : {},
         client,
+        orgIds,
       );
     },
   },

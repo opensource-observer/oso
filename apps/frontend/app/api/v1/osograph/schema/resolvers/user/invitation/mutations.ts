@@ -20,7 +20,7 @@ export const invitationMutations: GraphQLResolverModule<GraphQLContext>["Mutatio
       context: GraphQLContext,
     ) => {
       const input = validateInput(AcceptInvitationSchema, args.input);
-      const { client, userId } = getAuthenticatedClient(context);
+      const { client, userId } = await getAuthenticatedClient(context);
 
       const { data: invitation, error: invError } = await client
         .from("invitations")

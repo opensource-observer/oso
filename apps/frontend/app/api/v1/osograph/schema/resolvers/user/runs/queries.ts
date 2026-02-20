@@ -4,7 +4,6 @@ import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { RunWhereSchema } from "@/app/api/v1/osograph/utils/validation";
-import { getUserOrganizationIds } from "@/app/api/v1/osograph/utils/resolver-helpers";
 
 /**
  * Top-level runs query that fetches runs for the authenticated user's organizations.
@@ -15,8 +14,7 @@ export const runsQueries: GraphQLResolverModule<GraphQLContext>["Query"] = {
     args: FilterableConnectionArgs,
     context: GraphQLContext,
   ) => {
-    const { client, userId } = getAuthenticatedClient(context);
-    const orgIds = await getUserOrganizationIds(userId, client);
+    const { client, orgIds } = await getAuthenticatedClient(context);
 
     return queryWithPagination(args, context, {
       client,

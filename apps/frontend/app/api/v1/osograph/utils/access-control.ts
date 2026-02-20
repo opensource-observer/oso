@@ -5,7 +5,41 @@ import {
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
 import { AuthenticationErrors } from "@/app/api/v1/osograph/utils/errors";
+import { getUserOrganizationIds } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import type { Database } from "@/lib/types/supabase";
+import { logger } from "@/lib/logger";
+
+/**
+ * Describes the org-scoping behavior of the current authentication context.
+ * - api_token: Restricted to a single org (from api_keys.org_id)
+ * - pat: Supabase JWT login, can access all user orgs
+ * - system: Internal system credentials
+ */
+export type OrgScope =
+  | { type: "api_token"; orgId: string }
+  | { type: "pat" }
+  | { type: "system" };
+
+/**
+ * Determines the org scope from the current GraphQL context.
+ * API tokens are restricted to their associated org.
+ * PATs can access all user orgs.
+ */
+export function getOrgScope(context: GraphQLContext): OrgScope {
+  if (context.systemCredentials) {
+    return { type: "system" };
+  }
+  const { user } = context;
+  if (
+    user.role !== "anonymous" &&
+    user.keyName !== "login" &&
+    "orgId" in user &&
+    user.orgId
+  ) {
+    return { type: "api_token", orgId: user.orgId };
+  }
+  return { type: "pat" };
+}
 
 /**
  * Table names from Supabase schema.
@@ -123,6 +157,10 @@ function validateAndReturnResourceAccess(
       permissionLevel: permissionLevel as Exclude<PermissionLevel, "none">,
     };
   }
+  logger.error("Permission level insufficient", {
+    permissionLevel,
+    requiredPermission,
+  });
   throw AuthenticationErrors.notAuthorized();
 }
 
@@ -139,39 +177,64 @@ function validateAndReturnResourceAccess(
  */
 export function getSystemClient(context: GraphQLContext): SupabaseAdminClient {
   if (!context.systemCredentials) {
+    logger.error("System credentials missing in context");
     throw AuthenticationErrors.notAuthorized();
   }
   return createAdminClient();
 }
 
 /**
- * Result returned by getAuthenticatedClient containing both the client and
- * the user's ID.
+ * Returns the user's organization IDs, using the request-scoped cache
+ */
+async function getOrCacheUserOrgIds(
+  context: GraphQLContext,
+  userId: string,
+  client: SupabaseAdminClient,
+): Promise<string[]> {
+  const cached = context.authCache.orgIds.get(userId);
+  if (cached) return cached;
+
+  const orgIds = await getUserOrganizationIds(userId, client);
+  context.authCache.orgIds.set(userId, orgIds);
+  return orgIds;
+}
+
+/**
+ * Result returned by getAuthenticatedClient containing the client,
+ * user's ID, and org IDs scoped by token type.
  */
 export interface AuthenticatedClientResult {
   client: SupabaseAdminClient;
   userId: string;
+  orgIds: string[];
+  orgScope: OrgScope;
 }
 
 /**
  * Get a Supabase admin client for authenticated user operations.
  * Validates that the user is authenticated (not anonymous).
+ * Returns orgIds already scoped by token type:
+ * - API tokens → [tokenOrgId]
+ * - PATs → all user orgs
  *
  * Note: This does NOT check org membership, use getOrgScopedClient for that.
- * This is useful for user profile operations.
  *
  * @param context GraphQL context
- * @returns Object containing Supabase admin client and user ID
+ * @returns Object containing Supabase admin client, user ID, scoped orgIds, and orgScope
  * @throws {AuthenticationErrors.notAuthenticated()} if user is anonymous
  */
-export function getAuthenticatedClient(
+export async function getAuthenticatedClient(
   context: GraphQLContext,
-): AuthenticatedClientResult {
+): Promise<AuthenticatedClientResult> {
   const user = requireAuthentication(context.user);
-  return {
-    client: createAdminClient(),
-    userId: user.userId,
-  };
+  const client = createAdminClient();
+  const orgScope = getOrgScope(context);
+  const orgIds =
+    orgScope.type === "api_token"
+      ? [orgScope.orgId]
+      : await getOrCacheUserOrgIds(context, user.userId, client);
+
+  return { client, userId: user.userId, orgIds, orgScope };
 }
 
 /**
@@ -193,32 +256,26 @@ export async function getOrgScopedClient(
   orgId: string,
 ): Promise<OrgAccessResult> {
   const user = requireAuthentication(context.user);
-  const cacheKey = `${user.userId}:${orgId}`;
 
-  const cachedRole = context.authCache.orgMemberships.get(cacheKey);
-  if (cachedRole) {
-    return {
-      client: createAdminClient(),
-      orgRole: cachedRole as OrgRole,
-      userId: user.userId,
-    };
-  }
-
-  const client = createAdminClient();
-  const { data: membership } = await client
-    .from("users_by_organization")
-    .select("user_role")
-    .eq("user_id", user.userId)
-    .eq("org_id", orgId)
-    .is("deleted_at", null)
-    .single();
-
-  if (!membership) {
+  const orgScope = getOrgScope(context);
+  if (orgScope.type === "api_token" && orgScope.orgId !== orgId) {
+    logger.error("API token cross-org access denied", {
+      tokenOrgId: orgScope.orgId,
+      requestedOrgId: orgId,
+    });
     throw AuthenticationErrors.notAuthorized();
   }
 
-  const orgRole = membership.user_role as OrgRole;
-  context.authCache.orgMemberships.set(cacheKey, orgRole);
+  const client = createAdminClient();
+  const orgRole = await getOrgRoleCached(client, context, user.userId, orgId);
+
+  if (!orgRole) {
+    logger.error("User is not a member of organization", {
+      userId: user.userId,
+      orgId,
+    });
+    throw AuthenticationErrors.notAuthorized();
+  }
 
   return { client, orgRole, userId: user.userId };
 }
@@ -237,7 +294,7 @@ interface ResourceConfig<T extends keyof Tables> {
  * Maps resource types to their corresponding database table and column names.
  * Type-safe: permissionColumn must be a valid column in resource_permissions.
  */
-const RESOURCE_CONFIG: {
+export const RESOURCE_CONFIG: {
   notebook: ResourceConfig<"notebooks">;
   chat: ResourceConfig<"chat_history">;
   dataset: ResourceConfig<"datasets">;
@@ -260,6 +317,36 @@ const RESOURCE_CONFIG: {
     permissionColumn: "data_connection_id",
   },
 };
+
+/**
+ * Helper function to get org role with caching.
+ */
+async function getOrgRoleCached(
+  client: SupabaseAdminClient,
+  context: GraphQLContext,
+  userId: string,
+  orgId: string,
+): Promise<OrgRole | undefined> {
+  const cacheKey = `${userId}:${orgId}`;
+  const cached = context.authCache.orgMemberships.get(cacheKey) as
+    | OrgRole
+    | undefined;
+  if (cached) return cached;
+
+  const { data: membership } = await client
+    .from("users_by_organization")
+    .select("user_role")
+    .eq("user_id", userId)
+    .eq("org_id", orgId)
+    .is("deleted_at", null)
+    .single();
+
+  if (!membership) return undefined;
+
+  const role = membership.user_role as OrgRole;
+  context.authCache.orgMemberships.set(cacheKey, role);
+  return role;
+}
 
 /**
  * Get a Supabase admin client for operations on a resource within an organization.
@@ -324,29 +411,17 @@ export async function getOrgResourceClient(
     .single();
 
   if (!resource) {
+    logger.error("Resource not found", { resourceType, resourceId });
     throw AuthenticationErrors.notAuthorized();
   }
 
-  // Check orgMemberships cache before querying DB
-  const membershipCacheKey = `${user.userId}:${resource.org_id}`;
-  let orgRole = context.authCache.orgMemberships.get(membershipCacheKey) as
-    | OrgRole
-    | undefined;
+  const orgScope = getOrgScope(context);
+  const isCrossOrgApiToken =
+    orgScope.type === "api_token" && orgScope.orgId !== resource.org_id;
 
-  if (!orgRole) {
-    const { data: membership } = await client
-      .from("users_by_organization")
-      .select("user_role")
-      .eq("user_id", user.userId)
-      .eq("org_id", resource.org_id)
-      .is("deleted_at", null)
-      .single();
-
-    if (membership) {
-      orgRole = membership.user_role as OrgRole;
-      context.authCache.orgMemberships.set(membershipCacheKey, orgRole);
-    }
-  }
+  const orgRole = isCrossOrgApiToken
+    ? undefined
+    : await getOrgRoleCached(client, context, user.userId, resource.org_id);
 
   if (orgRole && bypassesResourcePermissions(orgRole)) {
     const permissionLevel = orgRole === "owner" ? "owner" : "admin";
@@ -354,18 +429,20 @@ export async function getOrgResourceClient(
     return { client, permissionLevel };
   }
 
-  const { data: userPermission } = await client
-    .from("resource_permissions")
-    .select("permission_level")
-    .eq("user_id", user.userId)
-    .eq(config.permissionColumn, resourceId)
-    .is("revoked_at", null)
-    .single();
+  if (!isCrossOrgApiToken) {
+    const { data: userPermission } = await client
+      .from("resource_permissions")
+      .select("permission_level")
+      .eq("user_id", user.userId)
+      .eq(config.permissionColumn, resourceId)
+      .is("revoked_at", null)
+      .single();
 
-  if (userPermission) {
-    const userLevel = userPermission.permission_level as PermissionLevel;
-    context.authCache.resourcePermissions.set(cacheKey, userLevel);
-    return validateAndReturnResourceAccess(userLevel, requiredPermission);
+    if (userPermission) {
+      const userLevel = userPermission.permission_level as PermissionLevel;
+      context.authCache.resourcePermissions.set(cacheKey, userLevel);
+      return validateAndReturnResourceAccess(userLevel, requiredPermission);
+    }
   }
 
   if (orgRole === "member") {
@@ -387,5 +464,11 @@ export async function getOrgResourceClient(
     return validateAndReturnResourceAccess(publicLevel, requiredPermission);
   }
 
+  logger.error("Resource access denied", {
+    userId: user.userId,
+    resourceType,
+    resourceId,
+    isCrossOrgApiToken,
+  });
   throw AuthenticationErrors.notAuthorized();
 }

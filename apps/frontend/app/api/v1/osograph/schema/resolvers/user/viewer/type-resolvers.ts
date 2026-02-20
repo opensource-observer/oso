@@ -1,7 +1,6 @@
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import {
-  getUserOrganizationIds,
   getUserOrganizationsConnection,
   getUserInvitationsConnection,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
@@ -36,7 +35,7 @@ export const viewerTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const { client } = getAuthenticatedClient(context);
+      const { client, orgIds } = await getAuthenticatedClient(context);
 
       const validatedWhere = args.where
         ? validateInput(OrganizationWhereSchema, args.where)
@@ -47,6 +46,7 @@ export const viewerTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
         args,
         validatedWhere ? parseWhereClause(validatedWhere) : {},
         client,
+        orgIds,
       );
     },
 
@@ -55,8 +55,7 @@ export const viewerTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const { client } = getAuthenticatedClient(context);
-      const orgIds = await getUserOrganizationIds(parent.id, client);
+      const { client, orgIds } = await getAuthenticatedClient(context);
 
       const options: ExplicitClientQueryOptions<"notebooks"> = {
         client,
@@ -76,8 +75,7 @@ export const viewerTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const { client } = getAuthenticatedClient(context);
-      const orgIds = await getUserOrganizationIds(parent.id, client);
+      const { client, orgIds } = await getAuthenticatedClient(context);
 
       const options: ExplicitClientQueryOptions<"datasets"> = {
         client,
@@ -97,7 +95,7 @@ export const viewerTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const { client } = getAuthenticatedClient(context);
+      const { client } = await getAuthenticatedClient(context);
 
       const validatedWhere = args.where
         ? validateInput(InvitationWhereSchema, args.where)

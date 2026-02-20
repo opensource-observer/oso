@@ -3,4 +3,4 @@ name: scheduler
 description: Deploys the scheduler workers and cronjobs
 
 type: application
-version: 0.3.3
+version: 0.3.4

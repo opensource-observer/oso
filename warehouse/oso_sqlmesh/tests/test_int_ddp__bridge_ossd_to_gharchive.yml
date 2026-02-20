@@ -1,0 +1,161 @@
+test_bridge_ossd_to_gharchive_basic:
+  model: oso.int_ddp__bridge_ossd_to_gharchive
+  inputs:
+    oso.projects_v1:
+      rows:
+      - project_id: "project_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "uniswap"
+        display_name: "Uniswap"
+        description: "Uniswap protocol"
+      - project_id: "project_2"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "optimism"
+        display_name: "Optimism"
+        description: "Optimism protocol"
+      - project_id: "project_3"
+        project_source: "CRYPTO_ECOSYSTEMS"
+        project_namespace: "ce"
+        project_name: "ethereum"
+        display_name: "Ethereum"
+        description: "Ethereum ecosystem"
+    oso.artifacts_by_project_v1:
+      rows:
+      # OSS_DIRECTORY project with GITHUB artifact -> should be included
+      - artifact_id: "artifact_1"
+        artifact_source_id: "12345"
+        artifact_source: "GITHUB"
+        artifact_namespace: "uniswap"
+        artifact_name: "v3-core"
+        project_id: "project_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "uniswap"
+      # OSS_DIRECTORY project with OPTIMISM artifact -> should be excluded
+      - artifact_id: "artifact_2"
+        artifact_source_id: "0xabcdef"
+        artifact_source: "OPTIMISM"
+        artifact_namespace: ""
+        artifact_name: "0xabcdef"
+        project_id: "project_2"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "optimism"
+      # OSS_DIRECTORY project with another GITHUB artifact -> should be included
+      - artifact_id: "artifact_3"
+        artifact_source_id: "67890"
+        artifact_source: "GITHUB"
+        artifact_namespace: "ethereum-optimism"
+        artifact_name: "optimism"
+        project_id: "project_2"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "optimism"
+      # CRYPTO_ECOSYSTEMS project with GITHUB artifact -> should be excluded
+      - artifact_id: "artifact_4"
+        artifact_source_id: "99999"
+        artifact_source: "GITHUB"
+        artifact_namespace: "ethereum"
+        artifact_name: "go-ethereum"
+        project_id: "project_3"
+        project_source: "CRYPTO_ECOSYSTEMS"
+        project_namespace: "ce"
+        project_name: "ethereum"
+  outputs:
+    query:
+      rows:
+      - project_id: "project_1"
+        project_name: "uniswap"
+        project_display_name: "Uniswap"
+        repo_name: "uniswap/v3-core"
+        gharchive_id: 12345
+      - project_id: "project_2"
+        project_name: "optimism"
+        project_display_name: "Optimism"
+        repo_name: "ethereum-optimism/optimism"
+        gharchive_id: 67890
+
+test_bridge_ossd_to_gharchive_dedup:
+  model: oso.int_ddp__bridge_ossd_to_gharchive
+  inputs:
+    oso.projects_v1:
+      rows:
+      - project_id: "project_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "test-project"
+        display_name: "Test Project"
+        description: "A test project"
+    oso.artifacts_by_project_v1:
+      rows:
+      # Duplicate rows for the same project+repo
+      - artifact_id: "artifact_a"
+        artifact_source_id: "11111"
+        artifact_source: "GITHUB"
+        artifact_namespace: "org"
+        artifact_name: "repo"
+        project_id: "project_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "test-project"
+      - artifact_id: "artifact_b"
+        artifact_source_id: "11111"
+        artifact_source: "GITHUB"
+        artifact_namespace: "org"
+        artifact_name: "repo"
+        project_id: "project_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "test-project"
+  outputs:
+    query:
+      rows:
+      - project_id: "project_1"
+        project_name: "test-project"
+        project_display_name: "Test Project"
+        repo_name: "org/repo"
+        gharchive_id: 11111
+
+test_bridge_ossd_to_gharchive_empty_source_id:
+  model: oso.int_ddp__bridge_ossd_to_gharchive
+  inputs:
+    oso.projects_v1:
+      rows:
+      - project_id: "project_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "test-project"
+        display_name: "Test Project"
+        description: "A test project"
+    oso.artifacts_by_project_v1:
+      rows:
+      # Empty artifact_source_id -> should be excluded
+      - artifact_id: "artifact_1"
+        artifact_source_id: ""
+        artifact_source: "GITHUB"
+        artifact_namespace: "org"
+        artifact_name: "repo1"
+        project_id: "project_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "test-project"
+      # Valid artifact_source_id -> should be included
+      - artifact_id: "artifact_2"
+        artifact_source_id: "22222"
+        artifact_source: "GITHUB"
+        artifact_namespace: "org"
+        artifact_name: "repo2"
+        project_id: "project_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "test-project"
+  outputs:
+    query:
+      rows:
+      - project_id: "project_1"
+        project_name: "test-project"
+        project_display_name: "Test Project"
+        repo_name: "org/repo2"
+        gharchive_id: 22222

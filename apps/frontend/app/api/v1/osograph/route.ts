@@ -10,6 +10,7 @@ import { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import { shouldUseNewResolvers } from "@/lib/feature-flags/posthog-features";
 import { resolvers as newResolvers } from "@/app/api/v1/osograph/schema/resolvers";
 import { resolvers as oldResolvers } from "@/app/api/v1/osograph/schema/resolvers/legacy";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 function loadSchemas(): string {
   const schemaDir = path.join(
@@ -62,6 +63,7 @@ const newResolverHandler = startServerAndCreateNextHandler<NextRequest>(
         authCache: {
           orgMemberships: new Map(),
           resourcePermissions: new Map(),
+          orgIds: new Map(),
         },
       } satisfies GraphQLContext;
     },
@@ -81,6 +83,7 @@ const oldResolverHandler = startServerAndCreateNextHandler<NextRequest>(
         authCache: {
           orgMemberships: new Map(),
           resourcePermissions: new Map(),
+          orgIds: new Map(),
         },
       } satisfies GraphQLContext;
     },
@@ -108,4 +111,6 @@ export function OPTIONS() {
   });
 }
 
-export { handler as GET, handler as POST };
+const wrappedHandler = withPostHogTracking(handler);
+
+export { wrappedHandler as GET, wrappedHandler as POST };
