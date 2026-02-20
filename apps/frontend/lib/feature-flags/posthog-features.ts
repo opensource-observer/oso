@@ -1,14 +1,9 @@
 import { User } from "@/lib/types/user";
-import {
-  FEATURE_FLAG_NEW_RESOLVERS,
-  ENABLE_POSTHOG_LOCAL_EVALUATION,
-} from "@/lib/config";
+import { ENABLE_POSTHOG_LOCAL_EVALUATION } from "@/lib/config";
 import { PostHogClient } from "@/lib/clients/posthog";
 import { logger } from "@/lib/logger";
 
-export const FEATURE_FLAGS = {
-  NEW_GRAPHQL_RESOLVERS: FEATURE_FLAG_NEW_RESOLVERS,
-} as const;
+export const FEATURE_FLAGS = {} as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];
 
@@ -44,12 +39,4 @@ export async function evaluateFeatureFlag(
     logger.error(`Error evaluating feature flag ${flagKey}:`, error);
     return defaultValue;
   }
-}
-
-/**
- * Helper function specifically for the new resolvers feature flag.
- * Returns true if the user should receive the new GraphQL resolvers.
- */
-export async function shouldUseNewResolvers(user: User): Promise<boolean> {
-  return evaluateFeatureFlag(FEATURE_FLAGS.NEW_GRAPHQL_RESOLVERS, user, false);
 }
