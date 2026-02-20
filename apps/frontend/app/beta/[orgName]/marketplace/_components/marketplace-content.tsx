@@ -35,7 +35,10 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { DatasetType } from "@/lib/graphql/generated/graphql";
+import {
+  DatasetType,
+  MarketplaceDatasetsQuery,
+} from "@/lib/graphql/generated/graphql";
 import { MarketplaceSkeleton } from "@/app/beta/[orgName]/marketplace/_components/marketplace-skeleton";
 
 const DATASET_TYPE_LABELS: Record<string, string> = {
@@ -46,6 +49,113 @@ const DATASET_TYPE_LABELS: Record<string, string> = {
 };
 
 export const PAGE_SIZE = 25;
+
+type DatasetNode = NonNullable<
+  NonNullable<MarketplaceDatasetsQuery["marketplaceDatasets"]["edges"]>[number]
+>["node"];
+
+interface DatasetCardProps {
+  dataset: DatasetNode;
+  orgId: string;
+}
+
+function DatasetCard({ dataset, orgId }: DatasetCardProps) {
+  const [subscribe, { loading: subscribing }] = useMutation(
+    SUBSCRIBE_TO_DATASET,
+    { refetchQueries: [MARKETPLACE_DATASETS] },
+  );
+  const [unsubscribe, { loading: unsubscribing }] = useMutation(
+    UNSUBSCRIBE_FROM_DATASET,
+    { refetchQueries: [MARKETPLACE_DATASETS] },
+  );
+
+  const handleSubscribe = useCallback(async () => {
+    try {
+      await subscribe({
+        variables: { input: { datasetId: dataset.id, orgId } },
+      });
+      toast.success("Subscribed to dataset");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to subscribe");
+    }
+  }, [dataset.id, orgId, subscribe]);
+
+  const handleUnsubscribe = useCallback(async () => {
+    try {
+      await unsubscribe({
+        variables: { input: { datasetId: dataset.id, orgId } },
+      });
+      toast.success("Unsubscribed from dataset");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to unsubscribe");
+    }
+  }, [dataset.id, orgId, unsubscribe]);
+
+  return (
+    <Card className="flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <Badge variant="secondary">
+            {DATASET_TYPE_LABELS[dataset.type] ?? dataset.type}
+          </Badge>
+          <span className="text-xs text-muted-foreground">
+            {dataset.organization.displayName ?? dataset.organization.name}
+          </span>
+        </div>
+        <h3 className="font-semibold text-base mt-2 leading-tight">
+          {dataset.displayName ?? dataset.name}
+        </h3>
+        <p className="text-xs text-muted-foreground font-mono mt-1 min-h-[1rem]">
+          {dataset.name}
+        </p>
+      </CardHeader>
+      <CardContent className="flex-1 pb-3">
+        {dataset.description ? (
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {dataset.description}
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground italic">No description</p>
+        )}
+        <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Table2 className="h-3.5 w-3.5" />
+            {dataset.tables?.totalCount ?? 0}{" "}
+            {dataset.tables?.totalCount === 1 ? "table" : "tables"}
+          </span>
+          {dataset.updatedAt && (
+            <span className="flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" />
+              {new Date(dataset.updatedAt).toLocaleDateString()}
+            </span>
+          )}
+        </div>
+      </CardContent>
+      <CardFooter className="pt-0">
+        {dataset.isSubscribed ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            disabled={unsubscribing}
+            onClick={() => void handleUnsubscribe()}
+          >
+            {unsubscribing ? "Unsubscribing..." : "Unsubscribe"}
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            className="w-full"
+            disabled={subscribing}
+            onClick={() => void handleSubscribe()}
+          >
+            {subscribing ? "Subscribing..." : "Subscribe"}
+          </Button>
+        )}
+      </CardFooter>
+    </Card>
+  );
+}
 
 interface MarketplaceDataGridProps {
   orgId: string;
@@ -63,7 +173,7 @@ function MarketplaceDataGrid({
   setAfterCursor,
 }: MarketplaceDataGridProps) {
   // Fetch marketplace datasets - reads from preloaded cache on first render
-  const { data, refetch } = useSuspenseQuery(MARKETPLACE_DATASETS, {
+  const { data } = useSuspenseQuery(MARKETPLACE_DATASETS, {
     variables: {
       first: PAGE_SIZE,
       after: afterCursor,
@@ -73,49 +183,6 @@ function MarketplaceDataGrid({
       orgId,
     },
   });
-
-  const [subscribe, { loading: subscribing }] = useMutation(
-    SUBSCRIBE_TO_DATASET,
-    {
-      refetchQueries: [MARKETPLACE_DATASETS],
-    },
-  );
-  const [unsubscribe, { loading: unsubscribing }] = useMutation(
-    UNSUBSCRIBE_FROM_DATASET,
-    {
-      refetchQueries: [MARKETPLACE_DATASETS],
-    },
-  );
-
-  const handleSubscribe = useCallback(
-    async (datasetId: string) => {
-      try {
-        await subscribe({
-          variables: { input: { datasetId, orgId } },
-        });
-        toast.success("Subscribed to dataset");
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to subscribe");
-      }
-    },
-    [orgId, subscribe, refetch],
-  );
-
-  const handleUnsubscribe = useCallback(
-    async (datasetId: string) => {
-      try {
-        await unsubscribe({
-          variables: { input: { datasetId, orgId } },
-        });
-        toast.success("Unsubscribed from dataset");
-      } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : "Failed to unsubscribe",
-        );
-      }
-    },
-    [orgId, unsubscribe, refetch],
-  );
 
   const connection = data?.marketplaceDatasets;
   const datasets = connection?.edges ?? [];
@@ -142,72 +209,8 @@ function MarketplaceDataGrid({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {datasets.map(({ node: dataset, cursor }) => (
-            <Card key={cursor} className="flex flex-col">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <Badge variant="secondary">
-                    {DATASET_TYPE_LABELS[dataset.type] ?? dataset.type}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {dataset.organization.displayName ??
-                      dataset.organization.name}
-                  </span>
-                </div>
-                <h3 className="font-semibold text-base mt-2 leading-tight">
-                  {dataset.displayName ?? dataset.name}
-                </h3>
-                <p className="text-xs text-muted-foreground font-mono mt-1 min-h-[1rem]">
-                  {dataset.name}
-                </p>
-              </CardHeader>
-              <CardContent className="flex-1 pb-3">
-                {dataset.description ? (
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {dataset.description}
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">
-                    No description
-                  </p>
-                )}
-                <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Table2 className="h-3.5 w-3.5" />
-                    {dataset.tables?.totalCount ?? 0}{" "}
-                    {dataset.tables?.totalCount === 1 ? "table" : "tables"}
-                  </span>
-                  {dataset.updatedAt && (
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" />
-                      {new Date(dataset.updatedAt).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter className="pt-0">
-                {dataset.isSubscribed ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    disabled={unsubscribing}
-                    onClick={() => void handleUnsubscribe(dataset.id)}
-                  >
-                    {unsubscribing ? "Unsubscribing..." : "Unsubscribe"}
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    disabled={subscribing}
-                    onClick={() => void handleSubscribe(dataset.id)}
-                  >
-                    {subscribing ? "Subscribing..." : "Subscribe"}
-                  </Button>
-                )}
-              </CardFooter>
-            </Card>
+          {datasets.map(({ node: dataset }) => (
+            <DatasetCard key={dataset.id} dataset={dataset} orgId={orgId} />
           ))}
         </div>
       )}

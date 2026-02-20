@@ -143,7 +143,7 @@ async function queryWithExplicitClient<TTable extends TableWithOrgId>(
     supabase,
     options.tableName,
     predicate,
-    (query: any) => {
+    (query) => {
       query = orderBy
         ? query.order(orderBy.key, {
             ascending: orderBy.ascending ?? false,
@@ -212,7 +212,7 @@ async function queryWithImplicitClient<TTable extends TableWithOrgId>(
     supabase,
     options.tableName,
     predicate,
-    (query: any) => {
+    (query) => {
       query = orderBy
         ? query.order(orderBy.key, {
             ascending: orderBy.ascending ?? false,

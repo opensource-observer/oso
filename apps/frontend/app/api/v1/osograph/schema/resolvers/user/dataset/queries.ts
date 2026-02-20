@@ -63,8 +63,12 @@ export const datasetQueries: GraphQLResolverModule<GraphQLContext>["Query"] = {
       logger.warn(
         `Org ${args.orgId} attempted to access marketplace datasets, but is not part of the requesting orgs.`,
       );
-      return OrganizationErrors.notFound();
+      throw OrganizationErrors.notFound();
     }
+
+    const validatedSearch = args.search
+      ? args.search.replace(/[^a-zA-Z0-9_ ]/g, "")
+      : undefined;
 
     // 1. Get public dataset IDs from resource_permissions
     const { data: publicPerms, error: permsError } = await client
@@ -106,12 +110,12 @@ export const datasetQueries: GraphQLResolverModule<GraphQLContext>["Query"] = {
       .is("deleted_at", null);
 
     // Search across dataset name, display_name, and organization name
-    if (args.search) {
+    if (validatedSearch) {
       query = query
         .or(
-          `name.ilike.%${args.search}%,display_name.ilike.%${args.search}%,filter.not.is.null`,
+          `name.ilike."%${validatedSearch}%",display_name.ilike."%${validatedSearch}%",filter.not.is.null`,
         )
-        .ilike("filter.org_name", `%${args.search}%`);
+        .ilike("filter.org_name", `%${validatedSearch}%`);
     }
 
     if (args.datasetType) {
