@@ -4,7 +4,11 @@ from sqlmesh.core.macros import MacroEvaluator
 
 
 def _generate_oso_id(evaluator: MacroEvaluator, *args: exp.Expression):
-    """Creates a deterministic ID by concatenating the arguments and hashing them."""
+    """Creates a deterministic ID by concatenating the arguments and hashing them.
+
+    Returns base64-encoded SHA256 hash for both DuckDB and Trino,
+    ensuring consistency between local development and production.
+    """
     if evaluator.runtime_stage == "loading":
         return exp.Literal(this="someid", is_string=True)
     concatenated = exp.Concat(expressions=args, safe=True, coalesce=False)
@@ -16,9 +20,16 @@ def _generate_oso_id(evaluator: MacroEvaluator, *args: exp.Expression):
         this=concatenated,
         length=exp.Literal(this=256, is_string=False),
     )
+
+    # Convert to base64 for consistency across engines
     if evaluator.engine_adapter.dialect == "duckdb":
-        return sha
-    return exp.ToBase64(this=sha)
+        # DuckDB: SHA256 returns hex VARCHAR, need to convert hex -> blob -> base64
+        # Use FROM_HEX to convert hex string to BLOB, then TO_BASE64
+        hex_to_blob = exp.Anonymous(this="FROM_HEX", expressions=[sha])
+        return exp.ToBase64(this=hex_to_blob)
+    else:
+        # Trino: SHA256 already returns varbinary, can directly convert to base64
+        return exp.ToBase64(this=sha)
 
 
 @macro()

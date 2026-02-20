@@ -6,6 +6,8 @@ test_defillama_tvl_to_project_monthly:
     end: 2024-03-01
   inputs:
     oso.int_events_daily__defillama:
+      columns:
+        bucket_day: date
       rows:
         - to_artifact_id: to_art_0
           from_artifact_namespace: test

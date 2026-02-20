@@ -10,7 +10,7 @@ test_int_ddp__commits_unified_basic_join:
     oso.int_github__commits_all:
       columns:
         sha: varchar
-        created_at: timestamp
+        created_at: timestamp(6)
         repository_id: bigint
         repository_name: varchar
         actor_id: bigint
@@ -19,7 +19,7 @@ test_int_ddp__commits_unified_basic_join:
         author_name: varchar
       rows:
         - sha: "abc123def456"
-          created_at: "2024-01-15 10:00:00"
+          created_at: "2024-01-15 10:00:00.000000"
           repository_id: 1001
           repository_name: "org/repo"
           actor_id: 100
@@ -34,8 +34,9 @@ test_int_ddp__commits_unified_basic_join:
         is_bot: bigint
         additions: bigint
         deletions: bigint
-        committed_at: timestamp
-        authored_at: timestamp
+        created_at: timestamp(6)
+        committed_at: timestamp(6)
+        authored_at: timestamp(6)
       rows:
         - sha1: "abc123def456"
           repo_id: 2001
@@ -43,13 +44,14 @@ test_int_ddp__commits_unified_basic_join:
           is_bot: 0
           additions: 50
           deletions: 10
-          committed_at: "2024-01-15 09:55:00"
-          authored_at: "2024-01-15 09:50:00"
+          committed_at: "2024-01-15 09:55:00.000000"
+          authored_at: "2024-01-15 09:50:00.000000"
     oso.int_opendevdata__repositories_with_repo_id:
       columns:
         opendevdata_id: bigint
         repo_id: bigint
         repo_name: varchar
+        repo_created_at: timestamp(6)
       rows:
         - opendevdata_id: 2001
           repo_id: 1001
@@ -72,7 +74,7 @@ test_int_ddp__commits_unified_basic_join:
     query:
       rows:
         - sha: "abc123def456"
-          created_at: "2024-01-15 10:00:00"
+          created_at: "2024-01-15 10:00:00.000000"
           repository_id: 1001
           repository_name: "org/repo"
           actor_id: 100
@@ -83,8 +85,8 @@ test_int_ddp__commits_unified_basic_join:
           is_bot: 0
           additions: 50
           deletions: 10
-          committed_at: "2024-01-15 09:55:00"
-          authored_at: "2024-01-15 09:50:00"
+          committed_at: "2024-01-15 09:55:00.000000"
+          authored_at: "2024-01-15 09:50:00.000000"
           author_id: 100
           primary_github_user_id: "MDQ6VXNlcjEwMA=="
           source: "gharchive"
@@ -99,7 +101,7 @@ test_int_ddp__commits_unified_same_sha_different_repos:
     oso.int_github__commits_all:
       columns:
         sha: varchar
-        created_at: timestamp
+        created_at: timestamp(6)
         repository_id: bigint
         repository_name: varchar
         actor_id: bigint
@@ -109,7 +111,7 @@ test_int_ddp__commits_unified_same_sha_different_repos:
       rows:
         # Same commit pushed to original repo
         - sha: "shared_commit_sha"
-          created_at: "2024-01-15 10:00:00"
+          created_at: "2024-01-15 10:00:00.000000"
           repository_id: 1001
           repository_name: "org/original-repo"
           actor_id: 100
@@ -118,7 +120,7 @@ test_int_ddp__commits_unified_same_sha_different_repos:
           author_name: "Author"
         # Same commit exists in forked repo
         - sha: "shared_commit_sha"
-          created_at: "2024-01-15 11:00:00"
+          created_at: "2024-01-15 11:00:00.000000"
           repository_id: 2002
           repository_name: "user/forked-repo"
           actor_id: 200
@@ -133,8 +135,9 @@ test_int_ddp__commits_unified_same_sha_different_repos:
         is_bot: bigint
         additions: bigint
         deletions: bigint
-        committed_at: timestamp
-        authored_at: timestamp
+        created_at: timestamp(6)
+        committed_at: timestamp(6)
+        authored_at: timestamp(6)
       rows:
         - sha1: "shared_commit_sha"
           repo_id: 3001
@@ -142,13 +145,14 @@ test_int_ddp__commits_unified_same_sha_different_repos:
           is_bot: 0
           additions: 25
           deletions: 5
-          committed_at: "2024-01-15 09:55:00"
-          authored_at: "2024-01-15 09:50:00"
+          committed_at: "2024-01-15 09:55:00.000000"
+          authored_at: "2024-01-15 09:50:00.000000"
     oso.int_opendevdata__repositories_with_repo_id:
       columns:
         opendevdata_id: bigint
         repo_id: bigint
         repo_name: varchar
+        repo_created_at: timestamp(6)
       rows:
         - opendevdata_id: 3001
           repo_id: 1001
@@ -200,7 +204,7 @@ test_int_ddp__commits_unified_no_opendevdata_match:
     oso.int_github__commits_all:
       columns:
         sha: varchar
-        created_at: timestamp
+        created_at: timestamp(6)
         repository_id: bigint
         repository_name: varchar
         actor_id: bigint
@@ -209,7 +213,7 @@ test_int_ddp__commits_unified_no_opendevdata_match:
         author_name: varchar
       rows:
         - sha: "gharchive_only_commit"
-          created_at: "2024-01-15 10:00:00"
+          created_at: "2024-01-15 10:00:00.000000"
           repository_id: 1001
           repository_name: "org/repo"
           actor_id: 100
@@ -224,14 +228,16 @@ test_int_ddp__commits_unified_no_opendevdata_match:
         is_bot: bigint
         additions: bigint
         deletions: bigint
-        committed_at: timestamp
-        authored_at: timestamp
+        created_at: timestamp(6)
+        committed_at: timestamp(6)
+        authored_at: timestamp(6)
       rows: []
     oso.int_opendevdata__repositories_with_repo_id:
       columns:
         opendevdata_id: bigint
         repo_id: bigint
         repo_name: varchar
+        repo_created_at: timestamp(6)
       rows: []
     oso.stg_opendevdata__canonical_developers:
       columns:
@@ -268,7 +274,7 @@ test_int_ddp__commits_unified_null_primary_github_user_id:
     oso.int_github__commits_all:
       columns:
         sha: varchar
-        created_at: timestamp
+        created_at: timestamp(6)
         repository_id: bigint
         repository_name: varchar
         actor_id: bigint
@@ -277,7 +283,7 @@ test_int_ddp__commits_unified_null_primary_github_user_id:
         author_name: varchar
       rows:
         - sha: "commit_from_deleted_account"
-          created_at: "2024-01-15 10:00:00"
+          created_at: "2024-01-15 10:00:00.000000"
           repository_id: 1001
           repository_name: "org/repo"
           actor_id: 100
@@ -292,8 +298,9 @@ test_int_ddp__commits_unified_null_primary_github_user_id:
         is_bot: bigint
         additions: bigint
         deletions: bigint
-        committed_at: timestamp
-        authored_at: timestamp
+        created_at: timestamp(6)
+        committed_at: timestamp(6)
+        authored_at: timestamp(6)
       rows:
         - sha1: "commit_from_deleted_account"
           repo_id: 4001
@@ -301,13 +308,14 @@ test_int_ddp__commits_unified_null_primary_github_user_id:
           is_bot: 0
           additions: 10
           deletions: 5
-          committed_at: "2024-01-15 09:55:00"
-          authored_at: "2024-01-15 09:50:00"
+          committed_at: "2024-01-15 09:55:00.000000"
+          authored_at: "2024-01-15 09:50:00.000000"
     oso.int_opendevdata__repositories_with_repo_id:
       columns:
         opendevdata_id: bigint
         repo_id: bigint
         repo_name: varchar
+        repo_created_at: timestamp(6)
       rows:
         - opendevdata_id: 4001
           repo_id: 1001

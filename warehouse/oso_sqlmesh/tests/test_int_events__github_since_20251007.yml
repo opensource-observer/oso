@@ -5,29 +5,50 @@ test_int_events__github_since_20251007_basic:
     end_dt: 2025-10-08
   inputs:
     oso.stg_github__distinct_commits_resolved_mergebot_since_20251007:
+      columns:
+        created_at: timestamp(6)
       rows:
       - repository_id: 101
         sha: "sha1"
-        created_at: "2025-10-07 10:00:00"
+        created_at: "2025-10-07 10:00:00.000000"
         repository_name: "owner/repo"
         push_id: 123
         actor_id: 555
         actor_login: "user1"
         author_email: null
     oso.stg_github__releases:
+      columns:
+        created_at: timestamp(6)
       rows: []
     oso.stg_github__comments_since_20251007:
+      columns:
+        closed_at: timestamp(6)
+        created_at: timestamp(6)
+        event_time: timestamp(6)
+        merged_at: timestamp(6)
       rows: []
     oso.stg_github__issues:
+      columns:
+        closed_at: timestamp(6)
+        created_at: timestamp(6)
+        event_time: timestamp(6)
       rows: []
     oso.stg_github__pull_requests_since_20251007:
+      columns:
+        closed_at: timestamp(6)
+        created_at: timestamp(6)
+        event_time: timestamp(6)
+        merged_at: timestamp(6)
       rows: []
     oso.stg_github__pull_request_merge_events_since_20251007:
       columns:
         repository_id: bigint
         id: text
         type: text
-        event_time: timestamp
+        event_time: timestamp(6)
+        created_at: timestamp(6)
+        merged_at: timestamp(6)
+        closed_at: timestamp(6)
         repository_name: text
         actor_id: bigint
         actor_login: text
@@ -35,37 +56,36 @@ test_int_events__github_since_20251007_basic:
       - repository_id: 101
         id: "ev1"
         type: "PULL_REQUEST_MERGED"
-        event_time: "2025-10-07 12:00:00"
+        event_time: "2025-10-07 12:00:00.000000"
         repository_name: "owner/repo"
         actor_id: 555
         actor_login: "user1"
     oso.stg_github__stars_and_forks:
+      columns:
+        created_at: timestamp(6)
       rows: []
   outputs:
     query:
+      partial: true
       rows:
-      - time: "2025-10-07 10:00:00"
+      - time: "2025-10-07 10:00:00.000000"
         to_artifact_name: "repo"
         to_artifact_namespace: "owner"
         to_artifact_source_id: "101"
-        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
         from_artifact_name: "user1"
         from_artifact_namespace: "user1"
         from_artifact_source_id: "555"
-        from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
         event_type: "COMMIT_CODE"
         event_source_id: "123"
         event_source: "GITHUB"
         amount: 1.0
-      - time: "2025-10-07 12:00:00"
+      - time: "2025-10-07 12:00:00.000000"
         to_artifact_name: "repo"
         to_artifact_namespace: "owner"
         to_artifact_source_id: "101"
-        to_artifact_id: "d67f26aa76a0fc7e0e59e72461ba23ae60d57a0f148e0341ec9da1eeb37e8a22"
         from_artifact_name: "user1"
         from_artifact_namespace: "user1"
         from_artifact_source_id: "555"
-        from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
         event_type: "PULL_REQUEST_MERGED"
         event_source_id: "ev1"
         event_source: "GITHUB"

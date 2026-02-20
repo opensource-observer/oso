@@ -5,9 +5,11 @@ test_stg_github__commits_basic:
     end_dt: 2024-01-02
   inputs:
     oso.stg_github__push_events:
+      columns:
+        created_at: timestamp(6)
       rows:
       - push_id: 123
-        created_at: "2024-01-01 12:00:00"
+        created_at: "2024-01-01 12:00:00.000000"
         repository_id: 101
         repository_name: "owner/repo"
         ref: "refs/heads/main"
@@ -17,7 +19,7 @@ test_stg_github__commits_basic:
   outputs:
     query:
       rows:
-      - created_at: "2024-01-01 12:00:00"
+      - created_at: "2024-01-01 12:00:00.000000"
         repository_id: 101
         repository_name: "owner/repo"
         push_id: 123

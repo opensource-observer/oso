@@ -5,65 +5,20 @@ test_self_merge_rates_to_project_daily:
     end: 2024-01-31
   inputs:
     oso.int_events_aux_prs:
-      rows:
-      # Repository 1: Multiple PR events showing lifecycle
-      # PR 1: Self-merged without comments
-      - time: "2024-01-01 09:00:00"
-        to_artifact_id: repo_1
-        from_artifact_id: user_1
-        pr_id: pr_1_1
-        pr_number: 1
-        event_type: PULL_REQUEST_OPENED
-        event_source: GITHUB
-        merged_at: null
-        comments: 0
-      - time: "2024-01-01 10:00:00"
-        to_artifact_id: repo_1
-        from_artifact_id: user_1
-        pr_id: pr_1_1
-        pr_number: 1
-        event_type: PULL_REQUEST_MERGED
-        event_source: GITHUB
-        merged_at: "2024-01-01 10:00:00"
-        comments: 0
-      # PR 2: Self-merged with comments (not counted)
-      - time: "2024-01-02 09:00:00"
-        to_artifact_id: repo_1
-        from_artifact_id: user_1
-        pr_id: pr_1_2
-        pr_number: 2
-        event_type: PULL_REQUEST_OPENED
-        event_source: GITHUB
-        merged_at: null
-        comments: 0
-      - time: "2024-01-02 11:00:00"
-        to_artifact_id: repo_1
-        from_artifact_id: user_1
-        pr_id: pr_1_2
-        pr_number: 2
-        event_type: PULL_REQUEST_MERGED
-        event_source: GITHUB
-        merged_at: "2024-01-02 11:00:00"
-        comments: 2
-      # PR 3: Merged by different user
-      - time: "2024-01-03 09:00:00"
-        to_artifact_id: repo_1
-        from_artifact_id: user_2
-        pr_id: pr_1_3
-        pr_number: 3
-        event_type: PULL_REQUEST_OPENED
-        event_source: GITHUB
-        merged_at: null
-        comments: 0
-      - time: "2024-01-03 12:00:00"
-        to_artifact_id: repo_1
-        from_artifact_id: user_3
-        pr_id: pr_1_3
-        pr_number: 3
-        event_type: PULL_REQUEST_MERGED
-        event_source: GITHUB
-        merged_at: "2024-01-03 12:00:00"
-        comments: 0
+      columns:
+        author_association: varchar
+      query: |
+        SELECT CAST('2024-01-01 09:00:00.000000' AS TIMESTAMP(6)) AS time, 'repo_1' AS to_artifact_id, 'user_1' AS from_artifact_id, 'pr_1_1' AS pr_id, 1 AS pr_number, 'PULL_REQUEST_OPENED' AS event_type, 'GITHUB' AS event_source, CAST(NULL AS TIMESTAMP(6)) AS created_at, CAST(NULL AS TIMESTAMP(6)) AS closed_at, CAST(NULL AS TIMESTAMP(6)) AS merged_at, 0 AS comments, CAST(NULL AS VARCHAR) AS author_association, CAST(NULL AS VARCHAR) AS event_source_id
+        UNION ALL
+        SELECT CAST('2024-01-01 10:00:00.000000' AS TIMESTAMP(6)) AS time, 'repo_1' AS to_artifact_id, 'user_1' AS from_artifact_id, 'pr_1_1' AS pr_id, 1 AS pr_number, 'PULL_REQUEST_MERGED' AS event_type, 'GITHUB' AS event_source, CAST(NULL AS TIMESTAMP(6)) AS created_at, CAST(NULL AS TIMESTAMP(6)) AS closed_at, CAST('2024-01-01 10:00:00.000000' AS TIMESTAMP(6)) AS merged_at, 0 AS comments, CAST(NULL AS VARCHAR) AS author_association, CAST(NULL AS VARCHAR) AS event_source_id
+        UNION ALL
+        SELECT CAST('2024-01-02 09:00:00.000000' AS TIMESTAMP(6)) AS time, 'repo_1' AS to_artifact_id, 'user_1' AS from_artifact_id, 'pr_1_2' AS pr_id, 2 AS pr_number, 'PULL_REQUEST_OPENED' AS event_type, 'GITHUB' AS event_source, CAST(NULL AS TIMESTAMP(6)) AS created_at, CAST(NULL AS TIMESTAMP(6)) AS closed_at, CAST(NULL AS TIMESTAMP(6)) AS merged_at, 0 AS comments, CAST(NULL AS VARCHAR) AS author_association, CAST(NULL AS VARCHAR) AS event_source_id
+        UNION ALL
+        SELECT CAST('2024-01-02 11:00:00.000000' AS TIMESTAMP(6)) AS time, 'repo_1' AS to_artifact_id, 'user_1' AS from_artifact_id, 'pr_1_2' AS pr_id, 2 AS pr_number, 'PULL_REQUEST_MERGED' AS event_type, 'GITHUB' AS event_source, CAST(NULL AS TIMESTAMP(6)) AS created_at, CAST(NULL AS TIMESTAMP(6)) AS closed_at, CAST('2024-01-02 11:00:00.000000' AS TIMESTAMP(6)) AS merged_at, 2 AS comments, CAST(NULL AS VARCHAR) AS author_association, CAST(NULL AS VARCHAR) AS event_source_id
+        UNION ALL
+        SELECT CAST('2024-01-03 09:00:00.000000' AS TIMESTAMP(6)) AS time, 'repo_1' AS to_artifact_id, 'user_2' AS from_artifact_id, 'pr_1_3' AS pr_id, 3 AS pr_number, 'PULL_REQUEST_OPENED' AS event_type, 'GITHUB' AS event_source, CAST(NULL AS TIMESTAMP(6)) AS created_at, CAST(NULL AS TIMESTAMP(6)) AS closed_at, CAST(NULL AS TIMESTAMP(6)) AS merged_at, 0 AS comments, CAST(NULL AS VARCHAR) AS author_association, CAST(NULL AS VARCHAR) AS event_source_id
+        UNION ALL
+        SELECT CAST('2024-01-03 12:00:00.000000' AS TIMESTAMP(6)) AS time, 'repo_1' AS to_artifact_id, 'user_3' AS from_artifact_id, 'pr_1_3' AS pr_id, 3 AS pr_number, 'PULL_REQUEST_MERGED' AS event_type, 'GITHUB' AS event_source, CAST(NULL AS TIMESTAMP(6)) AS created_at, CAST(NULL AS TIMESTAMP(6)) AS closed_at, CAST('2024-01-03 12:00:00.000000' AS TIMESTAMP(6)) AS merged_at, 0 AS comments, CAST(NULL AS VARCHAR) AS author_association, CAST(NULL AS VARCHAR) AS event_source_id
     oso.artifacts_by_project_v1:
       rows:
       - artifact_id: repo_1
@@ -98,83 +53,24 @@ test_self_merge_rates_to_project_daily_multiple_artifacts_in_project:
     end: 2024-01-02
   inputs:
     oso.int_events_aux_prs:
-      rows:
-      # repo_1, Day 1, self-merged
-      - time: "2024-01-01 09:00:00"
-        to_artifact_id: repo_1
-        from_artifact_id: user_1
-        pr_id: pr_1_1
-        pr_number: 1
-        event_type: PULL_REQUEST_OPENED
-        event_source: GITHUB
-        merged_at: null
-        comments: 0
-      - time: "2024-01-01 10:00:00"
-        to_artifact_id: repo_1
-        from_artifact_id: user_1
-        pr_id: pr_1_1
-        pr_number: 1
-        event_type: PULL_REQUEST_MERGED
-        event_source: GITHUB
-        merged_at: "2024-01-01 10:00:00"
-        comments: 0
-      # repo_2, Day 1, self-merged
-      - time: "2024-01-01 11:00:00"
-        to_artifact_id: repo_2
-        from_artifact_id: user_2
-        pr_id: pr_2_1
-        pr_number: 1
-        event_type: PULL_REQUEST_OPENED
-        event_source: GITHUB
-        merged_at: null
-        comments: 0
-      - time: "2024-01-01 12:00:00"
-        to_artifact_id: repo_2
-        from_artifact_id: user_2
-        pr_id: pr_2_1
-        pr_number: 1
-        event_type: PULL_REQUEST_MERGED
-        event_source: GITHUB
-        merged_at: "2024-01-01 12:00:00"
-        comments: 0
-      # repo_1, Day 2, not self-merged
-      - time: "2024-01-02 09:00:00"
-        to_artifact_id: repo_1
-        from_artifact_id: user_1
-        pr_id: pr_1_2
-        pr_number: 2
-        event_type: PULL_REQUEST_OPENED
-        event_source: GITHUB
-        merged_at: null
-        comments: 0
-      - time: "2024-01-02 10:00:00"
-        to_artifact_id: repo_1
-        from_artifact_id: user_3 # Merged by another user
-        pr_id: pr_1_2
-        pr_number: 2
-        event_type: PULL_REQUEST_MERGED
-        event_source: GITHUB
-        merged_at: "2024-01-02 10:00:00"
-        comments: 0
-      # repo_2, Day 2, self-merged
-      - time: "2024-01-02 11:00:00"
-        to_artifact_id: repo_2
-        from_artifact_id: user_2
-        pr_id: pr_2_2
-        pr_number: 2
-        event_type: PULL_REQUEST_OPENED
-        event_source: GITHUB
-        merged_at: null
-        comments: 0
-      - time: "2024-01-02 12:00:00"
-        to_artifact_id: repo_2
-        from_artifact_id: user_2
-        pr_id: pr_2_2
-        pr_number: 2
-        event_type: PULL_REQUEST_MERGED
-        event_source: GITHUB
-        merged_at: "2024-01-02 12:00:00"
-        comments: 0
+      columns:
+        author_association: varchar
+      query: |
+        SELECT CAST('2024-01-01 09:00:00.000000' AS TIMESTAMP(6)) AS time, 'repo_1' AS to_artifact_id, 'user_1' AS from_artifact_id, 'pr_1_1' AS pr_id, 1 AS pr_number, 'PULL_REQUEST_OPENED' AS event_type, 'GITHUB' AS event_source, CAST(NULL AS TIMESTAMP(6)) AS created_at, CAST(NULL AS TIMESTAMP(6)) AS closed_at, CAST(NULL AS TIMESTAMP(6)) AS merged_at, 0 AS comments, CAST(NULL AS VARCHAR) AS author_association, CAST(NULL AS VARCHAR) AS event_source_id
+        UNION ALL
+        SELECT CAST('2024-01-01 10:00:00.000000' AS TIMESTAMP(6)) AS time, 'repo_1' AS to_artifact_id, 'user_1' AS from_artifact_id, 'pr_1_1' AS pr_id, 1 AS pr_number, 'PULL_REQUEST_MERGED' AS event_type, 'GITHUB' AS event_source, CAST(NULL AS TIMESTAMP(6)) AS created_at, CAST(NULL AS TIMESTAMP(6)) AS closed_at, CAST('2024-01-01 10:00:00.000000' AS TIMESTAMP(6)) AS merged_at, 0 AS comments, CAST(NULL AS VARCHAR) AS author_association, CAST(NULL AS VARCHAR) AS event_source_id
+        UNION ALL
+        SELECT CAST('2024-01-01 11:00:00.000000' AS TIMESTAMP(6)) AS time, 'repo_2' AS to_artifact_id, 'user_2' AS from_artifact_id, 'pr_2_1' AS pr_id, 1 AS pr_number, 'PULL_REQUEST_OPENED' AS event_type, 'GITHUB' AS event_source, CAST(NULL AS TIMESTAMP(6)) AS created_at, CAST(NULL AS TIMESTAMP(6)) AS closed_at, CAST(NULL AS TIMESTAMP(6)) AS merged_at, 0 AS comments, CAST(NULL AS VARCHAR) AS author_association, CAST(NULL AS VARCHAR) AS event_source_id
+        UNION ALL
+        SELECT CAST('2024-01-01 12:00:00.000000' AS TIMESTAMP(6)) AS time, 'repo_2' AS to_artifact_id, 'user_2' AS from_artifact_id, 'pr_2_1' AS pr_id, 1 AS pr_number, 'PULL_REQUEST_MERGED' AS event_type, 'GITHUB' AS event_source, CAST(NULL AS TIMESTAMP(6)) AS created_at, CAST(NULL AS TIMESTAMP(6)) AS closed_at, CAST('2024-01-01 12:00:00.000000' AS TIMESTAMP(6)) AS merged_at, 0 AS comments, CAST(NULL AS VARCHAR) AS author_association, CAST(NULL AS VARCHAR) AS event_source_id
+        UNION ALL
+        SELECT CAST('2024-01-02 09:00:00.000000' AS TIMESTAMP(6)) AS time, 'repo_1' AS to_artifact_id, 'user_1' AS from_artifact_id, 'pr_1_2' AS pr_id, 2 AS pr_number, 'PULL_REQUEST_OPENED' AS event_type, 'GITHUB' AS event_source, CAST(NULL AS TIMESTAMP(6)) AS created_at, CAST(NULL AS TIMESTAMP(6)) AS closed_at, CAST(NULL AS TIMESTAMP(6)) AS merged_at, 0 AS comments, CAST(NULL AS VARCHAR) AS author_association, CAST(NULL AS VARCHAR) AS event_source_id
+        UNION ALL
+        SELECT CAST('2024-01-02 10:00:00.000000' AS TIMESTAMP(6)) AS time, 'repo_1' AS to_artifact_id, 'user_3' AS from_artifact_id, 'pr_1_2' AS pr_id, 2 AS pr_number, 'PULL_REQUEST_MERGED' AS event_type, 'GITHUB' AS event_source, CAST(NULL AS TIMESTAMP(6)) AS created_at, CAST(NULL AS TIMESTAMP(6)) AS closed_at, CAST('2024-01-02 10:00:00.000000' AS TIMESTAMP(6)) AS merged_at, 0 AS comments, CAST(NULL AS VARCHAR) AS author_association, CAST(NULL AS VARCHAR) AS event_source_id
+        UNION ALL
+        SELECT CAST('2024-01-02 11:00:00.000000' AS TIMESTAMP(6)) AS time, 'repo_2' AS to_artifact_id, 'user_2' AS from_artifact_id, 'pr_2_2' AS pr_id, 2 AS pr_number, 'PULL_REQUEST_OPENED' AS event_type, 'GITHUB' AS event_source, CAST(NULL AS TIMESTAMP(6)) AS created_at, CAST(NULL AS TIMESTAMP(6)) AS closed_at, CAST(NULL AS TIMESTAMP(6)) AS merged_at, 0 AS comments, CAST(NULL AS VARCHAR) AS author_association, CAST(NULL AS VARCHAR) AS event_source_id
+        UNION ALL
+        SELECT CAST('2024-01-02 12:00:00.000000' AS TIMESTAMP(6)) AS time, 'repo_2' AS to_artifact_id, 'user_2' AS from_artifact_id, 'pr_2_2' AS pr_id, 2 AS pr_number, 'PULL_REQUEST_MERGED' AS event_type, 'GITHUB' AS event_source, CAST(NULL AS TIMESTAMP(6)) AS created_at, CAST(NULL AS TIMESTAMP(6)) AS closed_at, CAST('2024-01-02 12:00:00.000000' AS TIMESTAMP(6)) AS merged_at, 0 AS comments, CAST(NULL AS VARCHAR) AS author_association, CAST(NULL AS VARCHAR) AS event_source_id
     oso.artifacts_by_project_v1:
       rows:
       - artifact_id: repo_1
