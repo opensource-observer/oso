@@ -41,6 +41,8 @@ from scheduler.graphql_client.input_types import (
 from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
 from scheduler.types import (
     AlreadyLockedMessageResponse,
+    AsyncCancellationReason,
+    CancelledResponse,
     ConcurrencyLockStore,
     FailedResponse,
     HandlerResponse,
@@ -54,8 +56,10 @@ from scheduler.types import (
     StepContext,
     StepFailedException,
     SuccessResponse,
+    TimeoutCancellation,
+    UserRequestedCancellation,
 )
-from scheduler.utils import convert_uuid_bytes_to_str
+from scheduler.utils import convert_uuid_bytes_to_str, get_cancellation_reason
 
 T = t.TypeVar("T", bound=ProtobufMessage)
 
@@ -385,21 +389,23 @@ class RunHandler(MessageHandler[T]):
                 done, pending = await asyncio.wait(
                     [message_handling_task, renew_task],
                     return_when=asyncio.FIRST_COMPLETED,
-                    timeout=common_settings.message_handling_timeout_seconds,
                 )
-            except asyncio.CancelledError:
+            except asyncio.CancelledError as e:
                 logger.warning(
-                    "Message handling was cancelled. Cancelling the message handling task and renewal task."
+                    "Message handling was cancelled by a parent process. "
+                    "Cancelling the message handling task and concurrency lock renewal task."
                 )
-                message_handling_task.cancel()
+                reason = get_cancellation_reason(e)
+                if reason:
+                    message_handling_task.cancel(reason)
+                else:
+                    message_handling_task.cancel(
+                        AsyncCancellationReason(
+                            message="Message handling was cancelled by a parent process."
+                        )
+                    )
                 renew_task.cancel()
                 return await message_handling_task
-            if message_handling_task in pending:
-                logger.error(
-                    f"Message processing task did not complete within the timeout of {common_settings.message_handling_timeout_seconds} seconds. Cancelling the task."
-                )
-                message_handling_task.cancel()
-                return FailedResponse(message="Message processing timed out.")
             if renew_task in done:
                 logger.error(
                     "Fatal: Auto concurrency lock renewal task completed before message handling task. This should not happen as the renew task is supposed to run indefinitely until cancelled. An unexpected issue occurred."
@@ -408,7 +414,7 @@ class RunHandler(MessageHandler[T]):
                 raise RuntimeError(
                     "Concurrency lock renewal task completed unexpectedly."
                 )
-
+            assert message_handling_task in done, "Message handling task should be done"
             return await message_handling_task
 
     @asynccontextmanager
@@ -516,7 +522,18 @@ class RunHandler(MessageHandler[T]):
         try:
             run_context.log.info(f"Reporting run {run_id} as started.")
             await oso_client.start_run(run_id=run_id)
-        except Exception as e:
+        except (Exception, asyncio.CancelledError) as e:
+            if isinstance(e, asyncio.CancelledError):
+                run_context.log.warning(
+                    f"Run {run_id} was cancelled while trying to set it to started. This likely means the worker was shut down while processing. Stopping processing of this message.",
+                )
+                response = CancelledResponse(
+                    message="Run was cancelled during startup."
+                )
+            else:
+                response = FailedResponse(
+                    message=f"Failed to start run {run_id}.", exception=e
+                )
             run_context.log.error(
                 f"Error starting run {run_id}", exc_info=True, exception=e
             )
@@ -531,7 +548,7 @@ class RunHandler(MessageHandler[T]):
             return await self.report_response(
                 run_id=run_id,
                 run_context=run_context,
-                response=FailedResponse(message=f"Failed to start run {run_id}."),
+                response=response,
                 metrics=metrics,
                 labeler=labeler,
                 posthog_client=posthog_client,
@@ -556,8 +573,28 @@ class RunHandler(MessageHandler[T]):
             )
         except Exception as e:
             response = await self._convert_exception_into_response(e, internal_logger)
-        except asyncio.CancelledError:
-            response = FailedResponse(message="Run cancelled during message handling.")
+        except asyncio.CancelledError as e:
+            reason = get_cancellation_reason(e)
+            match reason:
+                case TimeoutCancellation():
+                    run_context.log.warning(
+                        f"Run {run_id} was cancelled due to timeout."
+                    )
+                    response = FailedResponse(
+                        message="Run was cancelled during message handling due to timeout."
+                    )
+                case UserRequestedCancellation():
+                    run_context.log.info(f"Run {run_id} was cancelled by user request.")
+                    response = CancelledResponse(
+                        message="Run was cancelled during message handling by user request."
+                    )
+                case _:
+                    run_context.log.warning(
+                        f"Run {run_id} was cancelled due to an unknown reason."
+                    )
+                    response = FailedResponse(
+                        message="Run was cancelled during message handling due to an unknown reason."
+                    )
         finally:
             if response is None:
                 response = FailedResponse(

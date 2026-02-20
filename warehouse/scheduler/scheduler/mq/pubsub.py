@@ -57,6 +57,7 @@ from scheduler.types import (
     MessageHandlerRegistry,
     SkipResponse,
     SuccessResponse,
+    TimeoutCancellation,
 )
 
 module_logger = logging.getLogger(__name__)
@@ -530,7 +531,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
             logger.error(
                 f"Message processing task did not complete within the timeout of {common_settings.message_handling_timeout_seconds} seconds."
             )
-            handle_message_task.cancel()
+            handle_message_task.cancel(TimeoutCancellation())
 
         try:
             async with asyncio.timeout(

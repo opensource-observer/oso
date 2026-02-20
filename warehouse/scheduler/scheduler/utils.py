@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from typing import Literal
 
@@ -6,7 +7,7 @@ from aiotrino.exceptions import TrinoQueryError
 from dlt.common.schema import TTableSchemaColumns
 from queryrewriter.types import TableResolver
 from scheduler.graphql_client.client import Client as OSOClient
-from scheduler.types import DataModelColumnInput
+from scheduler.types import AsyncCancellationReason, DataModelColumnInput
 from sqlglot import exp
 
 logger = structlog.getLogger(__name__)
@@ -139,3 +140,22 @@ def aiotrino_query_error_to_json(error: TrinoQueryError):
         "failure_info": error.failure_info,
         "query_id": error.query_id,
     }
+
+
+def get_cancellation_reason(
+    exc: asyncio.CancelledError,
+) -> AsyncCancellationReason | None:
+    """Extract the cancellation reason from a CancelledError, if available.
+
+    Args:
+        exc: The CancelledError instance.
+    Returns:
+        An AsyncCancellationReason instance if a reason was provided, otherwise None.
+    """
+    args = exc.args
+    if len(args) != 1:
+        return None
+    potential_reason = args[0]
+    if isinstance(potential_reason, AsyncCancellationReason):
+        return potential_reason
+    return None

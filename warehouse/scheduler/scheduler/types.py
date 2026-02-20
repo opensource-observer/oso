@@ -34,6 +34,21 @@ from sqlmesh.core import dialect as sqlmesh_dialect
 logger = structlog.getLogger(__name__)
 
 
+@dataclass
+class AsyncCancellationReason:
+    message: str
+
+
+@dataclass
+class TimeoutCancellation(AsyncCancellationReason):
+    message: str = "The operation was cancelled due to a timeout."
+
+
+@dataclass
+class UserRequestedCancellation(AsyncCancellationReason):
+    message: str = "The operation was cancelled by the user."
+
+
 class StepFailedException(Exception):
     """An exception indicating that a step has failed."""
 
