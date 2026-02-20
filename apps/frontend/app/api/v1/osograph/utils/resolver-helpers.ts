@@ -31,6 +31,7 @@ import {
   type SupabaseAdminClient,
 } from "@/lib/supabase/admin";
 import { Database } from "@/lib/types/supabase";
+import { logger } from "@/lib/logger";
 import {
   invitationsRowSchema,
   organizationsRowSchema,
@@ -370,4 +371,29 @@ export async function getMaterializations(
       ascending: false,
     },
   });
+}
+
+export async function getModelContext(
+  datasetId: string,
+  tableId: string,
+  client: SupabaseAdminClient,
+) {
+  const { data, error } = await client
+    .from("model_contexts")
+    .select("*")
+    .eq("dataset_id", datasetId)
+    .eq("table_id", tableId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (error) {
+    logger.error(
+      `Error fetching model context for ${datasetId}/${tableId}: ${error.message}`,
+    );
+    throw ServerErrors.database("Failed to fetch model context");
+  }
+
+  if (!data) return null;
+
+  return data;
 }
