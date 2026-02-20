@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+/**
+ * A run request for testing purposes
+ */
+message TestMessageRunRequest {
+  bytes run_id = 1;
+
+  // The dataset on which the models are to be run
+  string dataset_id = 2;
+
+  // Seconds to sleep before returning a response. This is used to test the
+  // timeout and cancellation behavior of the message handling.
+  int32 sleep_seconds = 3;
+}
