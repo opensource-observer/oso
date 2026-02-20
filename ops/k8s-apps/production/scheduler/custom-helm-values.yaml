@@ -21,7 +21,7 @@ spec:
             SCHEDULER_MESSAGE_HANDLING_TIMEOUT_SECONDS: "3600"
         - name: "data_ingestion_run_requests"
           envVars:
-            SCHEDULER_MESSAGE_HANDLING_TIMEOUT_SECONDS: "7200"
+            SCHEDULER_MESSAGE_HANDLING_TIMEOUT_SECONDS: "60"
         - name: "query_run_requests"
           envVars:
             SCHEDULER_MESSAGE_HANDLING_TIMEOUT_SECONDS: "300"
