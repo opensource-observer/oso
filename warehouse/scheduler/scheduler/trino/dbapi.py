@@ -1,3 +1,6 @@
+import sys
+from decimal import Decimal
+
 from sqlglot import exp, parse_one
 from trino.dbapi import Connection as BaseConnection
 from trino.dbapi import Cursor as BaseCursor
@@ -97,9 +100,17 @@ class Cursor(BaseCursor):
             if isinstance(values, exp.Values):
                 # Render each row's SQL once upfront
                 tuple_sqls = [
-                    exp.Tuple(expressions=[exp.convert(v) for v in row]).sql(
-                        dialect="trino"
-                    )
+                    exp.Tuple(
+                        expressions=[
+                            exp.Cast(
+                                this=exp.Literal.string(str(v)),
+                                to=exp.DataType.build("DECIMAL"),
+                            )
+                            if isinstance(v, Decimal) and abs(v) > sys.maxsize
+                            else exp.convert(v)
+                            for v in row
+                        ]
+                    ).sql(dialect="trino")
                     for row in seq_of_params
                 ]
 
