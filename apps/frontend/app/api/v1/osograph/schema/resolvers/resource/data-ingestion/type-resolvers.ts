@@ -1,10 +1,12 @@
 import { getOrgResourceClient } from "@/app/api/v1/osograph/utils/access-control";
 import { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import { ServerErrors } from "@/app/api/v1/osograph/utils/errors";
-import { getMaterializations } from "@/app/api/v1/osograph/utils/resolver-helpers";
+import {
+  getMaterializations,
+  getModelContext,
+} from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { logger } from "@/lib/logger";
 import { DataIngestionsRow } from "@/lib/types/schema-types";
-import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
 import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import {
   executePreviewQuery,
@@ -60,8 +62,14 @@ export const dataIngestionTypeResolvers: GraphQLResolverModule<GraphQLContext> =
       modelContext: async (
         parent: DataIngestionsRow,
         args: DataIngestionModelContextArgs,
+        context: GraphQLContext,
       ) => {
-        return getModelContext(parent.dataset_id, args.tableName);
+        const { client } = await getOrgResourceClient(
+          context,
+          "data_ingestion",
+          parent.id,
+        );
+        return getModelContext(parent.dataset_id, args.tableName, client);
       },
       materializations: async (
         parent: DataIngestionsRow,

@@ -7,6 +7,7 @@ import {
 import { ResourceErrors } from "@/app/api/v1/osograph/utils/errors";
 import {
   getMaterializations,
+  getModelContext,
   getModelRunConnection,
   getResourceById,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
@@ -25,7 +26,6 @@ import {
   ModelRevisionRow,
   ModelReleaseRow,
 } from "@/lib/types/schema-types";
-import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
 import {
   executePreviewQuery,
   generateTableId,
@@ -181,8 +181,17 @@ export const dataModelTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       );
       return getModelRunConnection(parent.dataset_id, parent.id, args, client);
     },
-    modelContext: async (parent: ModelRow) => {
-      return getModelContext(parent.dataset_id, parent.id);
+    modelContext: async (
+      parent: ModelRow,
+      _args: unknown,
+      context: GraphQLContext,
+    ) => {
+      const { client } = await getOrgResourceClient(
+        context,
+        "data_model",
+        parent.id,
+      );
+      return getModelContext(parent.dataset_id, parent.id, client);
     },
     materializations: async (
       parent: ModelRow,
