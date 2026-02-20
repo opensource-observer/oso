@@ -157,6 +157,16 @@ export const CreateDatasetSchema = z.object({
   type: z.enum(DATASET_TYPES),
 });
 
+export const SubscribeToDatasetSchema = z.object({
+  datasetId: z.string().uuid(),
+  orgId: z.string().uuid(),
+});
+
+export const UnsubscribeFromDatasetSchema = z.object({
+  datasetId: z.string().uuid(),
+  orgId: z.string().uuid(),
+});
+
 export const CreateDataModelSchema = z.object({
   orgId: z.string().uuid("Invalid organization ID"),
   datasetId: z.string().uuid("Invalid dataset ID"),

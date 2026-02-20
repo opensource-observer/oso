@@ -1,4 +1,3 @@
-import { ApolloWrapper } from "@/components/dataprovider/apollo-wrapper";
 import { PostHogProvider } from "@/components/dataprovider/posthog-provider";
 import { DebugProvider } from "@/components/dataprovider/debug-provider";
 import { SupabaseProvider } from "@/components/hooks/supabase";
@@ -61,9 +60,7 @@ export default function RootLayout({
         <Toaster />
         <SupabaseProvider>
           <DebugProvider />
-          <PostHogProvider>
-            <ApolloWrapper>{children}</ApolloWrapper>
-          </PostHogProvider>
+          <PostHogProvider>{children}</PostHogProvider>
         </SupabaseProvider>
       </body>
       <GoogleAnalytics />

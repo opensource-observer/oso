@@ -2,6 +2,7 @@ import { useQuery } from "@apollo/client/react";
 import dayjs from "dayjs";
 import _, { Dictionary } from "lodash";
 import React from "react";
+import { WarehouseApolloWrapper } from "@/components/dataprovider/apollo-wrapper";
 import {
   assertNever,
   safeCast,
@@ -326,14 +327,18 @@ const formatData = (
  * @returns
  */
 function MetricsDataProvider(props: MetricsDataProviderProps) {
-  return props.entityType === "artifact" ? (
-    <ArtifactMetricsDataProvider {...props} />
-  ) : props.entityType === "project" ? (
-    <ProjectMetricsDataProvider {...props} />
-  ) : props.entityType === "collection" ? (
-    <CollectionMetricsDataProvider {...props} />
-  ) : (
-    assertNever(props.entityType)
+  return (
+    <WarehouseApolloWrapper>
+      {props.entityType === "artifact" ? (
+        <ArtifactMetricsDataProvider {...props} />
+      ) : props.entityType === "project" ? (
+        <ProjectMetricsDataProvider {...props} />
+      ) : props.entityType === "collection" ? (
+        <CollectionMetricsDataProvider {...props} />
+      ) : (
+        assertNever(props.entityType)
+      )}
+    </WarehouseApolloWrapper>
   );
 }
 

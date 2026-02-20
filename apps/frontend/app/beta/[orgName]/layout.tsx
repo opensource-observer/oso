@@ -3,6 +3,7 @@ import { cache } from "react";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "@/plasmic-init";
 import { PlasmicClientRootProvider } from "@/plasmic-init-client";
+import { AppApolloWrapper } from "@/components/dataprovider/app-apollo-wrapper";
 import { logger } from "@/lib/logger";
 
 const PLASMIC_COMPONENT = "LayoutApp";
@@ -38,7 +39,10 @@ export default async function PlasmicLayout({
     >
       <PlasmicComponent
         component={compMeta.displayName}
-        componentProps={{ children, activeOrgName: params.orgName }}
+        componentProps={{
+          children: <AppApolloWrapper>{children}</AppApolloWrapper>,
+          activeOrgName: params.orgName,
+        }}
       />
     </PlasmicClientRootProvider>
   );

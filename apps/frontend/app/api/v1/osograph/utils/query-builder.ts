@@ -16,13 +16,24 @@ export type TableRow<T extends ValidTableName> =
 
 export type StringKeys<T> = Extract<keyof T, string>;
 
+export type FilterKeyWithPermission<T extends ValidTableName> =
+  | StringKeys<TableRow<T>>
+  | `permission.${StringKeys<TableRow<"resource_permissions">>}`;
+
 export type FilterMap<T extends ValidTableName> = {
   [K in StringKeys<TableRow<T>>]: TableRow<T>[K];
 };
 
-export type TypedFilterEntry<T extends ValidTableName, V> = {
-  [K in StringKeys<TableRow<T>>]: { key: K; value: V };
-}[StringKeys<TableRow<T>>];
+export type TypedFilterEntry<T extends ValidTableName, V> =
+  | {
+      [K in StringKeys<TableRow<T>>]: { key: K; value: V };
+    }[StringKeys<TableRow<T>>]
+  | {
+      [K in StringKeys<TableRow<"resource_permissions">>]: {
+        key: `permission.${K}`;
+        value: V;
+      };
+    }[StringKeys<TableRow<"resource_permissions">>];
 
 export type FilterEntry<T extends ValidTableName> = TypedFilterEntry<
   T,
@@ -56,6 +67,7 @@ export type QueryPredicate<T extends ValidTableName> = {
   like?: StringFilterEntry<T>[];
   ilike?: StringFilterEntry<T>[];
   is?: NullableFilterEntry<T>[];
+  or?: string[];
 };
 
 export type OrderBy<T extends ValidTableName> = {
@@ -76,6 +88,19 @@ export function _inferQueryType<TTable extends ValidTableName>(
     .select("*", { count: "exact" });
 }
 
+export function _inferQueryTypeWithPermission<TTable extends ValidTableName>(
+  client: SupabaseClient,
+  tableName: TTable,
+) {
+  type ResolvedTableName = TTable extends keyof Database["public"]["Tables"]
+    ? TTable
+    : keyof Database["public"]["Tables"];
+
+  return client
+    .from(tableName as ResolvedTableName)
+    .select("*, permission:resource_permissions()", { count: "exact" });
+}
+
 export async function buildQuery<TTable extends ValidTableName>(
   client: SupabaseClient,
   tableName: TTable,
@@ -83,32 +108,37 @@ export async function buildQuery<TTable extends ValidTableName>(
   hook?: <TQuery extends ReturnType<typeof _inferQueryType<TTable>>>(
     query: TQuery,
   ) => TQuery,
-  single?: boolean,
+  options?: {
+    single?: boolean;
+    includeResourcePermissions?: boolean;
+  },
 ) {
   type TQuery = ReturnType<typeof _inferQueryType<TTable>>;
-  let query = _inferQueryType(client, tableName);
+  let query = options?.includeResourcePermissions
+    ? _inferQueryTypeWithPermission(client, tableName)
+    : _inferQueryType(client, tableName);
 
-  function applyFilter<K extends StringKeys<TableRow<TTable>>>(
+  function applyFilter<K extends FilterKeyWithPermission<TTable>>(
     q: TQuery,
     key: K,
-    value: FilterMap<TTable>[K],
+    value: FilterMap<TTable>[StringKeys<TableRow<TTable>>],
     method: "eq" | "neq" | "gt" | "gte" | "lt" | "lte",
   ): TQuery {
     // @ts-expect-error - TS can't correlate generic K with union method signatures
     return q[method](key, value);
   }
 
-  function applyArrayFilter<K extends StringKeys<TableRow<TTable>>>(
+  function applyArrayFilter<K extends FilterKeyWithPermission<TTable>>(
     q: TQuery,
     key: K,
-    value: Array<FilterMap<TTable>[K]>,
+    value: Array<FilterMap<TTable>[StringKeys<TableRow<TTable>>]>,
     method: "in" | "contains",
   ): TQuery {
     // @ts-expect-error - TS can't narrow FilterMap<TTable>[K][] to Supabase types
     return q[method](key, value);
   }
 
-  function applyStringFilter<K extends StringKeys<TableRow<TTable>>>(
+  function applyStringFilter<K extends FilterKeyWithPermission<TTable>>(
     q: TQuery,
     key: K,
     value: string,
@@ -116,12 +146,17 @@ export async function buildQuery<TTable extends ValidTableName>(
   ): TQuery {
     return q[method](key, value);
   }
-  function applyIs<K extends StringKeys<TableRow<TTable>>>(
+
+  function applyIs<K extends FilterKeyWithPermission<TTable>>(
     q: TQuery,
     key: K,
     value: null | boolean,
   ): TQuery {
     return q.is(key, value);
+  }
+
+  function applyOr(q: TQuery, condition: string): TQuery {
+    return q.or(condition);
   }
 
   const handlers: {
@@ -141,6 +176,7 @@ export async function buildQuery<TTable extends ValidTableName>(
     like: (q, f) => applyStringFilter(q, f.key, f.value, "like"),
     ilike: (q, f) => applyStringFilter(q, f.key, f.value, "ilike"),
     is: (q, f) => applyIs(q, f.key, f.value),
+    or: (q, f) => applyOr(q, f),
   };
 
   for (const key of Object.keys(
@@ -151,15 +187,15 @@ export async function buildQuery<TTable extends ValidTableName>(
 
     const handler = handlers[key];
     for (const filter of filters) {
-      if (filter.value !== undefined) {
+      if (typeof filter === "string" || filter.value !== undefined) {
         // @ts-expect-error - TS cannot correlate handler type with predicate key
         query = handler(query, filter);
       }
     }
   }
 
-  const result = hook?.(query) ?? query;
-  if (single) {
+  const result = (hook?.(query as TQuery) ?? query) as TQuery;
+  if (options?.single) {
     const finalResult = await result.single();
     return {
       ...finalResult,

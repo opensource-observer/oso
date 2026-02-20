@@ -1941,6 +1941,8 @@ export type Dataset = {
   description?: Maybe<Scalars["String"]["output"]>;
   displayName?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
+  /** Whether the current user's organization is subscribed to this dataset. */
+  isSubscribed: Scalars["Boolean"]["output"];
   /**
    * The materializations for this dataset. Returns all materializations regardless of their source
    * (data model, static model, or data ingestion).
@@ -1959,6 +1961,10 @@ export type Dataset = {
   type: DatasetType;
   typeDefinition: DatasetTypeDefinition;
   updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type DatasetIsSubscribedArgs = {
+  orgId: Scalars["ID"]["input"];
 };
 
 export type DatasetMaterializationsArgs = {
@@ -3776,6 +3782,8 @@ export type Mutation = {
   stopRunningSchedule: ScheduleMutationResult;
   /** Disable a sensor from launching runs for a job. */
   stopSensor: StopSensorMutationResultOrError;
+  /** Subscribe an organization to a public dataset in the marketplace. */
+  subscribeToDataset: SimplePayload;
   syncDataConnection: SyncDataConnectionPayload;
   /** Terminates a run. */
   terminatePipelineExecution: TerminateRunResult;
@@ -3785,6 +3793,8 @@ export type Mutation = {
   terminateRuns: TerminateRunsResultOrError;
   /** Unpublish the notebook */
   unpublishNotebook: UnpublishNotebookPayload;
+  /** Unsubscribe an organization from a marketplace dataset. */
+  unsubscribeFromDataset: SimplePayload;
   updateDataModel: CreateDataModelPayload;
   /** Update a dataset */
   updateDataset: UpdateDatasetPayload;
@@ -4142,6 +4152,11 @@ export type MutationStopSensorArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationSubscribeToDatasetArgs = {
+  input: SubscribeToDatasetInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationSyncDataConnectionArgs = {
   id: Scalars["ID"]["input"];
 };
@@ -4167,6 +4182,11 @@ export type MutationTerminateRunsArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationUnpublishNotebookArgs = {
   notebookId: Scalars["ID"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUnsubscribeFromDatasetArgs = {
+  input: UnsubscribeFromDatasetInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -6447,6 +6467,11 @@ export type Query = {
   /** Retrieve event logs after applying a run id filter, cursor, and limit. */
   logsForRun: EventConnectionOrError;
   /**
+   * Browse public datasets available in the marketplace.
+   * Supports search by name, display_name, or organization name, and filtering by dataset type.
+   */
+  marketplaceDatasets: DatasetConnection;
+  /**
    * Query notebooks with optional filtering and pagination.
    *
    * The where parameter accepts a JSON object with field-level filtering.
@@ -6795,6 +6820,15 @@ export type QueryLogsForRunArgs = {
   afterCursor?: InputMaybe<Scalars["String"]["input"]>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   runId: Scalars["ID"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryMarketplaceDatasetsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  datasetType?: InputMaybe<DatasetType>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  orgId: Scalars["ID"]["input"];
+  search?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -8763,6 +8797,11 @@ export type StopSensorMutationResultOrError =
   | StopSensorMutationResult
   | UnauthorizedError;
 
+export type SubscribeToDatasetInput = {
+  datasetId: Scalars["ID"]["input"];
+  orgId: Scalars["ID"]["input"];
+};
+
 /** The root for all subscriptions to retrieve real-time data from the Dagster instance. */
 export type Subscription = {
   __typename?: "Subscription";
@@ -9084,6 +9123,11 @@ export type UnpublishNotebookPayload = {
   success: Scalars["Boolean"]["output"];
 };
 
+export type UnsubscribeFromDatasetInput = {
+  datasetId: Scalars["ID"]["input"];
+  orgId: Scalars["ID"]["input"];
+};
+
 export type UnsupportedOperationError = Error & {
   __typename?: "UnsupportedOperationError";
   message: Scalars["String"]["output"];
@@ -9353,6 +9397,90 @@ export enum Link__Purpose {
   /** `SECURITY` features provide metadata necessary to securely resolve fields. */
   Security = "SECURITY",
 }
+
+export type ResolveOrganizationQueryVariables = Exact<{
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+}>;
+
+export type ResolveOrganizationQuery = {
+  __typename?: "Query";
+  organizations: {
+    __typename?: "OrganizationConnection";
+    edges: Array<{
+      __typename?: "OrganizationEdge";
+      node: { __typename?: "Organization"; id: string; name: string };
+    }>;
+  };
+};
+
+export type MarketplaceDatasetsQueryVariables = Exact<{
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  search?: InputMaybe<Scalars["String"]["input"]>;
+  datasetType?: InputMaybe<DatasetType>;
+  orgId: Scalars["ID"]["input"];
+}>;
+
+export type MarketplaceDatasetsQuery = {
+  __typename?: "Query";
+  marketplaceDatasets: {
+    __typename?: "DatasetConnection";
+    totalCount?: number | null;
+    edges: Array<{
+      __typename?: "DatasetEdge";
+      cursor: string;
+      node: {
+        __typename?: "Dataset";
+        id: string;
+        name: string;
+        displayName?: string | null;
+        description?: string | null;
+        type: DatasetType;
+        updatedAt: any;
+        isSubscribed: boolean;
+        organization: {
+          __typename?: "Organization";
+          name: string;
+          displayName?: string | null;
+        };
+        tables: { __typename?: "TableConnection"; totalCount?: number | null };
+      };
+    }>;
+    pageInfo: {
+      __typename?: "PageInfo";
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+      startCursor?: string | null;
+      endCursor?: string | null;
+    };
+  };
+};
+
+export type SubscribeToDatasetMutationVariables = Exact<{
+  input: SubscribeToDatasetInput;
+}>;
+
+export type SubscribeToDatasetMutation = {
+  __typename?: "Mutation";
+  subscribeToDataset: {
+    __typename?: "SimplePayload";
+    success: boolean;
+    message?: string | null;
+  };
+};
+
+export type UnsubscribeFromDatasetMutationVariables = Exact<{
+  input: UnsubscribeFromDatasetInput;
+}>;
+
+export type UnsubscribeFromDatasetMutation = {
+  __typename?: "Mutation";
+  unsubscribeFromDataset: {
+    __typename?: "SimplePayload";
+    success: boolean;
+    message?: string | null;
+  };
+};
 
 export type GetPreviewDataQueryVariables = Exact<{
   datasetId: Scalars["ID"]["input"];
@@ -9985,6 +10113,442 @@ export type TimeseriesMetricsByCollectionQuery = {
   }> | null;
 };
 
+export const ResolveOrganizationDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "ResolveOrganization" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "where" },
+          },
+          type: { kind: "NamedType", name: { kind: "Name", value: "JSON" } },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "organizations" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "first" },
+                value: { kind: "IntValue", value: "1" },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "single" },
+                value: { kind: "BooleanValue", value: true },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "where" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "where" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "edges" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "node" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "id" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "name" },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  ResolveOrganizationQuery,
+  ResolveOrganizationQueryVariables
+>;
+export const MarketplaceDatasetsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "MarketplaceDatasets" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "first" },
+          },
+          type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "after" },
+          },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "search" },
+          },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "datasetType" },
+          },
+          type: {
+            kind: "NamedType",
+            name: { kind: "Name", value: "DatasetType" },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "orgId" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "ID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "marketplaceDatasets" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "orgId" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "orgId" },
+                },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "first" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "first" },
+                },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "after" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "after" },
+                },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "search" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "search" },
+                },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "datasetType" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "datasetType" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "edges" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "node" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "id" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "name" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "displayName" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "description" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "type" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "updatedAt" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "organization" },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "name" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: {
+                                      kind: "Name",
+                                      value: "displayName",
+                                    },
+                                  },
+                                ],
+                              },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "tables" },
+                              arguments: [
+                                {
+                                  kind: "Argument",
+                                  name: { kind: "Name", value: "first" },
+                                  value: { kind: "IntValue", value: "0" },
+                                },
+                              ],
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "totalCount" },
+                                  },
+                                ],
+                              },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "isSubscribed" },
+                              arguments: [
+                                {
+                                  kind: "Argument",
+                                  name: { kind: "Name", value: "orgId" },
+                                  value: {
+                                    kind: "Variable",
+                                    name: { kind: "Name", value: "orgId" },
+                                  },
+                                },
+                              ],
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "cursor" },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "pageInfo" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "hasNextPage" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "hasPreviousPage" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "startCursor" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "endCursor" },
+                      },
+                    ],
+                  },
+                },
+                { kind: "Field", name: { kind: "Name", value: "totalCount" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  MarketplaceDatasetsQuery,
+  MarketplaceDatasetsQueryVariables
+>;
+export const SubscribeToDatasetDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "SubscribeToDataset" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "SubscribeToDatasetInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "subscribeToDataset" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  SubscribeToDatasetMutation,
+  SubscribeToDatasetMutationVariables
+>;
+export const UnsubscribeFromDatasetDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "UnsubscribeFromDataset" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "UnsubscribeFromDatasetInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "unsubscribeFromDataset" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  UnsubscribeFromDatasetMutation,
+  UnsubscribeFromDatasetMutationVariables
+>;
 export const GetPreviewDataDocument = {
   kind: "Document",
   definitions: [
