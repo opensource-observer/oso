@@ -98,8 +98,8 @@ github_artifacts AS (
   FROM projects
   CROSS JOIN UNNEST(projects.github) AS @unnested_struct_ref(unnested_github)
   INNER JOIN oso.int_repositories__ossd AS ossd_repos
-    ON unnested_github.url = ossd_repos.artifact_url
-    OR unnested_github.url = ossd_repos.owner_url
+    ON LOWER(unnested_github.url) = ossd_repos.artifact_url
+    OR LOWER(unnested_github.url) = ossd_repos.owner_url
 ),
 
 -- =============================================================================
