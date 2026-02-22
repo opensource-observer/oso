@@ -10,11 +10,11 @@ import {
 } from "@/app/api/v1/osograph/utils/auth";
 import {
   getMaterializations,
+  getModelContext,
   getModelRunConnection,
   getResourceById,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
-import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
 import {
   executePreviewQuery,
   generateTableId,
@@ -82,8 +82,17 @@ export const staticModelTypeResolvers: GraphQLResolverModule<GraphQLContext> = {
       );
       return getModelRunConnection(parent.dataset_id, parent.id, args, client);
     },
-    modelContext: async (parent: StaticModelRow) => {
-      return getModelContext(parent.dataset_id, parent.id);
+    modelContext: async (
+      parent: StaticModelRow,
+      _args: unknown,
+      context: GraphQLContext,
+    ) => {
+      const { client } = await getOrgResourceClient(
+        context,
+        "static_model",
+        parent.id,
+      );
+      return getModelContext(parent.dataset_id, parent.id, client);
     },
     materializations: async (
       parent: StaticModelRow,
