@@ -55,6 +55,7 @@ type ResolverHandler<TResult, TParent, TContext, TArgs> = (
  * Each middleware receives the output from the previous middleware and returns
  * potentially enhanced versions of context and args.
  *
+ * @template TParent - The parent object type (for field resolvers)
  * @template TInputContext - The input context type
  * @template TOutputContext - The enhanced context type to return
  * @template TInputArgs - The input args type
@@ -64,8 +65,8 @@ type ResolverHandler<TResult, TParent, TContext, TArgs> = (
  *
  * Example:
  * ```typescript
- * const myMiddleware: Middleware<GraphQLContext, AuthenticatedContext, any, any> =
- *   async (context, args) => {
+ * const myMiddleware: Middleware<unknown, GraphQLContext, AuthenticatedContext, any, any> =
+ *   async (parent, context, args) => {
  *     const { client, userId } = getAuthenticatedClient(context);
  *     return {
  *       context: { ...context, client, userId } as AuthenticatedContext,
@@ -74,11 +75,17 @@ type ResolverHandler<TResult, TParent, TContext, TArgs> = (
  *   };
  * ```
  */
-export type Middleware<TInputContext, TOutputContext, TInputArgs, TOutputArgs> =
-  (
-    context: TInputContext,
-    args: TInputArgs,
-  ) => Promise<{ context: TOutputContext; args: TOutputArgs }>;
+export type Middleware<
+  TParent,
+  TInputContext,
+  TOutputContext,
+  TInputArgs,
+  TOutputArgs,
+> = (
+  parent: TParent,
+  context: TInputContext,
+  args: TInputArgs,
+) => Promise<{ context: TOutputContext; args: TOutputArgs }>;
 
 /**
  * Builder class for creating type-safe GraphQL resolvers with composable middleware.
@@ -100,6 +107,7 @@ export class ResolverBuilder<TResult, TParent, TContext, TArgs> {
    */
   constructor(
     private applyMiddleware: (
+      parent: any,
       context: any,
       args: any,
     ) => Promise<{ context: any; args: any }>,
@@ -128,17 +136,21 @@ export class ResolverBuilder<TResult, TParent, TContext, TArgs> {
    * ```
    */
   use<TNewContext = TContext, TNewArgs = TArgs>(
-    middleware: Middleware<TContext, TNewContext, TArgs, TNewArgs>,
+    middleware: Middleware<TParent, TContext, TNewContext, TArgs, TNewArgs>,
   ): ResolverBuilder<TResult, TParent, TNewContext, TNewArgs> {
     const previousApply = this.applyMiddleware;
 
     // Return a new builder that captures the previous middleware chain
     return new ResolverBuilder<TResult, TParent, TNewContext, TNewArgs>(
-      async (context, args) => {
+      async (parent, context, args) => {
         // Apply all previous middleware first
-        const intermediate = await previousApply(context, args);
+        const intermediate = await previousApply(parent, context, args);
         // Then apply this middleware
-        return await middleware(intermediate.context, intermediate.args);
+        return await middleware(
+          parent,
+          intermediate.context,
+          intermediate.args,
+        );
       },
     );
   }
@@ -169,6 +181,7 @@ export class ResolverBuilder<TResult, TParent, TContext, TArgs> {
     return async (parent, originalArgs, originalContext, info) => {
       // Apply all middleware via the captured closure chain
       const { context, args } = await applyMiddleware(
+        parent,
         originalContext,
         originalArgs,
       );
@@ -250,7 +263,10 @@ export function createResolver<
   ResolveArgs<TResolver, TArgs>
 > {
   // Start with an identity middleware (no-op)
-  return new ResolverBuilder(async (context, args) => ({ context, args }));
+  return new ResolverBuilder(async (parent, context, args) => ({
+    context,
+    args,
+  }));
 }
 
 interface CollectionBuilder<
