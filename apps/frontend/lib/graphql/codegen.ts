@@ -31,6 +31,7 @@ const config: CodegenConfig = {
   generates: {
     "./lib/graphql/generated/": {
       preset: "client",
+      //plugins: ["typescript", "typescript-resolvers", "typescript-operations"],
       plugins: [],
       presetConfig: {
         gqlTagName: "gql",

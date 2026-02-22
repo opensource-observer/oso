@@ -58,7 +58,8 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   StaticModelDefinition: datasetResolvers.StaticModelDefinition,
   DataIngestionDefinition: datasetResolvers.DataIngestionDefinition,
   DataIngestion: dataIngestionResolvers.DataIngestion,
-  DataModel: dataModelResolvers.DataModel,
+  // TODO(jabolo): Uncomment this to avoid conflict when #6706 lands
+  // DataModel: dataModelResolvers.DataModel,
   DataModelRevision: dataModelResolvers.DataModelRevision,
   DataModelRelease: dataModelResolvers.DataModelRelease,
   StaticModel: staticModelResolvers.StaticModel,
