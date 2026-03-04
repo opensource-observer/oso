@@ -1,11 +1,21 @@
+<p align="center">
+  <img
+    src="https://github.com/user-attachments/assets/fbab45c3-8632-47e0-921d-a11df5f6d942"
+    width="200"
+    height="200"
+    alt="OSO logo"
+    style="border-radius:50%; object-fit:cover; border:3px solid #e5e7eb; box-shadow:0 4px 12px rgba(0,0,0,0.15);"
+  />
+</p>
+
 # oso
 
-Since 2023, we've had an amazing journey building one of the best open source data pipelines for monitoring the open source universe. Our pipeline powered everything from Optimism retro funding (which distributed over 70M+ OP to open source projects) to strategic dashboards for various software ecosystems (like the Ethereum Foundation).
+Since 2023, we've had an amazing journey building one of the best open source data pipelines for monitoring the open source universe. Our pipeline powered everything from Optimism Retro Funding (which distributed over 70M+ OP to open source projects) to strategic dashboards for various software ecosystems (like the Ethereum Foundation). We have learned a lot and we have ambitious plans to apply these learnings to transform how open data will work in the future!
 
-Today marks an important transition for our project. We have learned a lot and we have ambitious plans to apply these learnings to transform how open data will work in the future.
+Today (March 4, 2026) marks an important transition for our project. We are moving the dbt/sqlmesh pipeline that powered the OSO data platform up until today to a [new home](https://github.com/opensource-observer/opensource-observer), archiving it, and breaking ground on a new platform.
 
-To summarize the 2 motivating drivers:
-1. AI is fundamentally transforming how data engineering will work in the future. Agents are now able to go beyond just drafting SQL queries, to building entire dashboards and insights end-to-end.
+There are two motivating drivers behind this transition:
+1. AI is fundamentally transforming the jobs of data teams. Agents are now able to go beyond just drafting SQL queries, to building entire pipelines and insights engines end-to-end.
 2. Open source licenses as they currently exist fail to address the financial realities of sustaining open source. This is exacerbated in the data economy, where the real costs of just running a data pipeline can easily exceed the cost of a salary. 
 
 But we have a plan! We just need some time. 
