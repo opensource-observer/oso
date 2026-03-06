@@ -1,6 +1,6 @@
 <p align="center">
   <img
-    src="https://github.com/user-attachments/assets/fbab45c3-8632-47e0-921d-a11df5f6d942"
+    src="https://avatars.githubusercontent.com/u/145079657?s=200&v=4"
     width="200"
     height="200"
     alt="OSO logo"
